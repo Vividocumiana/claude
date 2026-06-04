@@ -48,7 +48,7 @@ Tutte le routine consegnano via bot Slack con lo helper `send.sh`. Mai `slack_se
 bash ~/.claude/skills/vivido-assistant/send.sh <channel_id> <text_file> [thread_ts]
 ```
 
-- `channel_id` di default = `U062VMYTXDL` (DM bot Vivido ↔ founder). Fallback: `U062VMYTXDL` (user ID founder; `chat.postMessage` lo risolve sulla stessa DM).
+- `channel_id` di default = `D0634QNLF52` (DM founder ↔ assistant). Fallback: `U062VMYTXDL` (user ID founder; `chat.postMessage` lo risolve sulla stessa DM).
 - Token bot: env `VIVIDO_BOT_TOKEN` (cloud) o file `vivido-bot.token` (locale).
 - Scrivi il testo in `/tmp/vivido-assistant-<routine>.md` poi passalo a `send.sh`.
 
@@ -57,7 +57,7 @@ bash ~/.claude/skills/vivido-assistant/send.sh <channel_id> <text_file> [thread_
 Ping breve al founder ~30 min dopo l'EOD, per ricordargli di rispondere in thread (è ciò che alimenta il morning di domani). Niente data fetch:
 
 1. Componi: `🌙 Ricorda: rispondi all'EOD qui in thread (anche 2 righe, anche audio) — domani mattina diventa il POV del morning.`
-2. Invia con `send.sh U062VMYTXDL`.
+2. Invia con `send.sh D0634QNLF52`.
 3. Rispondi all'utente: `✅ Reminder EOD inviato`.
 
 ## 🧭 Esecuzione
@@ -66,7 +66,7 @@ Ping breve al founder ~30 min dopo l'EOD, per ricordargli di rispondere in threa
 2. `Read` di `routines/<arg>.md` (tranne `log-ingest-reminder`, inline qui sopra).
 3. Esegui. Raccolta dati via snapshot + MCP Notion/Gmail/Calendar/Granola/Slack; delivery SEMPRE via `send.sh`.
 4. Componi il testo in `/tmp/vivido-assistant-<arg>.md`.
-5. Invia con `send.sh` alla DM `U062VMYTXDL`.
+5. Invia con `send.sh` alla DM `D0634QNLF52`.
 6. Rispondi all'utente in UNA riga col conteggio sintetico.
 
 ## 📋 Convenzioni comuni

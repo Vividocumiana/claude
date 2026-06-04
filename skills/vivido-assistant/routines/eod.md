@@ -318,8 +318,8 @@ _⭐ Rispondi in thread. 22:00 sintetizzo nel Knowledge Log._
 ## Consegna
 
 1. Scrivi testo in `/tmp/vivido-assistant-eod.md`.
-2. `bash ~/.claude/skills/vivido-assistant/send.sh U062VMYTXDL /tmp/vivido-assistant-eod.md`
-3. Fallback retry 8s → `send.sh U062VMYTXDL` (stessa DM, indirizzata via user ID).
+2. `bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-eod.md`
+3. Fallback retry 8s → `send.sh D0634QNLF52` (stessa DM, indirizzata via user ID).
 4. Rispondi: `✅ EOD inviato (POV:<KL_status> · <P> progetti · 🔴<R> 🟡<Y> 🟢<G> · 🤝<Partner> · CRM:<N> · 💰Fatture:<F> · 📜Contratti:<C> · 🪦<S> · 💡<Sp> spunti · 👥<persone> · ❓<Q> domande).`
 
 L'EOD viene consegnato nella DM bot ↔ Samuele (`U062VMYTXDL`). **Il founder risponde in thread sulla DM stessa** — niente più reply su #company-brain. La routine `log-ingest` alle 22:00 cerca in quella DM il messaggio più recente del bot che inizia con `🌙 *EOD Debrief` di oggi e legge le sue reply.

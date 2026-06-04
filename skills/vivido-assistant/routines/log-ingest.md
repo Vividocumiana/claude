@@ -12,7 +12,7 @@ Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido A
 
 ### 1. Trova il messaggio EOD di oggi nella DM bot ↔ Samuele
 
-Channel: `U062VMYTXDL` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele `U062VMYTXDL`).
+Channel: `D0634QNLF52` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele `U062VMYTXDL`).
 
 **Regola inviolabile — niente `slack_search` su DM bot↔utente**: l'MCP `slack_search_*` autenticato come account utente NON indicizza le DM con i bot (falso negativo confermato il 2026-05-20). La lettura va fatta con `conversations.history` autenticato come **bot Vivido Assistant**, oppure via lo helper `read.sh` qui sotto (curl diretto con bot token).
 
@@ -22,7 +22,7 @@ Channel: `U062VMYTXDL` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele 
 TOKEN="$(tr -d '\r\n' < ~/.claude/skills/vivido-assistant/bot.token)"
 curl -sS -G https://slack.com/api/conversations.history \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=U062VMYTXDL" \
+  --data-urlencode "channel=D0634QNLF52" \
   --data-urlencode "limit=30"
 ```
 
@@ -36,7 +36,7 @@ curl -sS -G https://slack.com/api/conversations.history \
 ```bash
 curl -sS -G https://slack.com/api/conversations.replies \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=U062VMYTXDL" \
+  --data-urlencode "channel=D0634QNLF52" \
   --data-urlencode "ts=<eod_message.ts>" \
   --data-urlencode "limit=100"
 ```
@@ -130,7 +130,7 @@ Usa `notion-create-pages` con il data source URL della Knowledge Log. Body in ma
 
 ### 6. Notifica founder (DM, non canale)
 
-Invia un DM al founder via `send.sh U062VMYTXDL`:
+Invia un DM al founder via `send.sh D0634QNLF52`:
 
 ```
 🧠 Knowledge Log <YYYY-MM-DD> ✓

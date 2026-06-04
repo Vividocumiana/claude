@@ -315,8 +315,8 @@ _Outcome di business, non task. Cosa vuoi raccontare venerdì sera nel KL?_
 ## Consegna
 
 1. Scrivi il testo in `/tmp/vivido-assistant-weekly.md`.
-2. `bash ~/.claude/skills/vivido-assistant/send.sh U062VMYTXDL /tmp/vivido-assistant-weekly.md` (DM bot ↔ Samuele).
-3. Fallback `send.sh U062VMYTXDL` se fallisce.
+2. `bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-weekly.md` (DM bot ↔ Samuele).
+3. Fallback `send.sh D0634QNLF52` se fallisce.
 4. Rispondi all'utente: `✅ Weekly v2 inviato (🟢<X> 🟡<Y> 🔴<Z> · 📓<KL>/5 KL · ❓<D> decisioni pendenti · 🔁<P> pattern).`
 
 ---

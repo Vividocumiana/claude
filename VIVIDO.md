@@ -11,8 +11,13 @@ Vivido è una **design consultancy founder-to-founder** per startup e founder ea
 web; deliverable a catalogo: **Blueprint**, **MVP**, **Website (Pro)**, **Design Pod**, **Cycles** (retainer
 ricorrente), **Partnership**. Modello: progetti one-shot a scope + retainer mensili (Cycles/Monthly).
 
-Founder: **Samuele** (`hello@vivido.world`). Oggi Vivido opera **solo con il founder** (no team interno
-attivo nelle routine — vedi §3). Timezone operativo: **Europe/London**.
+Founder: **Samuele Poggio** (Cofounder, Growth — `samuele@vivido.world`). Cofounder: **Federico Garzena**
+(Design/Product — `federico@vivido.world`). Altri membri visti: `zeeshan@`, `nicolas@`, `gabriel@vivido.world`.
+`hello@vivido.world` è l'account **admin/condiviso** (è quello loggato su Slack/Notion/Calendar in questa
+sessione). Timezone operativo: **Europe/London**.
+
+> **Fase test (oggi):** le routine girano e consegnano **solo al founder** (DM `D0634QNLF52`). Il routing
+> multi-owner verso il team è disattivato finché non mappiamo gli UUID Notion/Slack di ogni membro (§3).
 
 ---
 
@@ -40,21 +45,26 @@ Google Calendar Vivido · Slack workspace Vivido World.
 
 ## 3. Team (owner mapping)
 
-Oggi Vivido = **solo Samuele**. Le routine non fanno owner-routing a più persone: ogni task/azione
-fa capo al founder.
+Il team esiste, ma in **fase test** le routine fanno capo al solo founder. UUID/Slack ID degli altri
+membri ancora da mappare (servono `notion-get-users` con email aziendali + Slack user lookup).
 
 | Membro | Ruolo | Slack ID | Notion Person UUID |
 |---|---|---|---|
-| Samuele | Founder | `U062VMYTXDL` | `09ff0769-85fd-4a7e-a637-b8164b9c3c5b` |
+| Samuele Poggio | Cofounder · Growth | `U062VMYTXDL` (admin) | `09ff0769-85fd-4a7e-a637-b8164b9c3c5b` (admin) |
+| Federico Garzena | Cofounder · Design/Product | _da mappare_ | _da mappare_ |
+| Zeeshan / Nicolas / Gabriel | Team | _da mappare_ | _da mappare_ |
 
-> Quando entrerà del team, aggiungi le righe qui e ripristina la logica owner-mapping nelle routine.
+> Nota: in Notion il workspace ha un solo "person" reale (`hello@`/Vivido Administration). Gli altri
+> membri hanno account Google (`@vivido.world`) ma potrebbero non essere ancora utenti Notion: verifica
+> prima di abilitare l'owner-mapping per-persona.
 
 ---
 
 ## 4. Slack — delivery
 
-- **DM operativa** founder: channel/user `U062VMYTXDL` (`hello@vivido.world` — "Vivido Administration").
-  È dove arrivano tutte le routine e dove il founder risponde all'EOD.
+- **DM operativa** founder: channel `D0634QNLF52` (user `U062VMYTXDL` = `hello@vivido.world`, "Vivido
+  Administration"). È dove arrivano tutte le routine e dove il founder risponde all'EOD. Il send.sh/MCP
+  accetta anche lo user ID come destinatario (chat.postMessage lo risolve sulla stessa DM).
 - **Bot Vivido**: ⚠️ **non ancora creato.** Finché non esiste il bot + `VIVIDO_BOT_TOKEN`, la consegna
   finale autonoma (cloud) non funziona. Per i test interattivi "solo con me" si consegna via MCP Slack
   alla DM del founder. Vedi `SETUP.md §5` per creare il bot e il secret.
