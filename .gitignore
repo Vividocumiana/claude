@@ -1,0 +1,13 @@
+# Token / secret — MAI committare (vedi INSTALL.md §3, SETUP.md §5)
+*.token
+skills/vivido-assistant/vivido-bot.token
+skills/vivido-assistant/notion.token
+
+# Snapshot cache generata a runtime da notion_snapshot.py
+skills/vivido-assistant/cache/*
+!skills/vivido-assistant/cache/.gitkeep
+
+# Temp file delle routine
+/tmp/vivido-assistant-*
+*.pyc
+__pycache__/

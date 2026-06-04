@@ -1,0 +1,22 @@
+{
+  "_README": "Config dei DB Notion Vivido + utenti. Compilare TUTTI i <...>. In cloud puoi anche passare notion_ds via env VIVIDO_NOTION_DS (JSON inline, vince sul file). Le chiavi opzionali che Vivido non ha (es. invoices/contracts) lasciale stringa vuota o rimuovile: lo snapshot le salta.",
+
+  "notion_ds": {
+    "projects":      "<VIVIDO_DS_PROJECTS>",
+    "tasks":         "<VIVIDO_DS_TASKS>",
+    "knowledge_log": "<VIVIDO_DS_KNOWLEDGE_LOG>",
+    "crm":           "<VIVIDO_DS_CRM>",
+    "clienti":       "",
+    "roadmap":       "",
+    "backlog":       "",
+    "invoices":      "",
+    "contracts":     ""
+  },
+
+  "user_names": {
+    "<VIVIDO_PERSON_FOUNDER>": "Samuele",
+    "<VIVIDO_PERSON_2>": "<Nome teammate Vivido>"
+  },
+
+  "done_statuses": ["Done", "Archived"]
+}
