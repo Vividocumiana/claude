@@ -261,9 +261,10 @@ def build(token, today, probe=False):
                 m = di.month - 1 + int(durata)
                 fine = date(di.year + m // 12, m % 12 + 1, min(di.day, 28)).isoformat()
         p = {
-            "id": r["id"], "url": r.get("url"), "name": pr.get("Name") or pr.get("Project") or "?",
+            "id": r["id"], "url": r.get("url"),
+            "name": pr.get("Project name") or pr.get("Name") or pr.get("Project") or "?",
             "status": pr.get("Status"), "contactEmail": contact,
-            "mrr": pr.get("MRR"), "contractType": pr.get("Contract Type"),
+            "mrr": pr.get("Monthly Price") or pr.get("MRR"), "contractType": pr.get("Contract Type"),
             "inizio": inizio, "durataPrevista": durata, "finePrevista": fine,
         }
         out["projects"].append(p)
@@ -276,12 +277,12 @@ def build(token, today, probe=False):
         status = pr.get("Status")
         if status in DONE_STATUSES:
             continue
-        # relazione progetto — NB: la property si chiama " Project" (spazio iniziale)
-        proj_rel = pr.get(" Project") or pr.get("Project") or []
+        # relazione progetto — Vivido: property "Vivido Project" (fallback Nest " Project")
+        proj_rel = pr.get("Vivido Project") or pr.get(" Project") or pr.get("Project") or []
         proj = proj_map.get(norm_id(proj_rel[0])) if proj_rel else None
-        # owner = UNIONE Person (people) + Assigned (relation)
+        # owner = UNIONE Account (people, Vivido) + Person (people, fallback Nest) + Assigned (relation)
         owners = []
-        for person in (pr.get("Person") or []):
+        for person in (pr.get("Account") or pr.get("Person") or []):
             owners.append(person.get("name") or USER_NAMES.get(person.get("id")) or person.get("id"))
         for aid in (pr.get("Assigned") or []):
             nm = team_map.get(norm_id(aid))
@@ -317,13 +318,14 @@ def build(token, today, probe=False):
         st = pr.get("Status")
         if st in ("Won", "Lost", "Accepted"):
             continue
-        nad = pr.get("Next Action Date")
+        nad = pr.get("Next Action Date") or pr.get("Follow Up Target")
         nad = nad.get("start") if isinstance(nad, dict) else nad
         out["crm"].append({
-            "id": r["id"], "url": r.get("url"), "name": pr.get("Name") or "?",
-            "status": st, "nextAction": pr.get("Next Action"),
-            "nextActionDate": nad, "mrr": pr.get("MRR"),
-            "tipologia": pr.get("Tipologia Contratto"),
+            "id": r["id"], "url": r.get("url"),
+            "name": pr.get("Name") or pr.get("Clients Name") or "?",
+            "status": st, "nextAction": pr.get("Next Action") or pr.get("Message"),
+            "nextActionDate": nad, "mrr": pr.get("Monthly Price") or pr.get("MRR"),
+            "tipologia": pr.get("Contract Type") or pr.get("Tipologia Contratto"),
             "email": next((v for k, v in pr.items() if "mail" in k.lower() and v), None),
         })
 
@@ -372,11 +374,13 @@ def build(token, today, probe=False):
 # ---------------------------------------------------------------------------
 def render_md(s):
     today = s["today"]
-    L = [f"# Nest snapshot — {today}", f"_generato {s['generated']}_", ""]
+    L = [f"# Vivido snapshot — {today}", f"_generato {s['generated']}_", ""]
     if s["errors"]:
         L += ["## ⚠️ Errori (DB non condivisi con l'integrazione?)"] + [f"- {e}" for e in s["errors"]] + [""]
 
-    active = [p for p in s["projects"] if p["status"] in ("Attivo", "Partner")]
+    # Vivido: progetto "attivo" = qualunque stato che non sia chiuso/pagato
+    PROJ_DONE = ("Completed", "Expired", "To Be Payed")
+    active = [p for p in s["projects"] if p["status"] not in PROJ_DONE]
     L.append(f"## Progetti attivi/partner ({len(active)})")
     for p in sorted(active, key=lambda x: x["name"].lower()):
         L.append(f"- **{p['name']}** [{p['status']}] · {p.get('contactEmail') or 'NO EMAIL'} · "
@@ -471,7 +475,7 @@ def render_md(s):
         a = (c.get("nextAction") or "").strip()
         # esclude vuoto e l'azione-fantoccio "Imposta Last Step" (= data gap, non azione vendita)
         return a not in ("", "—", "-", "–") and "Imposta Last Step" not in a
-    HOT = ("Discovery", "Proposta Sent", "Proposta FU1", "Proposta FU2", "Proposta FU3", "Rewind Call")
+    HOT = ("Discovery Call", "Quotation", "Follow up", "Negotiation", "Partnership")
     actionable = [c for c in s["crm"] if c["nextActionDate"] and c["nextActionDate"][:10] <= today
                   and has_action(c) and c["status"] and c["status"] != "Nurturing"]
     today_act = [c for c in actionable if c["nextActionDate"][:10] == today]
@@ -513,7 +517,7 @@ def main():
         f.write(render_md(s))
 
     print(f"✅ Snapshot {today}: "
-          f"{len([p for p in s['projects'] if p['status'] in ('Attivo','Partner')])} progetti attivi · "
+          f"{len([p for p in s['projects'] if p['status'] not in ('Completed','Expired','To Be Payed')])} progetti attivi · "
           f"{len(s['tasks'])} task aperte · {len(s['crm'])} lead CRM · "
           f"{len(s['roadmap'])} step · {len(s['backlog'])} backlog")
     if s["errors"]:

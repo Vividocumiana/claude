@@ -36,15 +36,15 @@ I nomi cliente (Carlo=Pixlex, Davide=Maoten, Max=Bhom, Anna=Officina38, ecc.) si
 ## Modello dati
 
 DB usati per la raccolta:
-- **Founder Knowledge Log**: `collection://<VIVIDO_DS_KNOWLEDGE_LOG>` (3 property: `Entry` title, `Content` text, `Created time` auto). **Scritto automaticamente da `log-ingest` la sera, raccogliendo la reply del founder all'EOD.** Il morning lo legge come primo input — non scrive mai.
-- **Projects**: `collection://<VIVIDO_DS_PROJECTS>`. Enumerazione canonica: `Status = "Attivo"` (clienti paganti) + `Status = "Partner"` se esiste come opzione, altrimenti `Status = "Attivo" AND Contract Type = "PARTNER"` (fallback). Distinguili visivamente nel report (`💼 Attivi` vs `🤝 Partner`) — sono ingaggi diversi.
+- **Founder Knowledge Log**: `collection://cd50aae4-bcc5-8396-b4c7-0718667ffdb5` (3 property: `Entry` title, `Content` text, `Created time` auto). **Scritto automaticamente da `log-ingest` la sera, raccogliendo la reply del founder all'EOD.** Il morning lo legge come primo input — non scrive mai.
+- **Projects**: `collection://610066df-92fc-45db-88f7-bb42c2d4b449`. Enumerazione canonica: `Status = "Attivo"` (clienti paganti) + `Status = "Partner"` se esiste come opzione, altrimenti `Status = "Attivo" AND Contract Type = "PARTNER"` (fallback). Distinguili visivamente nel report (`💼 Attivi` vs `🤝 Partner`) — sono ingaggi diversi.
 - **Contact Email del progetto** (proprietà `Contact Email`): **fonte di verità per matching** meeting/email/Slack ↔ progetto. Mai guessare dal nome di persona (es. "Davide" è ambiguo). Se vuoto: fallback (a) email dalla pagina `Client` relazionata, (b) match per nome cliente con disclaimer esplicito.
 - **Roadmap (Step)**: `collection://<VIVIDO_DS_ROADMAP>`
 - **Backlog Richieste**: `collection://<VIVIDO_DS_BACKLOG>`
-- **Tasks**: `collection://<VIVIDO_DS_TASKS>`. ⚠️ Owner = proprietà **`Person`** (NON `Assigned`: `Assigned` è morto, 0 task lo usano). Lo snapshot risolve già `owners[]` da `Person`. La sezione "Chi fa cosa oggi" si costruisce da lì.
-- **CRM**: `collection://<VIVIDO_DS_CRM>`
-- **Invoices**: `collection://<VIVIDO_DS_INVOICES>` (solo per flag urgenze in cima)
-- **Contracts**: `collection://<VIVIDO_DS_CONTRACTS>` (solo per flag urgenze in cima)
+- **Tasks**: `collection://91c2817c-74a6-4037-9b28-6849abe2a480`. ⚠️ Owner = proprietà **`Person`** (NON `Assigned`: `Assigned` è morto, 0 task lo usano). Lo snapshot risolve già `owners[]` da `Person`. La sezione "Chi fa cosa oggi" si costruisce da lì.
+- **CRM**: `collection://1450aae4-bcc5-8106-9d6c-000b908fed72`
+- **Invoices**: `collection://8d68a5c8-913a-45a1-8047-11998603e9eb` (solo per flag urgenze in cima)
+- **Contracts**: `collection://5fece0d9-2134-4b16-8b5f-b25dec053631` (solo per flag urgenze in cima)
 
 Modello progetto auto-detect:
 - **v2** (standard): pagina contiene Roadmap database link
@@ -86,8 +86,8 @@ Il morning **parte dal POV del founder** e tutto il resto è filtrato attraverso
 
 Il "secondo cervello" ricorda le entry recenti **per persona**, non solo gli ultimi N entry in assoluto.
 
-1. `notion-search` su `collection://<VIVIDO_DS_KNOWLEDGE_LOG>` **ordinato per `Created time` DESC**, `content_search_mode=workspace_search` (NIENTE `ai_search`/relevance — è un log temporale), `page_size=20`.
-2. Raggruppa i risultati per `Person` (UUID): Samu=`<VIVIDO_PERSON_FOUNDER>`, Dami=`<VIVIDO_PERSON_2>`, Elia=`<VIVIDO_PERSON_3>`, Wagane=`<VIVIDO_PERSON_4>` (Flowy, NON @usanest.it), Massi=`<VIVIDO_PERSON_5>`.
+1. `notion-search` su `collection://cd50aae4-bcc5-8396-b4c7-0718667ffdb5` **ordinato per `Created time` DESC**, `content_search_mode=workspace_search` (NIENTE `ai_search`/relevance — è un log temporale), `page_size=20`.
+2. Raggruppa i risultati per `Person` (UUID): Samu=`09ff0769-85fd-4a7e-a637-b8164b9c3c5b`, Dami=`<VIVIDO_PERSON_2>`, Elia=`<VIVIDO_PERSON_3>`, Wagane=`<VIVIDO_PERSON_4>` (Flowy, NON @usanest.it), Massi=`<VIVIDO_PERSON_5>`.
 3. Per ognuna delle 5 persone, identifica **l'ultima entry con `Content` non vuoto** (le entry titolate "⚠️ ping EOD senza risposta" hanno `Content` vuoto — NON contano come log valido). `notion-fetch` su quella entry.
 4. Per il **POV trend di Samu** (founder): fetch anche le 2 entry Samu consolidate precedenti (per continuità decisioni).
 5. **Mai dichiarare "log mancante" / "silenzio team"** prima di aver fatto 1+2+3. Se una persona non ha entry con Content negli ultimi 5g, scrivi "ultimo log <data>" senza giudizio.
@@ -118,7 +118,7 @@ Questa mappa è il filtro: per ogni dato che incontri dopo (meeting oggi, task i
 **Matching meeting ↔ progetto**: usa **solo attendee email/dominio** vs la mappa Contact Email costruita allo step 6 (sotto). Mai matchare per titolo o per nome di persona (es. "Samuele x Davide" può essere chiunque). Se nessun attendee email matcha → meeting va in sezione "📅 Altri meeting", NON assegnato a un progetto a caso.
 
 **REGOLA D — CRM cross-check obbligatorio per meeting esterni sconosciuti**: per ogni meeting esterno (attendee non-@usanest.it) che non matcha un progetto attivo, PRIMA di scrivere "contesto?" nel briefing:
-1. `notion-search` CRM (`collection://<VIVIDO_DS_CRM>`) per email/dominio attendee.
+1. `notion-search` CRM (`collection://1450aae4-bcc5-8106-9d6c-000b908fed72`) per email/dominio attendee.
 2. Se trovi match in CRM: cita stage (Discovery/Quotation/Nurturing) + ultimo contatto. Esempio: "17:30 — Giorgio Iob (1percent.it) — Discovery call, in pipeline da 3g".
 3. `search_threads` Gmail `from:<email> OR to:<email>` last 14d come ulteriore contesto.
 4. Solo se ZERO match in CRM AND ZERO email recenti → "contesto?" è ammesso (è un cold meeting genuino).
@@ -138,7 +138,7 @@ Vietato scrivere "contesto?" per pigrizia. Il founder ha più lead di quanto ric
 `search_threads` `after:oggi-5g`. Per ogni cliente attivo: traccia ultima mail IN/OUT.
 
 ### 4. Slack mentions ultime 12h
-`slack_search_public_and_private` query `to:<@<VIVIDO_FOUNDER_SLACK>> -is:read` limit=10. Conta + top 3 mittenti.
+`slack_search_public_and_private` query `to:<@U062VMYTXDL> -is:read` limit=10. Conta + top 3 mittenti.
 
 ### 4.5. Slack canale strategico Massi/Gabri/Samu (REGOLA E)
 
@@ -240,11 +240,11 @@ Procedura:
 
 Le fatture/contratti vivono nell'EOD. Nel morning li menzioniamo SOLO se c'è urgenza concreta che impatta oggi:
 
-**A. Invoices**: query `collection://<VIVIDO_DS_INVOICES>`. Match se:
+**A. Invoices**: query `collection://8d68a5c8-913a-45a1-8047-11998603e9eb`. Match se:
 - `Status ∈ {Next, To do}` AND `Expected Payment Date < oggi` (in ritardo)
 - OPPURE `Status ∈ {Next, To do}` AND `Expected Payment Date == oggi`
 
-**B. Contracts**: query `collection://<VIVIDO_DS_CONTRACTS>`. Match se:
+**B. Contracts**: query `collection://5fece0d9-2134-4b16-8b5f-b25dec053631`. Match se:
 - `Status = "To send"` AND `Sent Day < oggi-3g` (contratto fermo da inviare)
 - OPPURE `Status = "Sent"` AND `Sent Day < oggi-10g` (contratto inviato non firmato da 10+gg)
 
@@ -417,8 +417,8 @@ _(se 0: "🎯 Today's Action: 0 — pipeline pulita oggi")_
 ## Consegna
 
 1. Scrivi il testo in `/tmp/vivido-assistant-morning.md`.
-2. `bash ~/.claude/skills/vivido-assistant/send.sh <VIVIDO_DM_CHANNEL> /tmp/vivido-assistant-morning.md` (DM bot ↔ Samuele).
-3. Retry 8s → `send.sh <VIVIDO_FOUNDER_SLACK>` (stessa DM, indirizzata via user ID).
+2. `bash ~/.claude/skills/vivido-assistant/send.sh U062VMYTXDL /tmp/vivido-assistant-morning.md` (DM bot ↔ Samuele).
+3. Retry 8s → `send.sh U062VMYTXDL` (stessa DM, indirizzata via user ID).
 4. Rispondi all'utente: `✅ Morning inviato (🧠 POV: <KL_status> · <P> progetti con segnali · 🔍<C> crepe POV · 🔴<D> decisioni · CRM:<R> azioni · 💸<U> urgenze · <M> meeting)`.
 
 ---

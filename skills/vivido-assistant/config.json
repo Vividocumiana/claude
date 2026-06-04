@@ -1,21 +1,22 @@
 {
-  "_README": "Config dei DB Notion Vivido + utenti. Compilare TUTTI i <...>. In cloud puoi anche passare notion_ds via env VIVIDO_NOTION_DS (JSON inline, vince sul file). Le chiavi opzionali che Vivido non ha (es. invoices/contracts) lasciale stringa vuota o rimuovile: lo snapshot le salta.",
+  "_README": "Config dei DB Notion Vivido + utenti. Valori reali mappati dal workspace 'Vivido World' (6850c1bd-18aa-448d-97fe-9745f14c8ffc). In cloud puoi passare notion_ds via env VIVIDO_NOTION_DS (JSON inline, vince sul file). Le chiavi opzionali non usate restano stringa vuota: lo snapshot le salta.",
 
   "notion_ds": {
-    "projects":      "<VIVIDO_DS_PROJECTS>",
-    "tasks":         "<VIVIDO_DS_TASKS>",
-    "knowledge_log": "<VIVIDO_DS_KNOWLEDGE_LOG>",
-    "crm":           "<VIVIDO_DS_CRM>",
-    "clienti":       "",
+    "projects":      "610066df-92fc-45db-88f7-bb42c2d4b449",
+    "tasks":         "91c2817c-74a6-4037-9b28-6849abe2a480",
+    "knowledge_log": "cd50aae4-bcc5-8396-b4c7-0718667ffdb5",
+    "crm":           "1450aae4-bcc5-8106-9d6c-000b908fed72",
+    "clienti":       "775a0aac-ac84-49e9-ab9a-2c0d06bdc149",
     "roadmap":       "",
     "backlog":       "",
-    "invoices":      "",
-    "contracts":     ""
+    "invoices":      "8d68a5c8-913a-45a1-8047-11998603e9eb",
+    "contracts":     "5fece0d9-2134-4b16-8b5f-b25dec053631"
   },
 
+  "_team_member_ds": "1c30aae4-bcc5-80c2-852c-000b59b1a0e4",
+
   "user_names": {
-    "<VIVIDO_PERSON_FOUNDER>": "Samuele",
-    "<VIVIDO_PERSON_2>": "<Nome teammate Vivido>"
+    "09ff0769-85fd-4a7e-a637-b8164b9c3c5b": "Samuele"
   },
 
   "done_statuses": ["Done", "Archived"]

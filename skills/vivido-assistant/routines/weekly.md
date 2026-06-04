@@ -51,7 +51,7 @@ aperte (con progetto + owner=`Person` risolti), CRM, fatture, contratti. Niente 
 Questo è il pilastro del nuovo weekly. I 5 entry del founder (lun-ven della settimana scorsa) sono la voce autentica della settimana — il resto è coverage attorno.
 
 **0A. Recupera tutti gli entry**:
-- `notion-search` su `collection://<VIVIDO_DS_KNOWLEDGE_LOG>` ordinato per `Created time` desc, limit 14.
+- `notion-search` su `collection://cd50aae4-bcc5-8396-b4c7-0718667ffdb5` ordinato per `Created time` desc, limit 14.
 - Filtra entry con `Created time` nella settimana scorsa (lun 00:00 → dom 23:59).
 - `notion-fetch` per leggere il `Content` completo di ciascuno.
 
@@ -100,7 +100,7 @@ Memorizza come "Meeting sweep layer".
 
 Per ogni DB rilevante, `notion-search` ordinato `last_edited_time` desc, filtro `last_edited_time >= lun_scorso`:
 
-**A. Tasks** (`collection://<VIVIDO_DS_TASKS>`):
+**A. Tasks** (`collection://91c2817c-74a6-4037-9b28-6849abe2a480`):
 - Chiuse questa settimana (`Status = Done` AND `last_edited` nella settimana).
 - Riaperte (più difficile da rilevare automaticamente — flag se task `Status = In progress` con `last_edited > created + 7g` e cambiamenti recenti).
 - Nuove create (`created_time` nella settimana).
@@ -118,18 +118,18 @@ Per ogni DB rilevante, `notion-search` ordinato `last_edited_time` desc, filtro 
 - Rifiutate.
 - Ferme da valutare >5g.
 
-**D. CRM movements** (`collection://<VIVIDO_DS_CRM>`):
+**D. CRM movements** (`collection://1450aae4-bcc5-8106-9d6c-000b908fed72`):
 - Lead nuovi questa settimana.
 - Lead avanzati di Status (e.g. `Discovery → Quotation`).
 - Lead chiusi `Accepted` / `Lost` / `Partnership`.
 - MRR potenziale aggiunto in pipeline.
 
-**E. Invoices** (`collection://<VIVIDO_DS_INVOICES>`):
+**E. Invoices** (`collection://8d68a5c8-913a-45a1-8047-11998603e9eb`):
 - Emesse questa settimana (`Status: Next/To do → Sent`).
 - Pagate questa settimana (`Sent → Payed`, somma €).
 - Nuove in arrivo (`created_time` nella settimana).
 
-**F. Contracts** (`collection://<VIVIDO_DS_CONTRACTS>`):
+**F. Contracts** (`collection://5fece0d9-2134-4b16-8b5f-b25dec053631`):
 - Inviati (`To send → Sent`).
 - Firmati (`Sent → Signed`, somma €).
 - Bloccati (`To send > 7g`).
@@ -315,8 +315,8 @@ _Outcome di business, non task. Cosa vuoi raccontare venerdì sera nel KL?_
 ## Consegna
 
 1. Scrivi il testo in `/tmp/vivido-assistant-weekly.md`.
-2. `bash ~/.claude/skills/vivido-assistant/send.sh <VIVIDO_DM_CHANNEL> /tmp/vivido-assistant-weekly.md` (DM bot ↔ Samuele).
-3. Fallback `send.sh <VIVIDO_FOUNDER_SLACK>` se fallisce.
+2. `bash ~/.claude/skills/vivido-assistant/send.sh U062VMYTXDL /tmp/vivido-assistant-weekly.md` (DM bot ↔ Samuele).
+3. Fallback `send.sh U062VMYTXDL` se fallisce.
 4. Rispondi all'utente: `✅ Weekly v2 inviato (🟢<X> 🟡<Y> 🔴<Z> · 📓<KL>/5 KL · ❓<D> decisioni pendenti · 🔁<P> pattern).`
 
 ---

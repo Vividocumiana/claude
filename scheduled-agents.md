@@ -3,7 +3,7 @@
 Da creare **sull'account Claude di Vivido**, con lo skill `/schedule` di Claude Code (o l'equivalente
 "routines"/scheduled agents nel cloud). Girano sull'infra Anthropic → nessun computer acceso.
 
-**Timezone**: imposta quella del founder (es. `Europe/Rome`). I cron sotto sono in quella tz.
+**Timezone**: imposta quella del founder (es. `Europe/London`). I cron sotto sono in quella tz.
 
 **Prompt**: ogni agent ha un prompt di una riga che invoca la skill. Assicurati che la skill
 `vivido-assistant` sia installata/raggiungibile dall'agent (vedi `SETUP.md §4`) e che i secret

@@ -44,15 +44,15 @@ I nomi cliente (Carlo=Pixlex, Davide Foco=Maoten, Max=Bhom, Anna=Officina38, And
 
 DB usati per la raccolta:
 
-- **Founder Knowledge Log**: `collection://<VIVIDO_DS_KNOWLEDGE_LOG>` (3 property: `Entry`, `Content`, `Created time`). Letto come POV layer (ultime 5 entry).
-- **Projects**: `collection://<VIVIDO_DS_PROJECTS>`. **Enumerazione dallo snapshot** (`projects[]` con `status ∈ {"Attivo","Partner"}`) — completa, con contactEmail/mrr/finePrevista già risolti. Distinguili nel report (`💼 Attivi paganti` vs `🤝 Partner`).
+- **Founder Knowledge Log**: `collection://cd50aae4-bcc5-8396-b4c7-0718667ffdb5` (3 property: `Entry`, `Content`, `Created time`). Letto come POV layer (ultime 5 entry).
+- **Projects**: `collection://610066df-92fc-45db-88f7-bb42c2d4b449`. **Enumerazione dallo snapshot** (`projects[]` con `status ∈ {"Attivo","Partner"}`) — completa, con contactEmail/mrr/finePrevista già risolti. Distinguili nel report (`💼 Attivi paganti` vs `🤝 Partner`).
 - **Contact Email del progetto** (proprietà `Contact Email` su pagina progetto): è la **fonte di verità per matching** meeting/email/Slack ↔ progetto. Mai guessare dal nome (es. "Davide" può essere Davide Foco di Maoten OPPURE un altro Davide totalmente diverso). Se `Contact Email` vuoto, fallback (in ordine): (a) leggi pagina `Client` relazionata e prendi email lì, (b) cerca campo email nella property `Team Member` se cliente, (c) ultima risorsa: match per nome cliente con disclaimer esplicito nel report.
 - **Roadmap (Step)**: `collection://<VIVIDO_DS_ROADMAP>`. Per progetti v2.
 - **Backlog Richieste**: `collection://<VIVIDO_DS_BACKLOG>`.
-- **Tasks**: `collection://<VIVIDO_DS_TASKS>`. ⚠️ Owner = **`Person`** (NON `Assigned`, che è morto: 0 task lo usano). Lo snapshot risolve già `owners[]`. La sezione "Chi fa cosa domani" si costruisce da lì.
-- **CRM**: `collection://<VIVIDO_DS_CRM>`.
-- **Invoices**: `collection://<VIVIDO_DS_INVOICES>`.
-- **Contracts**: `collection://<VIVIDO_DS_CONTRACTS>`.
+- **Tasks**: `collection://91c2817c-74a6-4037-9b28-6849abe2a480`. ⚠️ Owner = **`Person`** (NON `Assigned`, che è morto: 0 task lo usano). Lo snapshot risolve già `owners[]`. La sezione "Chi fa cosa domani" si costruisce da lì.
+- **CRM**: `collection://1450aae4-bcc5-8106-9d6c-000b908fed72`.
+- **Invoices**: `collection://8d68a5c8-913a-45a1-8047-11998603e9eb`.
+- **Contracts**: `collection://5fece0d9-2134-4b16-8b5f-b25dec053631`.
 
 ---
 
@@ -91,7 +91,7 @@ Questa mappa **filtra tutto** il resto dell'EOD. Vedi un dato di oggi → passa 
 
 **Procedura multi-round per garantire copertura completa**:
 
-1. **Round 1 — query generica**: `notion-search` su `collection://<VIVIDO_DS_PROJECTS>` con query generica (es. "progetto cliente attivo"), `page_size=25`, `content_search_mode=ai_search`, `max_highlight_length=0`.
+1. **Round 1 — query generica**: `notion-search` su `collection://610066df-92fc-45db-88f7-bb42c2d4b449` con query generica (es. "progetto cliente attivo"), `page_size=25`, `content_search_mode=ai_search`, `max_highlight_length=0`.
 2. **Round 2 — query per status target**: ripeti con query "partner growth attivo", `page_size=25`. Dedupe.
 3. **Round 3 — query per Contract Type**: ripeti con "GROWTH PARTNER CUSTOM", `page_size=25`. Dedupe.
 4. **Round 4 — last_edited recente**: ordina per `last_edited_time` desc, `page_size=25`. Dedupe.
@@ -318,11 +318,11 @@ _⭐ Rispondi in thread. 22:00 sintetizzo nel Knowledge Log._
 ## Consegna
 
 1. Scrivi testo in `/tmp/vivido-assistant-eod.md`.
-2. `bash ~/.claude/skills/vivido-assistant/send.sh <VIVIDO_DM_CHANNEL> /tmp/vivido-assistant-eod.md`
-3. Fallback retry 8s → `send.sh <VIVIDO_FOUNDER_SLACK>` (stessa DM, indirizzata via user ID).
+2. `bash ~/.claude/skills/vivido-assistant/send.sh U062VMYTXDL /tmp/vivido-assistant-eod.md`
+3. Fallback retry 8s → `send.sh U062VMYTXDL` (stessa DM, indirizzata via user ID).
 4. Rispondi: `✅ EOD inviato (POV:<KL_status> · <P> progetti · 🔴<R> 🟡<Y> 🟢<G> · 🤝<Partner> · CRM:<N> · 💰Fatture:<F> · 📜Contratti:<C> · 🪦<S> · 💡<Sp> spunti · 👥<persone> · ❓<Q> domande).`
 
-L'EOD viene consegnato nella DM bot ↔ Samuele (`<VIVIDO_DM_CHANNEL>`). **Il founder risponde in thread sulla DM stessa** — niente più reply su #company-brain. La routine `log-ingest` alle 22:00 cerca in quella DM il messaggio più recente del bot che inizia con `🌙 *EOD Debrief` di oggi e legge le sue reply.
+L'EOD viene consegnato nella DM bot ↔ Samuele (`U062VMYTXDL`). **Il founder risponde in thread sulla DM stessa** — niente più reply su #company-brain. La routine `log-ingest` alle 22:00 cerca in quella DM il messaggio più recente del bot che inizia con `🌙 *EOD Debrief` di oggi e legge le sue reply.
 
 ---
 

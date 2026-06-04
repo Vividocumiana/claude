@@ -4,7 +4,7 @@
 
 Genera **una sola bozza** di post LinkedIn al giorno partendo da attività reali del founder nelle ultime 24h (Notion Vivido + Granola Vivido). Segue il framework completo in `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md`.
 
-Output: DM Slack al founder **nel workspace Vivido World** (user ID `U062MREADAB`) tramite bot `vivido_assistant` (token `vivido-bot.token`). Se nelle ultime 24h non c'è abbastanza materiale per un post onesto → **silent-skip con un messaggio breve** ("niente materiale oggi, skip") invece di inventare.
+Output: DM Slack al founder **nel workspace Vivido World** (user ID `U062VMYTXDL`) tramite bot `vivido_assistant` (token `vivido-bot.token`). Se nelle ultime 24h non c'è abbastanza materiale per un post onesto → **silent-skip con un messaggio breve** ("niente materiale oggi, skip") invece di inventare.
 
 **Nota importante**: questa routine è l'unica del sistema `nest-assistant` che usa il bot Vivido (diverso dal bot Vivido Assistant delle altre 4 routine). Motivo: il contenuto LinkedIn è personal brand del founder, logicamente vicino a Vivido.
 
@@ -37,7 +37,7 @@ Se il file non esiste → abortisci, manda DM `⚠️ File istruzioni LinkedIn n
 - Cerca: task completate, meeting loggati, nuovi clienti, deliverable consegnati, note rilevanti delle ultime 24h.
 
 **2c. Gmail — email Vivido ultime 24h**
-- `search_threads` con query `newer_than:1d` sull'account `samuele@vivido.world`.
+- `search_threads` con query `newer_than:1d` sull'account `hello@vivido.world`.
 - Estrai: feedback clienti, decisioni prese, pain emersi, numeri condivisi, frasi significative.
 - Ignora newsletter, notifiche automatiche, inviti calendario senza contenuto.
 
@@ -134,10 +134,10 @@ _Caratteri: <n>/1300_
 
 Poi invia con lo script dedicato al bot Vivido:
 ```bash
-bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin.md
+bash ~/.claude/skills/vivido-assistant/send.sh U062VMYTXDL /tmp/vivido-assistant-linkedin.md
 ```
 
-**Consegna: DM diretto al founder nel workspace Vivido** (user ID `U062MREADAB`, bot `vivido_assistant`). NON usare `send.sh` (è il bot Nest, workspace diverso). NON postare in #company-brain del workspace Nest. Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina. Non bloccare, non chiedere conferma, non creare bozze.
+**Consegna: DM diretto al founder nel workspace Vivido** (user ID `U062VMYTXDL`, bot `vivido_assistant`). NON usare `send.sh` (è il bot Nest, workspace diverso). NON postare in #company-brain del workspace Nest. Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina. Non bloccare, non chiedere conferma, non creare bozze.
 
 ### 8. Skip onesto
 

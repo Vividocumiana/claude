@@ -85,7 +85,7 @@ Se l'ambiente cloud **non** supporta env-secret per gli script bash/python, due 
 
 Sull'account Vivido, usa lo skill **`/schedule`** di Claude Code per creare un agent per routine. `scheduled-agents.md` contiene i 6 spec pronti (nome, cron, timezone, prompt). Ogni prompt è una riga: "invoca la skill `vivido-assistant` con arg `<X>`".
 
-Esempio orari (timezone Vivido — imposta `Europe/Rome` o quella del founder):
+Esempio orari (timezone Vivido — imposta `Europe/London` o quella del founder):
 - `vivido-morning` — 08:00 lun-ven
 - `vivido-weekly` — 08:18 lun
 - `vivido-eod` — 18:30 lun-ven

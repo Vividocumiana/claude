@@ -1,6 +1,6 @@
 # Routine: Knowledge Log Auto-Ingest
 
-Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido Assistant ↔ Samuele** (`<VIVIDO_DM_CHANNEL>`), la sintetizza e scrive un'entry nel **Founder Knowledge Log** Notion. Chiude il loop: la reply alla sera diventa il POV layer del morning successivo.
+Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido Assistant ↔ Samuele** (`U062VMYTXDL`), la sintetizza e scrive un'entry nel **Founder Knowledge Log** Notion. Chiude il loop: la reply alla sera diventa il POV layer del morning successivo.
 
 **Quando gira**: 22:00 lun-ven (cron `0 22 * * 1-5`), ~3.5h dopo l'EOD delle 18:30. Lascia tempo al founder di rispondere senza tagliare reply tardive.
 
@@ -12,7 +12,7 @@ Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido A
 
 ### 1. Trova il messaggio EOD di oggi nella DM bot ↔ Samuele
 
-Channel: `<VIVIDO_DM_CHANNEL>` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele `<VIVIDO_FOUNDER_SLACK>`).
+Channel: `U062VMYTXDL` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele `U062VMYTXDL`).
 
 **Regola inviolabile — niente `slack_search` su DM bot↔utente**: l'MCP `slack_search_*` autenticato come account utente NON indicizza le DM con i bot (falso negativo confermato il 2026-05-20). La lettura va fatta con `conversations.history` autenticato come **bot Vivido Assistant**, oppure via lo helper `read.sh` qui sotto (curl diretto con bot token).
 
@@ -22,7 +22,7 @@ Channel: `<VIVIDO_DM_CHANNEL>` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ 
 TOKEN="$(tr -d '\r\n' < ~/.claude/skills/vivido-assistant/bot.token)"
 curl -sS -G https://slack.com/api/conversations.history \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=<VIVIDO_DM_CHANNEL>" \
+  --data-urlencode "channel=U062VMYTXDL" \
   --data-urlencode "limit=30"
 ```
 
@@ -36,14 +36,14 @@ curl -sS -G https://slack.com/api/conversations.history \
 ```bash
 curl -sS -G https://slack.com/api/conversations.replies \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=<VIVIDO_DM_CHANNEL>" \
+  --data-urlencode "channel=U062VMYTXDL" \
   --data-urlencode "ts=<eod_message.ts>" \
   --data-urlencode "limit=100"
 ```
 
-1. Filtra le reply scritte dal **founder** (`<VIVIDO_FOUNDER_SLACK>`). In una DM bot↔Samu non ci possono essere altri sender umani, ma il filtro evita di re-ingerire eventuali ack del bot stesso.
+1. Filtra le reply scritte dal **founder** (`U062VMYTXDL`). In una DM bot↔Samu non ci possono essere altri sender umani, ma il filtro evita di re-ingerire eventuali ack del bot stesso.
 2. Mantieni ordine cronologico. Concatena testo (separa con `\n---\n` se più di una reply).
-3. Memorizza `sender_user_id` = `<VIVIDO_FOUNDER_SLACK>` — serve per popolare `Person` nello step 5.
+3. Memorizza `sender_user_id` = `U062VMYTXDL` — serve per popolare `Person` nello step 5.
 
 **Nota**: in questa DM solo il founder può rispondere; le reply di altri membri team (Dami, Wagane, Elia, Gabri) avvengono nelle rispettive DM bot↔membro tramite il flusso `nest-dami-log-ingest` / analoghi, non qui.
 
@@ -106,7 +106,7 @@ Format: `YYYY-MM-DD — <keyword progetti/temi principali>`
 
 ### 5. Scrivi l'entry su Notion
 
-DB: `collection://<VIVIDO_DS_KNOWLEDGE_LOG>`.
+DB: `collection://cd50aae4-bcc5-8396-b4c7-0718667ffdb5`.
 
 Properties da scrivere:
 - `Entry` (title) = il titolo dello step 4
@@ -116,7 +116,7 @@ Properties da scrivere:
 `Created time` è auto-set da Notion.
 
 **Mapping autore → Notion user ID** (sender della reply EOD → user da scrivere in `Person`):
-- Samuele (Slack `<VIVIDO_FOUNDER_SLACK>`, email `<VIVIDO_FOUNDER_EMAIL>`) → `<VIVIDO_PERSON_FOUNDER>`
+- Samuele (Slack `U062VMYTXDL`, email `hello@vivido.world`) → `09ff0769-85fd-4a7e-a637-b8164b9c3c5b`
 - Damiano (Slack `U0AD5E1UTK8`, email `<VIVIDO_TEAMMATE_EMAIL>`) → `<VIVIDO_PERSON_2>`
 - Future estensioni: leggere da `collection://<VIVIDO_DS_TEAM>` (Team Members DB) per matchare slack_id/email del sender.
 
@@ -130,7 +130,7 @@ Usa `notion-create-pages` con il data source URL della Knowledge Log. Body in ma
 
 ### 6. Notifica founder (DM, non canale)
 
-Invia un DM al founder via `send.sh <VIVIDO_FOUNDER_SLACK>`:
+Invia un DM al founder via `send.sh U062VMYTXDL`:
 
 ```
 🧠 Knowledge Log <YYYY-MM-DD> ✓
