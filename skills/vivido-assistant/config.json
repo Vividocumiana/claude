@@ -8,6 +8,8 @@
     "collab_projects":"1c30aae4-bcc5-803f-a52e-000b1f703e45",
     "knowledge_log": "cd50aae4-bcc5-8396-b4c7-0718667ffdb5",
     "crm":           "1450aae4-bcc5-8106-9d6c-000b908fed72",
+    "monthly_scorecard":"8105b626-e467-489c-b77c-70214fdd9d09",
+    "team_kpi":      "24b0aae4-bcc5-8008-b5d5-000b28a18e00",
     "clienti":       "775a0aac-ac84-49e9-ab9a-2c0d06bdc149",
     "roadmap":       "",
     "backlog":       "",
@@ -21,5 +23,18 @@
     "09ff0769-85fd-4a7e-a637-b8164b9c3c5b": "Samuele"
   },
 
-  "done_statuses": ["Done", "Archived"]
+  "done_statuses": ["Done", "Archived"],
+
+  "_delivery_README": "Recipient Slack del daily. founder_dm = Samuele. team = mappa nome-Notion → Slack ID (per i daily per-persona). team_broadcast=false → i brief team NON vengono inviati ai membri (solo Samuele+Federico ai loro DM); metti true per attivare la consegna a ciascun membro.",
+  "slack": {
+    "founder_dm": "U062MREADAB",
+    "federico_dm": "U063RBJDVTJ",
+    "team": {
+      "Federico Garzena": "U063RBJDVTJ",
+      "Nicolas Zullino":  "U09DUL0B9GF",
+      "Gabriele Bollino": "U0ACYSH5USX",
+      "Raja Zeeshan":     "U08STGQP5LN"
+    },
+    "team_broadcast": false
+  }
 }

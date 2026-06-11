@@ -206,13 +206,29 @@ def days_between(d, today):
     return (d - today).days if d else None
 
 
+IT_MONTHS = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+             "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+EN_MONTHS = ["", "January", "February", "March", "April", "May", "June",
+             "July", "August", "September", "October", "November", "December"]
+
+
+def find_month_prop(pr, prefix, en_month):
+    """Le KPI hanno una colonna per mese con naming incoerente (es. 'Ore lavorate (June)',
+    'Utilization  (Feb)'). Trova la property che inizia per <prefix> e contiene il mese inglese."""
+    for k, v in pr.items():
+        if k.startswith(prefix) and en_month in k:
+            return v
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Build snapshot
 # ---------------------------------------------------------------------------
 def build(token, today, probe=False):
     out = {"generated": datetime.now().isoformat(), "today": today.isoformat(),
            "errors": [], "projects": [], "tasks": [], "crm": [], "roadmap": [],
-           "backlog": [], "invoices": [], "contracts": []}
+           "backlog": [], "invoices": [], "contracts": [],
+           "scorecard": None, "team_ore": []}
 
     def safe_query(key, **kw):
         if not DS.get(key):
@@ -391,6 +407,36 @@ def build(token, today, probe=False):
             "id": r["id"], "url": r.get("url"), "name": pr.get("Name") or "?",
             "status": pr.get("Status"),
             "sentDay": sd.get("start") if isinstance(sd, dict) else sd,
+        })
+
+    # --- Sales Monthly Scorecard (KPI Samuele) ---
+    SC_KEYS = ["Revenue", "Revenue Target", "vs Target %", "MQL", "MQL Target", "SQL",
+               "Proposals Sent", "Proposals Value", "Deals Won", "Deals Lost",
+               "Close Rate %", "Win Rate %", "Pod MRR", "CAC", "ROAS",
+               "Avg Deal Size", "Marketing Spend"]
+    scards = {}
+    for r in safe_query("monthly_scorecard"):
+        pr = props(r)
+        m = pr.get("Month")
+        if not m:
+            continue
+        scards[m] = {k: pr.get(k) for k in SC_KEYS}
+    month_it = IT_MONTHS[today.month]
+    out["scorecard"] = {"month": month_it, "current": scards.get(month_it), "all": scards}
+
+    # --- Team time tracking (ore/utilization mese corrente) ---
+    en_month = EN_MONTHS[today.month]
+    for r in safe_query("team_kpi"):
+        pr = props(r)
+        name = pr.get("Team Member ID") or page_title(r)
+        if not name:
+            continue
+        out["team_ore"].append({
+            "name": name,
+            "target": pr.get("Monthly Hour Target"),
+            "ore": find_month_prop(pr, "Ore lavorate", en_month),
+            "util": find_month_prop(pr, "Utilization", en_month),
+            "workload": pr.get("Workload "),
         })
 
     return out

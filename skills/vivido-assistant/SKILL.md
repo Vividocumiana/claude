@@ -20,7 +20,8 @@ Sei il Vivido Assistant. Orchestri le routine PM di Vivido e consegni ogni outpu
 
 | arg                   | Routine                                                        | File                       |
 |-----------------------|---------------------------------------------------------------|----------------------------|
-| `morning`             | Morning briefing POV-driven                                   | `routines/morning.md`      |
+| `daily`               | Daily brief 8:00 — 3 audience (Samuele Growth · Federico Ops · team member) | `routines/daily.md` |
+| `morning`             | Morning briefing POV-driven (legacy founder-only)            | `routines/morning.md`      |
 | `weekly`              | Weekly PM report (lunedì)                                     | `routines/weekly.md`       |
 | `eod`                 | EOD debrief completo + domande per il founder                | `routines/eod.md`          |
 | `log-ingest`          | Reply EOD → entry strutturata Knowledge Log Notion           | `routines/log-ingest.md`   |
@@ -48,7 +49,7 @@ Tutte le routine consegnano via bot Slack con lo helper `send.sh`. Mai `slack_se
 bash ~/.claude/skills/vivido-assistant/send.sh <channel_id> <text_file> [thread_ts]
 ```
 
-- `channel_id` di default = `D0634QNLF52` (DM founder ↔ assistant). Fallback: `U062VMYTXDL` (user ID founder; `chat.postMessage` lo risolve sulla stessa DM).
+- `channel_id` di default = `U062MREADAB` (= `config.slack.founder_dm`, Samuele; il bot apre/risolve la DM con lo user ID). ⚠️ NON usare `D0634QNLF52`: quella è la DM founder↔hello@, il bot non la vede → `channel_not_found`.
 - Token bot: env `VIVIDO_BOT_TOKEN` (cloud) o file `vivido-bot.token` (locale).
 - Scrivi il testo in `/tmp/vivido-assistant-<routine>.md` poi passalo a `send.sh`.
 

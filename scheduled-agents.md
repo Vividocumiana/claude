@@ -11,7 +11,8 @@ Da creare **sull'account Claude di Vivido**, con lo skill `/schedule` di Claude 
 
 | Agent | Cron | Quando | Prompt |
 |---|---|---|---|
-| `vivido-morning` | `0 8 * * 1-5` | 08:00 lun-ven | `Invoca la skill vivido-assistant con argomento "morning".` |
+| `vivido-daily` | `0 8 * * *` | 08:00 ogni giorno | `Invoca la skill vivido-assistant con argomento "daily".` |
+| `vivido-morning` *(legacy)* | `0 8 * * 1-5` | 08:00 lun-ven | `Invoca la skill vivido-assistant con argomento "morning".` (sostituito da `vivido-daily`) |
 | `vivido-weekly` | `18 8 * * 1` | 08:18 lun | `Invoca la skill vivido-assistant con argomento "weekly".` |
 | `vivido-eod` | `30 18 * * 1-5` | 18:30 lun-ven | `Invoca la skill vivido-assistant con argomento "eod".` |
 | `vivido-log-ingest-reminder` | `0 19 * * 1-5` | 19:00 lun-ven | `Invoca la skill vivido-assistant con argomento "log-ingest-reminder".` |
