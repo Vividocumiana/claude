@@ -174,6 +174,15 @@ def props(page):
     return {k: pv(p) for k, p in page.get("properties", {}).items()}
 
 
+def page_title(page):
+    """Estrae il valore della property di tipo title di una pagina (Team Member,
+    Collaborator Project: il nome del membro/progetto)."""
+    for p in page.get("properties", {}).values():
+        if p.get("type") == "title":
+            return pv(p)
+    return None
+
+
 def norm_id(s):
     return (s or "").replace("-", "")
 
@@ -270,6 +279,14 @@ def build(token, today, probe=False):
         out["projects"].append(p)
         proj_map[norm_id(r["id"])] = p
 
+    # --- Team Member + Collaborator Project (owner/progetto reali Vivido) ---
+    # In Notion Vivido c'è UN solo "person" (il founder/hello@): gli owner veri
+    # delle task stanno nella relazione "Team Member", e molti progetti (specie
+    # design) sono linkati via "Collaborator Project", non "Vivido Project".
+    # Risolviamo entrambe le relazioni per nome.
+    tm_map = {norm_id(r["id"]): page_title(r) for r in safe_query("team_members")}
+    collab_map = {norm_id(r["id"]): page_title(r) for r in safe_query("collab_projects")}
+
     # --- Tasks (solo aperte) ---
     task_rows = safe_query("tasks")
     for r in task_rows:
@@ -277,15 +294,25 @@ def build(token, today, probe=False):
         status = pr.get("Status")
         if status in DONE_STATUSES:
             continue
-        # relazione progetto — Vivido: property "Vivido Project" (fallback Nest " Project")
+        # relazione progetto — Vivido: "Vivido Project" → fallback "Collaborator Project"
+        # → fallback Nest " Project"/"Project". projectId resta solo se linka un progetto reale.
         proj_rel = pr.get("Vivido Project") or pr.get(" Project") or pr.get("Project") or []
         proj = proj_map.get(norm_id(proj_rel[0])) if proj_rel else None
-        # owner = UNIONE Account (people, Vivido) + Person (people, fallback Nest) + Assigned (relation)
+        proj_name = proj["name"] if proj else None
+        if not proj_name:
+            cp_rel = pr.get("Collaborator Project") or []
+            if cp_rel:
+                proj_name = collab_map.get(norm_id(cp_rel[0]))
+        # owner = Account/Person (people) + Assigned (relation) + Team Member (relation, Vivido)
         owners = []
         for person in (pr.get("Account") or pr.get("Person") or []):
             owners.append(person.get("name") or USER_NAMES.get(person.get("id")) or person.get("id"))
         for aid in (pr.get("Assigned") or []):
             nm = team_map.get(norm_id(aid))
+            if nm and nm not in owners:
+                owners.append(nm)
+        for tid in (pr.get("Team Member") or []):
+            nm = tm_map.get(norm_id(tid))
             if nm and nm not in owners:
                 owners.append(nm)
         due = (pr.get("Due Date") or {}).get("start") if isinstance(pr.get("Due Date"), dict) else None
@@ -307,7 +334,7 @@ def build(token, today, probe=False):
             "id": r["id"], "url": r.get("url"), "name": pr.get("Name") or "?",
             "status": status, "priority": pr.get("Priority"),
             "owners": owners or ["(nessun owner)"],
-            "projectName": proj["name"] if proj else "(nessun progetto)",
+            "projectName": proj_name or "(nessun progetto)",
             "projectId": proj["id"] if proj else None,
             "due": due, "deltaDays": delta, "bucket": bucket,
         })
