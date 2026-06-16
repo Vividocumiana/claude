@@ -67,7 +67,7 @@ Ping breve al founder ~30 min dopo l'EOD, per ricordargli di rispondere in threa
 2. `Read` di `routines/<arg>.md` (tranne `log-ingest-reminder`, inline qui sopra).
 3. Esegui. Raccolta dati via snapshot + MCP Notion/Gmail/Calendar/Granola/Slack; delivery SEMPRE via `send.sh`.
 4. Componi il testo in `/tmp/vivido-assistant-<arg>.md`.
-5. Invia con `send.sh` alla DM `D0634QNLF52`.
+5. Leggi `briefing_thread_ts` da `config.json`. Invia con `send.sh U062MREADAB /tmp/vivido-assistant-<arg>.md <briefing_thread_ts>` (reply nel thread fisso). Se `briefing_thread_ts` è vuoto, invia senza thread_ts.
 6. Rispondi all'utente in UNA riga col conteggio sintetico.
 
 ## 📋 Convenzioni comuni

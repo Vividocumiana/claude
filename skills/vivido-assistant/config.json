@@ -28,6 +28,7 @@
   "_delivery_README": "Recipient Slack del daily. founder_dm = Samuele. team = mappa nome-Notion → Slack ID (per i daily per-persona). team_broadcast=false → i brief team NON vengono inviati ai membri (solo Samuele+Federico ai loro DM); metti true per attivare la consegna a ciascun membro.",
   "slack": {
     "founder_dm": "U062MREADAB",
+    "briefing_thread_ts": "1781609332.719069",
     "federico_dm": "U063RBJDVTJ",
     "team": {
       "Federico Garzena": "U063RBJDVTJ",
