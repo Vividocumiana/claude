@@ -64,23 +64,42 @@ Poi `Read` di `~/.claude/skills/vivido-assistant/cache/snapshot.json`. Campi usa
 
 ## 3. Brief 2 — 🛠️ Federico · Ops & Delivery → DM `slack.federico_dm`
 
+**Stile "The Brief" (editoriale, connesso):** non è un cruscotto di numeri secchi, è un brief che *collega* meeting + call + messaggi + task in una narrazione operativa, e chiude con un punto su **ogni** progetto. Ogni voce cita la fonte (📅 calendar · 🎙️ Granola · 💬 Slack · 🗂️ Notion). Fonti extra rispetto allo snapshot:
+- **Call**: `mcp Granola list_meetings (this_week)` + `get_meeting_transcript` sulle 1-2 più rilevanti per estrarre decisioni/action item.
+- **Meeting di oggi**: `mcp Google_Calendar list_events` (oggi).
+- **Messaggi**: `mcp Slack slack_search_public_and_private` — attività recente nei canali progetto / menzioni Federico (`after:<ieri>`). Salta il chit-chat, tieni solo segnali operativi.
+
 ```
-🛠️ Ops — <ggset gg mese>
+🛠️ The <Giorno> Brief — Federico · Ops & Delivery
+<gg mese aaaa>
 
-🧭 <N> progetti attivi · €<MRR>/mese · <T> task aperte · <NO> senza owner · <G> ghost
-🧠 Polso team: <estratto ultimo KL / "KL vuoto"> · ore <mese> <util/"0 loggate">
+📋 <1 riga sul taglio della giornata: quanti meeting, finestre libere, polso>
 
-👥 Carico (task · vive · waiting · ghost):
-• <Nome> <tot> · <vive> · <wait> · <ghost>   (una riga per membro, ⚠️ se wait/ghost alti)
-• 🚧 <NO> task SENZA owner → assegnare
+🎯 Spingi avanti
+<UNA cosa prioritaria con contesto: cosa, da dove arriva (call/messaggio), perché ora, cosa sblocca>
 
-🚦 Progetti a rischio:
-• <Cliente> — <vive/wait/ghost>   • <Cliente> — <…>
-📦 Backlog grossi: <Progetto> (<n>) · …
+✅ Da fare oggi
+☐ <azione> — <contesto 1 riga> <📅/🎙️/💬/🗂️>
+☐ <azione> — <contesto 1 riga> <fonte>
+  (max 5, le più sbloccanti; ognuna ancorata a una fonte reale)
 
-📅 Deadline: <task/step due <data>, owner> · …
-🔴 Oggi: <collo di bottiglia da sbloccare>
+📡 Aggiornamenti
+• <update da call/Slack/progetto — 1 riga, con fonte>   (max 4)
+
+📅 La tua giornata
+<hh:mm> <evento> — <prep 1 riga: cosa portare / cosa allineare>   (dai meeting di oggi)
+
+🗂️ Punto su tutti i progetti (<N> attivi · €<MRR>/mese)
+🔴 <Cliente> — <segnale: vive/wait/ghost o blocco> 
+🟡 <Cliente> — <segnale>
+🟢 <Cliente> €<mrr> — <1 parola: on track / consegnato / quiet>
+   … (elenca TUTTI; i 🟢 dormienti senza task raggruppali in coda: "🟢 +N quiet: <nomi>")
+
+👥 Carico team (task · vive · wait · ghost): <Nome> <t>·<v>·<w>·<g> · …   · 🚧 <NO> senza owner
+🔴 Mossa di oggi: <il collo di bottiglia n.1 da sbloccare>
 ```
+- **Regola "tutti i progetti"**: ogni progetto attivo dello snapshot deve comparire almeno nel raggruppamento di coda. Dettaglia 🔴/🟡 + i 🟢 con task vive; collassa solo i 🟢 a 0 task.
+- Tono agentico solo in "🎯 Spingi avanti" e "🔴 Mossa di oggi": lì colleghi i segnali. Il resto è denso e fattuale.
 
 ## 4. Brief 3 — 👋 Team member (per persona)
 
