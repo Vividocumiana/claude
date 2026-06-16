@@ -58,7 +58,7 @@ bash ~/.claude/skills/vivido-assistant/send.sh <channel_id> <text_file> [thread_
 Ping breve al founder ~30 min dopo l'EOD, per ricordargli di rispondere in thread (è ciò che alimenta il morning di domani). Niente data fetch:
 
 1. Componi: `🌙 Ricorda: rispondi all'EOD qui in thread (anche 2 righe, anche audio) — domani mattina diventa il POV del morning.`
-2. Invia con `send.sh D0634QNLF52`.
+2. Invia con `send.sh U062MREADAB`.
 3. Rispondi all'utente: `✅ Reminder EOD inviato`.
 
 ## 🧭 Esecuzione
@@ -67,7 +67,7 @@ Ping breve al founder ~30 min dopo l'EOD, per ricordargli di rispondere in threa
 2. `Read` di `routines/<arg>.md` (tranne `log-ingest-reminder`, inline qui sopra).
 3. Esegui. Raccolta dati via snapshot + MCP Notion/Gmail/Calendar/Granola/Slack; delivery SEMPRE via `send.sh`.
 4. Componi il testo in `/tmp/vivido-assistant-<arg>.md`.
-5. Invia con `send.sh` alla DM `D0634QNLF52`.
+5. Invia con `send.sh` alla DM `U062MREADAB` (la chat unica bot↔founder; mai `D0634QNLF52`).
 6. Rispondi all'utente in UNA riga col conteggio sintetico.
 
 ## 📋 Convenzioni comuni

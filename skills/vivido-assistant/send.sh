@@ -4,7 +4,8 @@
 #
 # Token (in ordine di precedenza):
 #   1. env VIVIDO_BOT_TOKEN   ← usalo negli scheduled agent cloud (secret)
-#   2. file vivido-bot.token accanto allo script (uso locale)
+#   2. env SLACK_BOT_TOKEN    ← fallback: nome usato dall'ambiente cloud Vivido
+#   3. file vivido-bot.token accanto allo script (uso locale)
 #
 # Uso:
 #   send.sh <channel_id> <text_file_path> [thread_ts]
@@ -21,6 +22,8 @@ THREAD_TS="${3:-}"
 
 if [ -n "${VIVIDO_BOT_TOKEN:-}" ]; then
   TOKEN="$(printf '%s' "$VIVIDO_BOT_TOKEN" | tr -d '\r\n')"
+elif [ -n "${SLACK_BOT_TOKEN:-}" ]; then
+  TOKEN="$(printf '%s' "$SLACK_BOT_TOKEN" | tr -d '\r\n')"
 else
   TOKEN_FILE="$(cd "$(dirname "$0")" && pwd)/vivido-bot.token"
   if [ ! -f "$TOKEN_FILE" ]; then
