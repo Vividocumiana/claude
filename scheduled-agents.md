@@ -14,15 +14,22 @@ Da creare **sull'account Claude di Vivido**, con lo skill `/schedule` di Claude 
 | `vivido-daily` | `0 8 * * *` | 08:00 ogni giorno | `Invoca la skill vivido-assistant con argomento "daily".` |
 | `vivido-morning` *(legacy)* | `0 8 * * 1-5` | 08:00 lun-ven | `Invoca la skill vivido-assistant con argomento "morning".` (sostituito da `vivido-daily`) |
 | `vivido-weekly` | `18 8 * * 1` | 08:18 lun | `Invoca la skill vivido-assistant con argomento "weekly".` |
+| `vivido-team-eod` | `0 18 * * 1-5` | 18:00 lun-ven | `Invoca la skill vivido-assistant con argomento "team-eod".` |
 | `vivido-eod` | `30 18 * * 1-5` | 18:30 lun-ven | `Invoca la skill vivido-assistant con argomento "eod".` |
 | `vivido-log-ingest-reminder` | `0 19 * * 1-5` | 19:00 lun-ven | `Invoca la skill vivido-assistant con argomento "log-ingest-reminder".` |
+| `vivido-team-eod-ingest` | `30 21 * * 1-5` | 21:30 lun-ven | `Invoca la skill vivido-assistant con argomento "team-eod-ingest".` |
 | `vivido-log-ingest` | `0 22 * * 1-5` | 22:00 lun-ven | `Invoca la skill vivido-assistant con argomento "log-ingest".` |
 | `vivido-linkedin` | `0 13 * * *` | 13:00 ogni giorno | `Invoca la skill vivido-assistant con argomento "linkedin".` |
 
 ## Note
 
-- **Ordine del loop serale**: eod (18:30) → reminder (19:00) → log-ingest (22:00). Il reminder dà al
-  founder ~3h per rispondere in thread prima che il log-ingest legga le reply.
+- **Ordine del loop serale**: team-eod (18:00) → eod founder (18:30) → reminder (19:00) →
+  team-eod-ingest (21:30) → log-ingest founder (22:00). Il team ha ~3.5h per rispondere in
+  #vivido-general prima dell'ingest. I due ingest sono indipendenti (canale/DM diversi, entry distinte nel KL).
+- **Team EOD**: prompt rituale a tutto il team in `#vivido-general` (cosa fatto + sentori). Le reply
+  diventano 1 entry/persona nel Knowledge Log. ⚠️ Il bot Vivido deve essere membro di `#vivido-general`
+  (invita `@Vivido` nel canale una-tantum) e la property `Person` del KL si popola solo per chi ha un
+  account Notion reale (oggi solo Samuele) — vedi `routines/team-eod-ingest.md`.
 - **linkedin** è indipendente dal loop POV: scegli l'orario che preferisci. Se vuoi allinearlo
   all'attuale routine Vivido locale, usa lo stesso orario di quella.
 - **Dopo la creazione**: lancia un **run manuale di test** di ogni agent e controlla l'output

@@ -25,15 +25,20 @@
 
   "done_statuses": ["Done", "Archived"],
 
-  "_delivery_README": "Recipient Slack del daily. founder_dm = Samuele. team = mappa nome-Notion → Slack ID (per i daily per-persona). team_broadcast=false → i brief team NON vengono inviati ai membri (solo Samuele+Federico ai loro DM); metti true per attivare la consegna a ciascun membro.",
+  "_delivery_README": "Recipient Slack del daily. founder_dm = Samuele. team = mappa nome-Notion → Slack ID (per i daily per-persona). team_broadcast=false → i brief team NON vengono inviati ai membri (solo Samuele+Federico ai loro DM); metti true per attivare la consegna a ciascun membro. team_channel = canale condiviso per il Team EOD (#vivido-general). user_to_notion_person = Slack ID → Notion person ID, usato da team-eod-ingest per taggare la property Person del Knowledge Log; popolato solo per chi ha un account Notion reale (oggi solo Samuele).",
   "slack": {
     "founder_dm": "U062MREADAB",
     "federico_dm": "U063RBJDVTJ",
+    "team_channel": "C062VMYUG9L",
     "team": {
       "Federico Garzena": "U063RBJDVTJ",
       "Nicolas Zullino":  "U09DUL0B9GF",
       "Gabriele Bollino": "U0ACYSH5USX",
       "Raja Zeeshan":     "U08STGQP5LN"
+    },
+    "user_to_notion_person": {
+      "U062MREADAB": "09ff0769-85fd-4a7e-a637-b8164b9c3c5b",
+      "U062VMYTXDL": "09ff0769-85fd-4a7e-a637-b8164b9c3c5b"
     },
     "team_broadcast": false
   }

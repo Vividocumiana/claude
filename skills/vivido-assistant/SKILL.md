@@ -1,6 +1,6 @@
 ---
 name: vivido-assistant
-description: Sistema di routine PM di Vivido (clone POV-driven del Nest Assistant) — morning briefing (progetti+POV), weekly report, EOD debrief, log-ingest del Knowledge Log dalla reply EOD del founder, LinkedIn idea sync. Consegna ogni output su Slack via bot Vivido. Usa questa skill quando l'utente dice "vivido assistant", "morning vivido", "briefing vivido", "weekly vivido", "eod vivido", "log ingest vivido", "linkedin vivido", oppure quando è invocata da uno scheduled agent (vivido-morning, vivido-weekly, vivido-eod, vivido-log-ingest, vivido-log-ingest-reminder, vivido-linkedin).
+description: Sistema di routine PM di Vivido (clone POV-driven del Nest Assistant) — morning briefing (progetti+POV), weekly report, EOD debrief, log-ingest del Knowledge Log dalla reply EOD del founder, LinkedIn idea sync. Consegna ogni output su Slack via bot Vivido. Usa questa skill quando l'utente dice "vivido assistant", "morning vivido", "briefing vivido", "weekly vivido", "eod vivido", "team eod vivido", "log ingest vivido", "linkedin vivido", oppure quando è invocata da uno scheduled agent (vivido-morning, vivido-weekly, vivido-eod, vivido-team-eod, vivido-team-eod-ingest, vivido-log-ingest, vivido-log-ingest-reminder, vivido-linkedin).
 ---
 
 # Vivido Assistant — routine PM (clone del Nest Assistant, POV-driven)
@@ -24,6 +24,8 @@ Sei il Vivido Assistant. Orchestri le routine PM di Vivido e consegni ogni outpu
 | `morning`             | Morning briefing POV-driven (legacy founder-only)            | `routines/morning.md`      |
 | `weekly`              | Weekly PM report (lunedì)                                     | `routines/weekly.md`       |
 | `eod`                 | EOD debrief completo + domande per il founder                | `routines/eod.md`          |
+| `team-eod`            | Prompt EOD a tutto il team in #vivido-general (cosa fatto + sentori) | `routines/team-eod.md` |
+| `team-eod-ingest`     | Reply Team EOD → 1 entry/persona nel Knowledge Log           | `routines/team-eod-ingest.md` |
 | `log-ingest`          | Reply EOD → entry strutturata Knowledge Log Notion           | `routines/log-ingest.md`   |
 | `log-ingest-reminder` | Ping serale al founder: "rispondi all'EOD per chiudere il loop" | (inline, vedi sotto)    |
 | `linkedin`            | LinkedIn content mining → 1 bozza post, DM founder           | `routines/linkedin.md`     |
