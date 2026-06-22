@@ -147,9 +147,11 @@ Scrivi `/tmp/vivido-assistant-linkedin.md`:
 _Fonte: <1 riga sul materiale 24h usato>. Le trovi come Bozza nel Piano Editoriale._
 ```
 
-Invia con il bot Vivido:
+Invia con il bot Vivido alla **DM del founder** = `config.json` → `slack.founder_dm`
+(**`U062MREADAB`** = Samuele Poggio). NON usare `D0634QNLF52`: è la DM founder↔hello@, il bot
+non la vede → `channel_not_found`. Il bot risolve lo user ID e apre/usa la DM (serve scope `im:write`).
 ```bash
-bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-linkedin.md
+bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin.md
 ```
 Se l'invio fallisce → retry una volta dopo 8s, poi logga l'errore nella riga finale e termina
 (le bozze Notion restano comunque create).
