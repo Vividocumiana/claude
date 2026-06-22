@@ -119,14 +119,15 @@ Prima di mandare il DM, passa la checklist del file export. Se una sola voce fal
 Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
 
 ```
-🟢 Bozza LinkedIn pronta
-
-• <hook del post — prima riga o titolo dell'idea>
-
-💡 Idea estratta da: <fonte — es. "Granola: nome meeting" o "Knowledge Log: titolo entry"> · <nome founder, es. Samuele>
-
-Status: Bozza — pronta per revisione
+🟢 <https://notion.so/<page-id>|Bozza LinkedIn pronta>
+• <HOOK IN MAIUSCOLO — prima riga del post>
+💡 <fonte — es. "Granola: nome meeting" o "Knowledge Log: titolo entry"> · Samuele
 ```
+
+Regole formato:
+- Hook **sempre in MAIUSCOLO**
+- Niente righe vuote tra le voci (compatto)
+- Il link Notion punta alla bozza salvata (o al workspace se non salvata)
 
 Il post completo (testo pubblicabile + hashtag) va come **reply in thread** al messaggio sopra:
 ```
