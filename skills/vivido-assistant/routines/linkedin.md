@@ -149,7 +149,11 @@ TS=$(bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assi
 bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin-post.md "$TS"
 ```
 
-**Consegna: DM diretto al founder** via user ID `U062MREADAB` (Samuele). Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina.
+**Consegna: DM diretto al founder** via user ID `U062MREADAB` (Samuele).
+
+`send.sh` usa il token in questo ordine: env `VIVIDO_BOT_TOKEN` → env `SLACK_BOT_TOKEN` → file `vivido-bot.token`. Almeno uno dei tre è sempre presente nell'environment.
+
+⛔ **MAI usare `slack_send_message` MCP come fallback** — invia come utente, non come bot, zero notifiche push. Se send.sh fallisce → retry una volta dopo 8s → se fallisce ancora logga l'errore e termina. Basta.
 
 ### 8. Skip onesto
 
