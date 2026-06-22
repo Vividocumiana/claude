@@ -64,29 +64,50 @@ Scegli UNO tra questi tipi, ruota tra post (non ripetere lo stesso due giorni di
 
 Hook sempre in MAIUSCOLO (solo le prime 1-2 righe).
 
-## 6. PROCESSO BOT (adattato per run automatico)
+## 6. COSA FUNZIONA DAVVERO (dati empirici LinkedIn — 90 giorni, 25 mar→22 giu 2026)
+
+> Analisi completa in `reference/analisi_top_post_linkedin.md`. 32 post, 99.610 impressioni. Questi pattern hanno **precedenza sulle intuizioni**.
+
+**Formula vincente** (post da 1.400 a 24.000 impressioni):
+> **[storia personale in prima persona con stakes reali] + [dettaglio operativo con numeri/orari] + [frizione concreta] → [sistema/processo/AI come risoluzione, non come predica]**
+
+Top 4:
+1. **24.395** — "proposta 14:00, bonifico 16:15" → onboarding lento = perdi clienti Gen Z
+2. **8.692** — "ho costruito un'azienda con co-founder e una da solo" (Vivido vs Nest)
+3. **6.215** — "due anni fa ero quasi in burnout, oggi non tocco più Figma da agosto"
+4. **2.684** — "lead alle 9, lo richiamano alle 15, il Mercedes ha già chiamato un'altra agenzia"
+
+**Cosa sotto-performa (180–660 impr.): la tesi AI astratta.**
+- ❌ "Ogni azienda deve avere un AI ops team interno." (655)
+- ✅ "Facevo 10 meeting al giorno e avevo smesso di ricordare chi mi aveva chiesto cosa." (1.403)
+
+**→ Regola bot:** il tema AI/processi NON si predica, si incapsula nel format-storia. Tesi astratta = ultima scelta.
+
+## 7. PROCESSO BOT (adattato per run automatico)
 
 1. **Raccogli materiale** da Granola, Notion, Gmail ultime 24h.
-2. **Identifica 3 candidati angolo** (internamente, senza mostrarli): 1 riga ciascuno, ancorati a fatto reale + pillar.
-3. **Scegli il migliore**: pillar diverso dall'ultimo post, angolo con dati concreti o episodio specifico.
-4. **Scrivi la bozza**: hook → corpo → chiusura. CTA solo se serve davvero.
-5. **Applica §5** (anti-template + voce + passata anti-AI).
-6. **Checklist** (§7) — se fallisce una voce, riscrivi (max 2 tentativi).
+2. **Identifica 3 candidati angolo** (internamente): 1 riga ciascuno, formato-storia + pillar + fatto reale.
+3. **Scegli il migliore**: pillar diverso dall'ultimo, preferisci angolo con numero/orario/frizione concreta, evita tesi astratta.
+4. **Scrivi la bozza**: hook MAIUSCOLO → storia con dettaglio operativo → frizione → risoluzione → domanda finale.
+5. **Applica §5** (anti-template + voce + passata anti-AI obbligatoria).
+6. **Checklist §8** — se fallisce una voce, riscrivi (max 2 tentativi).
 7. **Consegna** come bozza, mai pubblicare in automatico.
 
-## 7. CHECKLIST PRE-CONSEGNA
+## 8. CHECKLIST PRE-CONSEGNA
 
 - [ ] C'è dentro un fatto reale di Nest/Vivido (non genericità)?
 - [ ] Parla a un founder operativo, di un suo problema vero?
-- [ ] È in un pillar diverso dall'ultima bozza?
-- [ ] Max 1 marker-firma, diverso dagli altri post recenti?
-- [ ] Hook in MAIUSCOLO, solo le prime 1-2 righe?
-- [ ] Almeno un dato/numero/dettaglio concreto?
+- [ ] È una **storia in prima persona** con dettaglio concreto/numero (non tesi astratta)?
+- [ ] L'eventuale messaggio AI/processo è **incapsulato nella storia**, non predicato?
+- [ ] Pillar diverso dall'ultima bozza?
+- [ ] Max 1 marker-firma, diverso dai post recenti?
+- [ ] Hook in MAIUSCOLO, solo prime 1-2 righe?
 - [ ] Domanda finale specifica (NO "cosa ne pensi?")?
 - [ ] Sotto 1.300 caratteri?
 - [ ] Zero link nel corpo, zero emoji sparse, zero markdown nel testo?
-- [ ] Zero buzzword-vetrina, zero hype AI fine a sé?
+- [ ] Zero buzzword (sinergia, ecosistema, disruptive, innovativo, valore aggiunto)?
+- [ ] Zero hype AI fine a sé?
 - [ ] Suona come Samuele che parla, non come un modello che spiega?
-- [ ] Parla di Nest come Growth Partner consultancy (non SaaS)?
-- [ ] Parla di Vivido come design consultancy (non agenzia)?
+- [ ] Nest = Growth Partner consultancy (non SaaS)?
+- [ ] Vivido = design consultancy (non agenzia)?
 - [ ] 3-5 hashtag alla fine?

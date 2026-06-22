@@ -12,15 +12,11 @@ Output: DM Slack al founder **nel workspace Vivido World** (user ID `U062VMYTXDL
 
 ### 1. Leggi il framework
 
-`Read` del file `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md`. È la fonte canonica per:
-- Tone of voice (vulnerabilità + MAIUSCOLE solo hook + frasi brevi)
-- I 3 pilastri (Validazione / Operations / Crescita) — scegline **uno**
-- I 4 tipi di hook (Vulnerabilità, Contro-intuitivo, Statistica shock, Domanda)
-- Struttura post + regole tecniche (max 1.300 caratteri, 3-5 hashtag)
-- Checklist pre-salvataggio e VIETATO ASSOLUTO
-- Few-shot examples dei top performer (#1-#6)
+`Read` in parallelo di:
+- `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md` — brief strategico completo (profilo, 5 pillar, voce, anti-template, formula vincente, checklist)
+- `~/.claude/skills/vivido-assistant/reference/analisi_top_post_linkedin.md` — dati empirici dei 32 post (90gg), pattern che vince vs. sotto-performa
 
-Se il file non esiste → abortisci, manda DM `⚠️ File istruzioni LinkedIn non trovato su Desktop, skip` e termina.
+Se uno dei due file non esiste → abortisci, manda DM `⚠️ File reference LinkedIn mancante, skip` e termina.
 
 ### 2. Raccolta materiale (parallelo)
 
@@ -49,18 +45,18 @@ Se trovi un meeting Granola particolarmente denso (insight, frase cliente memora
 
 ### 3. Selezione angolo
 
-Dal materiale raccolto, identifica internamente **3 candidati angolo** (1 riga ciascuno: fatto reale + pillar). Poi scegli il migliore:
+Dal materiale raccolto, identifica internamente **3 candidati angolo** in formato-storia. Per ciascuno: fatto reale + pillar + dettaglio operativo (numero/orario/frizione). Poi scegli il migliore:
 
-- Pillar diverso dall'ultimo post in `/tmp/vivido-linkedin-history.jsonl`
-- Angolo con dati concreti (€, ore, %, numero cliente) → priorità
-- Se l'angolo riguarda un cliente specifico → solo se deliverable pubblico o cliente già citato nel reference (SalesMagic, Vertalis, Chimera, ecc.)
+**Criteri di scelta (in ordine):**
+1. Ha una storia in prima persona con stakes reali? (frizione commerciale, errore, decisione difficile)
+2. Ha un dettaglio operativo concreto con numero o orario? ("14:00 → 16:15", "3 tool", "10 meeting")
+3. Pillar diverso dall'ultimo post in `/tmp/vivido-linkedin-history.jsonl`
+4. Se l'angolo riguarda un cliente → solo se deliverable pubblico o cliente già citato (SalesMagic, Vertalis, Chimera…)
 
-**5 pillar** (ruotarli, vedi reference per dettagli):
-1. Processi reali
-2. Da processo ad AI
-3. Dietro le quinte di Nest e Vivido
-4. Errori e lezioni
-5. POV sull'AI nelle operations
+**Evita come prima scelta**: tesi AI astratta e prescrittiva ("ogni azienda deve…", "tutti vogliono…") — vedi analisi, sotto-performa sistematicamente.
+
+**5 pillar** (ruotarli):
+1. Processi reali · 2. Da processo ad AI · 3. Dietro le quinte Nest/Vivido · 4. Errori e lezioni · 5. POV sull'AI nelle operations
 
 **Se il materiale è debole** (solo admin, zero insight, zero conversazioni) → skip onesto, non inventare.
 
