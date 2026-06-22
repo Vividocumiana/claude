@@ -133,6 +133,7 @@ Crea un'entry nel database **Piano Editoriale** (`collection://92b0aae4-bcc5-832
 🟢 *Bozza LinkedIn pronta*
 • <HOOK (prima riga del post, MAIUSCOLE)>
 💡 <fonte 1 riga: es. Granola "titolo meeting" · Samuele>
+📄 <URL pagina Notion creata al passo 7>
 ```
 
 Invia il main:
