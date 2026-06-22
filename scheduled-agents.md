@@ -23,8 +23,9 @@ Da creare **sull'account Claude di Vivido**, con lo skill `/schedule` di Claude 
 
 - **Ordine del loop serale**: eod (18:30) → reminder (19:00) → log-ingest (22:00). Il reminder dà al
   founder ~3h per rispondere in thread prima che il log-ingest legga le reply.
-- **linkedin** è indipendente dal loop POV: scegli l'orario che preferisci. Se vuoi allinearlo
-  all'attuale routine Vivido locale, usa lo stesso orario di quella.
+- **linkedin** è indipendente dal loop POV: scegli l'orario che preferisci. Genera **2 idee post**
+  dal materiale 24h (meeting Granola + Notion + Gmail) e le salva come bozze nel DB Notion
+  "Piano Editoriale" (Piattaforma = LinkedIn), poi manda un ping Slack al founder con i link.
 - **Dopo la creazione**: lancia un **run manuale di test** di ogni agent e controlla l'output
   (specie i connettori — vedi caveat headless in `SETUP.md §6`). Solo se tutti girano puliti, lasciali attivi.
 - Se l'ambiente cloud passa `currentDate`, le routine la useranno per "oggi"; altrimenti usano la data

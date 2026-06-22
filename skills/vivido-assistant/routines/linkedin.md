@@ -1,159 +1,167 @@
-# Routine: LinkedIn Content Mining — daily draft
+# Routine: LinkedIn Post Idea Gen — 2 bozze/giorno → Piano Editoriale
 
-> **Questa routine è specifica per Vivido.** Tutti i dati vengono da workspace Vivido: Notion "Vivido World" e Granola account `hello@vivido.world`. NON usare i collection ID Nest del CLAUDE.md — appartengono a un workspace separato.
+> **Routine specifica Vivido.** Tutti i dati vengono dal workspace Vivido: Notion "Vivido World",
+> Granola/Gmail/Calendar account `hello@vivido.world`. NON usare collection ID Nest.
 
-Genera **una sola bozza** di post LinkedIn al giorno partendo da attività reali del founder nelle ultime 24h (Notion Vivido + Granola Vivido). Segue il framework completo in `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md`.
+Ogni giorno: guarda i **meeting** (Granola) e il resto del materiale reale delle ultime 24h
+(Notion + Gmail), genera **2 idee** di post LinkedIn diverse tra loro, e inseriscile come
+**2 righe `Bozza`** nel DB Notion **"Piano Editoriale"** (Piattaforma = LinkedIn). Poi manda
+una DM Slack al founder con i link alle 2 bozze.
 
-Output: DM Slack al founder **nel workspace Vivido World** (user ID `U062VMYTXDL`) tramite bot `vivido_assistant` (token `vivido-bot.token`). Se nelle ultime 24h non c'è abbastanza materiale per un post onesto → **silent-skip con un messaggio breve** ("niente materiale oggi, skip") invece di inventare.
+Framework canonico (tono, pillar, hook, struttura, mapping, checklist, few-shot):
+`~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md` — **leggilo sempre per primo**.
 
-**Nota importante**: questa routine è l'unica del sistema `nest-assistant` che usa il bot Vivido (diverso dal bot Vivido Assistant delle altre 4 routine). Motivo: il contenuto LinkedIn è personal brand del founder, logicamente vicino a Vivido.
+## Coordinate del DB "Piano Editoriale"
+
+- Database: `27c0aae4bcc582e4b6bc01dd9f7b047a`
+- **Data source (parent per la create):** `92b0aae4-bcc5-8326-9483-078b106b51f9`
+- Template "Nuovo Post": `bcf0aae4-bcc5-8289-afee-0196a8dd4109` (per riferimento struttura; **non** passarlo a create perché vogliamo iniettare il copy)
+- Proprietà rilevanti: `Name` (title), `Status` (status), `Piattaforma` (multi_select), `Pillar` (select), `Formato` (select), `Priorità` (select), `Data pubblicazione` (date).
 
 ## Procedura
 
 ### 1. Leggi il framework
 
-`Read` del file `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md`. È la fonte canonica per:
-- Tone of voice (vulnerabilità + MAIUSCOLE solo hook + frasi brevi)
-- I 3 pilastri (Validazione / Operations / Crescita) — scegline **uno**
-- I 4 tipi di hook (Vulnerabilità, Contro-intuitivo, Statistica shock, Domanda)
-- Struttura post + regole tecniche (max 1.300 caratteri, 3-5 hashtag)
-- Checklist pre-salvataggio e VIETATO ASSOLUTO
-- Few-shot examples dei top performer (#1-#6)
+`Read` di `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md`.
+Se il file non esiste o è ancora un placeholder → abortisci, manda DM
+`⚠️ Framework LinkedIn mancante, skip` e termina.
 
-Se il file non esiste → abortisci, manda DM `⚠️ File istruzioni LinkedIn non trovato su Desktop, skip` e termina.
-
-### 2. Raccolta materiale (parallelo)
+### 2. Raccolta materiale 24h (in parallelo)
 
 **2a. Granola — meeting ultime 24h (account Vivido)**
 - `list_meetings` con `time_range: today`. Se zero, fallback `yesterday`.
-- Verifica che i meeting siano Vivido (note creator `hello@vivido.world`). Ignora meeting Nest.
-- Per ogni meeting trovato → `get_meeting_transcript` (se disponibile) o titolo + partecipanti.
-- Estrai: temi discussi, frasi del cliente, decisioni, numeri concreti, pain emersi.
+- Tieni solo i meeting Vivido (note creator `hello@vivido.world`). Ignora meeting Nest.
+- Per ogni meeting → `get_meeting_transcript` se disponibile, altrimenti titolo + partecipanti.
+- Estrai: temi, frasi del cliente, decisioni, numeri concreti, pain emersi.
 
 **2b. Notion — attività ultime 24h (workspace Vivido World)**
-- Usa `notion-search` con query generica (es. "task progetto attivo aggiornato oggi"), **senza** `data_source_url`. Questo restituisce risultati dal workspace Vivido World (`6850c1bd18aa448d97fe9745f14c8ffc`).
-- In alternativa, passa `page_url: 6850c1bd18aa448d97fe9745f14c8ffc` come scope.
-- NON usare i collection ID Nest (`1e09106d-...`, `1c79106d-...`) — sono un workspace separato e restituiranno errore o dati sbagliati.
-- Cerca: task completate, meeting loggati, nuovi clienti, deliverable consegnati, note rilevanti delle ultime 24h.
+- `notion-search` con query generica (es. "task progetto cliente aggiornato oggi"), scope
+  `page_url: 6850c1bd18aa448d97fe9745f14c8ffc`. NON usare collection ID Nest.
+- Cerca: task completate, deliverable consegnati (Blueprint/MVP/Website/Cycles), nuovi clienti
+  CRM, note rilevanti delle ultime 24h.
 
 **2c. Gmail — email Vivido ultime 24h**
-- `search_threads` con query `newer_than:1d` sull'account `hello@vivido.world`.
-- Estrai: feedback clienti, decisioni prese, pain emersi, numeri condivisi, frasi significative.
-- Ignora newsletter, notifiche automatiche, inviti calendario senza contenuto.
+- `search_threads` con `newer_than:1d` su `hello@vivido.world`.
+- Estrai: feedback clienti, decisioni, pain, numeri, frasi significative. Ignora newsletter,
+  notifiche automatiche, inviti calendario vuoti.
 
 **2d. Filtro Vivido obbligatorio**
-Dopo la raccolta, verifica esplicitamente per ogni pezzo di materiale: "parla di Vivido (Blueprint, MVP, clienti startup, design consultancy)?" Se parla di Nest (processi agenzie, Nest OS, Growth Partner retainer, outbound Nest) → **scartalo**, anche se trovato nel workspace Vivido World. Solo materiale Vivido entra nel post.
+Per ogni pezzo di materiale: "parla di Vivido (Blueprint, MVP, Website, Cycles, clienti startup,
+design founder-to-founder)?" Se parla di Nest → scartalo.
 
-**2e. Opzionale — transcript più ricco**
-Se trovi un meeting Granola particolarmente denso (insight, frase cliente memorabile, fallimento, numero), prioritizzalo come angolo principale.
+### 3. Estrai DUE angoli distinti
 
-### 3. Content-mine framework — estrai l'angolo
+Dal materiale, scegli i **2 angoli più ricchi e diversi tra loro** (per pillar e per taglio):
+- Idea A e Idea B devono usare **pillar diversi** e **hook diversi** (vedi framework §2-§3).
+- Preferisci angoli con numeri concreti (€, ore, %, n° clienti/utenti).
+- Una più "founder/personale", una più "valore/insight" è un buon bilanciamento.
+- Verifica l'anti-ripetizione su `/tmp/vivido-linkedin-history.jsonl` (framework §7).
 
-Dal materiale raccolto, cerca i pattern elencati nel file export:
-- Hard Problem / Tactical / Conversazioni cliente / Learning / News-Milestone / Contrarian / Case Study / Vulnerabilità
+**Se il materiale basta solo per 1 idea onesta** → crea 1 sola bozza e dillo nel ping.
+**Se il materiale è troppo debole per qualunque post onesto** → skip onesto (§7), non inventare.
 
-**Regole di selezione:**
-- Scegli **l'angolo più ricco**, non tutti. Una sola idea per post.
-- Preferisci angoli con **numeri concreti** (€, ore, %) — performano di più.
-- Vulnerabilità + MAIUSCOLE hook = archetipo top reach (vedi #1 e #4 del file).
-- Case study con numeri cliente = archetipo autorità (vedi #3 e #6).
-- Se l'angolo è un cliente specifico → verifica di poter parlarne (deliverable pubblico o cliente-reference già citato nel file: Virginia, Officina38, SalesMagic, Harvest).
+### 4. Scrivi le 2 bozze
 
-**Se il materiale è debole** (solo task di admin, zero insight, zero conversazioni significative) → skip onesto, non inventare.
+Per ciascuna idea, applica struttura + hashtag + checklist del framework (§4, §5, §8).
+Assegna `Pillar`, `Formato`, `Priorità` e un `Name` interno breve (non l'hook completo).
+Riscrivi se una voce non negoziabile della checklist fallisce (max 2 tentativi per idea).
 
-### 4. Assegna pilastro e hook
+### 5. Crea le pagine in "Piano Editoriale"
 
-- **Pilastro** — scegli UNO tra:
-  - Validazione veloce (35%) → Blueprint Vivido, dire NO, red flag idee non validate
-  - Operations scalabili (40%) → Nest Rewind, Nest OS, n8n, SOP, time allocation
-  - Crescita reale (25%) → numeri veri, fallimenti, Nest+Vivido parallelo, team, mental load
-
-- **Hook** — scegli UNO tra: Vulnerabilità MAIUSCOLE · Contro-intuitivo · Statistica shock · Domanda provocatoria. Alterna: evita di ripetere lo stesso archetipo due giorni di fila (vedi §6).
-
-### 5. Scrivi la bozza
-
-Segui la **struttura del post** del file export:
-```
-[HOOK 1-2 righe MAIUSCOLE]
-[riga bianca]
-Contesto rapido (1-2 righe)
-[riga bianca]
-Il punto centrale (1-2 righe)
-[riga bianca]
-Breakdown (max 3 punti, 1 frase ognuno, con dati)
-[riga bianca]
-Lesson learned applicabile (1-2 righe)
-[riga bianca]
-Domanda finale specifica (NO "cosa ne pensi?")
-[riga bianca]
-#Hashtag1 #Hashtag2 #Hashtag3
-```
-
-**Hashtag per pilastro** (3-5 max, sempre `#StartupItalia` come core):
-- Validazione → `#MVPDesign #ProductValidation #LeanStartup #StartupItalia`
-- Operations → `#AgencyOps #AgencyGrowth #Automation #StartupItalia`
-- Crescita → `#FounderJourney #BuildInPublic #ItalianStartups #StartupItalia`
-
-### 6. Checklist pre-consegna
-
-Prima di mandare il DM, passa la checklist del file export. Se una sola voce fallisce → **riscrivi** (max 2 tentativi). Voci non negoziabili:
-- [ ] Hook forte nelle prime 2 righe (uno dei 4 tipi)
-- [ ] MAIUSCOLE solo hook (non ovunque)
-- [ ] UN pilastro, UNA idea
-- [ ] Almeno un dato/numero/esempio concreto
-- [ ] Domanda finale specifica
-- [ ] Sotto 1.300 caratteri (inclusi spazi)
-- [ ] Zero link nel corpo
-- [ ] Zero emoji sparse / bullet con simboli
-- [ ] Zero bold/corsivo/header markdown nel testo del post
-- [ ] 3-5 hashtag alla fine
-- [ ] Niente pitch diretto ("prenota una call", "scopri di più")
-- [ ] Niente "Soluzione", "sinergia", "innovativo", "disruptive"
-- [ ] Parla di Nest come Growth Partner consultancy (non SaaS/prodotto)
-- [ ] Parla di Vivido come design consultancy (non agenzia)
-
-**Anti-ripetizione**: leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste). Contiene le ultime 7 bozze con {date, pilastro, hook_type, topic}. Evita di ripetere stesso pilastro+hook due giorni di fila, e stesso topic entro 7 giorni. Appendi la bozza di oggi in coda dopo l'invio.
-
-### 7. Consegna via DM Slack
-
-Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
+Usa `mcp__Notion__notion-create-pages` con **una sola chiamata** per entrambe le idee:
 
 ```
-📝 *Bozza LinkedIn — <data>*
-Pilastro: <pilastro> · Hook: <tipo hook>
-Fonte: <1 riga — da quale meeting/task/evento viene l'angolo>
+parent: { type: "data_source_id", data_source_id: "92b0aae4-bcc5-8326-9483-078b106b51f9" }
+pages: [
+  {
+    icon: "✍️",
+    properties: {
+      "Name": "<name interno idea A>",
+      "Status": "Bozza",
+      "Piattaforma": "[\"LinkedIn\"]",
+      "Pillar": "<pillar A>",
+      "Formato": "<formato A>",
+      "Priorità": "<🔴 Alta | 🟡 Media>"
+    },
+    content: "<corpo Notion-markdown idea A, vedi sotto>"
+  },
+  { ... idea B ... }
+]
+```
+
+**Corpo `content`** (replica il template "Nuovo Post", copy dentro code block):
+
+```
+# ✍️ Copy
+​```
+<POST COMPLETO, come va pubblicato, hashtag inclusi>
+​```
 
 ---
 
-<POST COMPLETO qui, come verrà pubblicato, hashtag inclusi>
+## Fonte
+<1 riga: meeting/task/email/evento da cui nasce l'angolo>
 
----
+## Meta
+Pillar: <pillar> · Hook: <tipo hook> · Caratteri: <n>/1300
 
-_Caratteri: <n>/1300_
+# ✅ Checklist
+- [ ] Copy approvato
+- [ ] Grafica/Video pronta
+- [ ] Orario confermato
+- [ ] Contenuto programmato
 ```
 
-Poi invia con lo script dedicato al bot Vivido:
+Note tecniche:
+- `Piattaforma` è multi_select → passa una **stringa JSON array** `"[\"LinkedIn\"]"`.
+- `Pillar`/`Formato`/`Priorità`/`Status` sono select/status → passa il nome esatto dell'opzione.
+- NON impostare `Data pubblicazione` (la decide il founder in revisione).
+- NON usare `template_id` (impedirebbe di iniettare il copy).
+- Dalla risposta, recupera gli `url` delle 2 pagine create per il ping.
+
+### 6. Aggiorna l'anti-ripetizione
+
+Appendi a `/tmp/vivido-linkedin-history.jsonl` una riga per idea creata:
+`{"date":"<oggi>","pillar":"<X>","hook_type":"<Y>","topic":"<breve>"}`.
+
+### 7. Ping Slack al founder
+
+Scrivi `/tmp/vivido-assistant-linkedin.md`:
+
+```
+📝 *Idee LinkedIn — <data>* (2 bozze in Piano Editoriale)
+
+1) <Name A> — <pillar A> · <hook A>
+   <url pagina A>
+2) <Name B> — <pillar B> · <hook B>
+   <url pagina B>
+
+_Fonte: <1 riga sul materiale 24h usato>. Le trovi come Bozza nel Piano Editoriale._
+```
+
+Invia con il bot Vivido:
 ```bash
 bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-linkedin.md
 ```
-
-**Consegna: DM diretto al founder nel workspace Vivido** (user ID `U062VMYTXDL`, bot `vivido_assistant`). NON usare `send.sh` (è il bot Nest, workspace diverso). NON postare in #company-brain del workspace Nest. Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina. Non bloccare, non chiedere conferma, non creare bozze.
+Se l'invio fallisce → retry una volta dopo 8s, poi logga l'errore nella riga finale e termina
+(le bozze Notion restano comunque create).
 
 ### 8. Skip onesto
 
-Se al punto 3 decidi che il materiale è troppo debole per un post onesto, manda invece questo messaggio corto:
+Se al punto 3 il materiale è troppo debole, **non creare pagine**. Manda solo:
 
 ```
 📝 *LinkedIn — <data>*
-Niente materiale forte nelle ultime 24h per un post onesto. Skip.
-<1 riga su cosa hai guardato: es. "2 meeting Granola + 6 task Notion, tutto admin">
+Niente materiale forte nelle ultime 24h per 2 post onesti. Skip.
+<1 riga su cosa hai guardato: es. "1 meeting Granola + 5 task admin">
 ```
 
-Ricorda: **meglio skip che post generico**. Il framework dice esplicitamente "una sola idea per post" e vieta le frasi motivazionali vuote.
+Meglio skip che bozze generiche.
 
-### 9. Risposta all'utente (nella CLI)
+### 9. Risposta all'utente (CLI)
 
 UNA riga:
-- Se inviato: `LinkedIn draft inviato (pilastro: <X>, hook: <Y>, <n> char)`
-- Se skip: `LinkedIn skip — materiale debole`
-- Se errore: `LinkedIn errore: <causa breve>`
+- 2 create: `LinkedIn: 2 bozze create in Piano Editoriale (<pillar A> + <pillar B>), ping inviato`
+- 1 create: `LinkedIn: 1 bozza creata (materiale per 1 sola idea onesta)`
+- skip: `LinkedIn skip — materiale debole`
+- errore: `LinkedIn errore: <causa breve>`

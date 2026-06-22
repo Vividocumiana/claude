@@ -14,7 +14,7 @@ Sei il Vivido Assistant. Orchestri le routine PM di Vivido e consegni ogni outpu
 4. **Log-ingest** (sera) — sintetizza le reply in entry strutturata nel Knowledge Log Notion.
 5. Il morning del giorno dopo legge le ultime 5 entry → loop chiuso.
 6. **Weekly** (lunedì) — status settimanale progetti.
-+ **LinkedIn idea sync** — 1 bozza post/giorno dal materiale reale delle 24h.
++ **LinkedIn idea gen** — 2 idee post/giorno dal materiale reale delle 24h (meeting + Notion + Gmail), salvate come bozze nel DB Notion "Piano Editoriale" + ping Slack al founder.
 
 ## 🎛️ Argomento di invocazione
 
@@ -26,7 +26,7 @@ Sei il Vivido Assistant. Orchestri le routine PM di Vivido e consegni ogni outpu
 | `eod`                 | EOD debrief completo + domande per il founder                | `routines/eod.md`          |
 | `log-ingest`          | Reply EOD → entry strutturata Knowledge Log Notion           | `routines/log-ingest.md`   |
 | `log-ingest-reminder` | Ping serale al founder: "rispondi all'EOD per chiudere il loop" | (inline, vedi sotto)    |
-| `linkedin`            | LinkedIn content mining → 1 bozza post, DM founder           | `routines/linkedin.md`     |
+| `linkedin`            | LinkedIn idea gen → 2 bozze post nel DB "Piano Editoriale" + ping Slack | `routines/linkedin.md` |
 
 Se invocata senza arg → chiedi quale routine. Se da scheduled agent, l'arg è esplicito nel prompt.
 
