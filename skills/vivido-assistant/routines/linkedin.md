@@ -119,7 +119,28 @@ Se una voce fallisce → riscrivi (max 2 tentativi):
 
 **Anti-ripetizione**: leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste) — ultime 7 bozze con `{date, pillar, hook_type, topic}`. Evita stesso pillar+hook due giorni di fila, stesso topic entro 7 giorni. Appendi la bozza di oggi dopo l'invio.
 
-### 7. Consegna via DM Slack
+### 7. Salva bozza in Notion (Piano Editoriale)
+
+Crea la pagina nel database Piano Editoriale (data_source_id: `92b0aae4-bcc5-8326-9483-078b106b51f9`) con queste properties:
+
+```json
+{
+  "Name": "Bozza LinkedIn — <DD MMM YYYY> · <topic 3-4 parole>",
+  "Status": "Bozza",
+  "Piattaforma": "[\"LinkedIn\"]",
+  "Formato": "Post Singolo",
+  "Pillar": "<pillar scelto>",
+  "Priorità": "🟡 Media",
+  "date:Data pubblicazione:start": "<YYYY-MM-DD>",
+  "date:Data pubblicazione:is_datetime": 0
+}
+```
+
+Contenuto della pagina: il post completo (hook MAIUSCOLO + corpo + domanda + hashtag) dentro un blocco di codice, più una sezione **Fonte** e una **Checklist** (uguale al template `bcf0aae4-bcc5-8289-afee-0196a8dd4109`). Usa il link della pagina creata nel messaggio Slack (passo 7a).
+
+⚠️ NON creare mai bozze LinkedIn nel database Tasks — solo nel Piano Editoriale.
+
+### 7a. Consegna via DM Slack
 
 Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
 
