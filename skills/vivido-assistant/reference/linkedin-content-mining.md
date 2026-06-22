@@ -1,120 +1,138 @@
 # LinkedIn Content Mining — framework Vivido
 
-> Fonte canonica per la routine `routines/linkedin.md`. Tono di voce, pillar, hook,
-> struttura post, mapping sul DB "Piano Editoriale", checklist e few-shot.
+> Fonte canonica per la routine `routines/linkedin.md`. Voce, pillar, hook,
+> struttura, mapping sul DB "Piano Editoriale", anti-template, passata anti-AI, few-shot.
 > Tutto **Vivido**: design consultancy founder-to-founder per startup early-stage.
-> Deliverable a catalogo: **Blueprint**, **MVP**, **Website (Pro)**, **Design Pod**,
-> **Cycles** (retainer), **Partnership**. Founder: Samuele Poggio (Growth) + Federico
-> Garzena (Design/Product). Mai contenuti Nest.
+> Deliverable: **Blueprint**, **MVP**, **Website (Pro)**, **Design Pod**, **Cycles** (retainer),
+> **Partnership**. Founder che firma i post: **Samuele Poggio** (Growth). Mai contenuti Nest.
+
+> **Leggi SEMPRE anche** (sono parte di questo framework, non opzionali):
+> - `reference/samuele-voice-authentic.md` — com'è la voce vera di Samuele.
+> - `reference/linkedin-anti-template.md` — perché lo scheletro ripetuto = tell #1 da AI.
 
 ## 0. Cosa produce la routine
 
-**2 idee post LinkedIn al giorno**, scritte come bozze pronte da rivedere, salvate
-come 2 righe `Bozza` nel DB **Piano Editoriale** (Piattaforma = LinkedIn). Le 2 idee
-devono essere **diverse tra loro per pillar e per angolo** — non due varianti dello
-stesso pensiero. Una può essere più "personale/founder", l'altra più "valore/insight".
+**2 idee post LinkedIn al giorno**, scritte come bozze pronte da rivedere, salvate come 2 righe
+`Bozza` nel DB **Piano Editoriale** (Piattaforma = LinkedIn). Le 2 idee devono essere diverse
+per **pillar, angolo E forma**. Il rischio più grave di generarne 2 insieme è che escano con lo
+**stesso scheletro**: è esattamente ciò che le fa suonare "da AI". Vedi §3 (Anti-template).
 
-## 1. Tono di voce
+## 1. La voce vera di Samuele
 
-- **Lingua**: italiano. **Voce**: prima persona del founder (Samuele o Vivido come "noi").
-- **Founder-to-founder**: parli a chi sta costruendo una startup, non a un cliente da convertire.
-- **Vulnerabilità reale** > flex. Errori, dubbi, decisioni difficili performano più dei successi.
-- **Frasi brevi**. Una riga = un'idea. Spazi bianchi generosi (il post si legge su mobile).
-- **MAIUSCOLE solo nell'hook** (1 frase), mai sparse nel corpo.
-- **Concreto**: numeri veri (€, ore, giorni, %, n° clienti), nomi di deliverable, situazioni reali.
-- **Zero pitch**: niente "prenota una call", "scopri di più", "contattaci". Il valore è il post.
+Il default NON è lo staccato punchy. La voce naturale di Samuele è **lunga, calda, concatenata
+a virgole**: periodi che si srotolano sul beat emotivo e poi una frase corta che atterra. Lo
+staccato (una riga = un'idea) è la *compressione* di questa voce, da usare con parsimonia, non
+la regola su ogni post.
 
-## 2. Pillar — usa la tassonomia REALE del DB
+- **Ritmo base**: frase lunga che si srotola → frase corta che chiude.
+- **Suoi intensificatori** (usali, non inventarne di "da brand"): "davvero", "un sacco", "così",
+  "da morire", "non ha avuto prezzo", "non vedo l'ora".
+- **Polisindeto** ("e… e… e…") ed enumerazioni lunghe e concrete (5-7 item), non la triade ordinata.
+- **Ancore sensoriali**: ogni emozione agganciata a un dettaglio fisico preciso.
+- **Ripetizione come ritmo**, dichiarative corte che chiudono ("Sono fiero di noi.").
+- **Zero hedging, zero ironia difensiva**: dice il sentimento dritto.
 
-Il DB "Piano Editoriale" ha una proprietà `Pillar`. Scegli **uno** dei suoi valori
-esatti (case-sensitive) per ogni idea:
+Almeno **una** delle 2 idee del giorno dovrebbe stare in questo registro lungo-caldo. L'altra può
+essere più compressa/insight — ma mai tutt'e due con lo stesso ritmo meccanico.
 
-| Pillar (DB) | Quando usarlo | Esempio di angolo Vivido |
+## 2. Tono e regole base
+
+- **Lingua**: italiano, prima persona del founder.
+- **Founder-to-founder**: parli a chi costruisce una startup, non a un cliente da convertire.
+- **Vulnerabilità reale** > flex. Dubbi e decisioni difficili performano più dei successi.
+- **MAIUSCOLE**: solo se servono per un hook, mai sparse. Non su ogni post (vedi §3).
+- **Concreto**: numeri veri (€, ore, giorni, %, n° clienti), nomi di deliverable, fatti reali.
+- **Zero pitch**: niente "prenota una call", "scopri di più". Il valore è il post.
+- **Lunghezza**: max ~1.300 caratteri. Hashtag 3-5, sempre `#StartupItalia` come core.
+
+## 3. Anti-template — la regola che viene prima di tutte
+
+Il tell #1 da "scritto da AI" non è la frase singola: è lo **stesso scheletro ripetuto**. Lo
+scheletro-trappola è:
+
+> hook MAIUSCOLE 2 righe → "Per anni ho pensato X / ho cambiato idea" → "Non è X. È Y." →
+> punchline aforistica → CTA binaria ("X o Y?").
+
+Presi uno alla volta, questi sono tic veri di Samuele. Stampati tutti, sempre nello stesso punto,
+su tutt'e due i post → formula. Regole operative quando generi le 2 bozze:
+
+- **Max 1 marker-firma per post**, e **ruotati** tra i due. Se A usa il pivot "Non è X, è Y",
+  B non lo usa. Se A chiude con domanda, B chiude in dichiarativa o con un dettaglio.
+- **Non tutte e due con il pivot**, e il pivot solo se la convinzione precedente era reale (mai
+  strawman finto "per anni ho creduto che…" se non è vero).
+- **Non tutte e due con CTA binaria.** Una domanda finale va bene su un post, non come stampo.
+- **Varia l'hook** tra i due (tipi in §4).
+- **Varia il ritmo**: uno lungo-caldo (§1), uno più compresso. Non due staccati gemelli.
+
+**Taglia sempre**: 3+ em dash in un post, parole-vetrina ("acceleratore", "ecosistema",
+"valore aggiunto", "output", "soluzione", "sinergia", "innovativo", "disruptive"), rule of three
+meccanica, transizioni didattiche ("In questo post ti spiego…"), conclusioni positive generiche
+("il successo è un viaggio").
+
+## 4. Hook — scegline uno per idea, diversi tra i due
+
+1. **Vulnerabilità** (event. MAIUSCOLE) — "Ho detto no a 8.000€."
+2. **Contro-intuitivo** — "Il sito migliore di quest'anno è il più brutto."
+3. **Statistica/fatto** — "9 founder su 10 ci chiedono un sito. A 7 diciamo di no."
+4. **Scena concreta** — apri dentro un momento reale (un meeting, una frase di un cliente),
+   non con una tesi. Spesso il più umano e il meno "da AI".
+
+Non ripetere lo stesso hook+pillar di ieri (anti-ripetizione §8).
+
+## 5. Pillar — tassonomia REALE del DB
+
+Scegli **uno** dei valori esatti della proprietà `Pillar` del DB (case-sensitive):
+
+| Pillar (DB) | Quando | Angolo Vivido |
 |---|---|---|
-| `PAIN TARGET` | Nomini il dolore preciso del founder early-stage | "Hai speso 6 mesi a costruire la feature sbagliata" |
-| `Educational` | Insegni un framework/metodo/processo | "Come validare un'idea con un Blueprint in 2 settimane" |
-| `Behind the Scenes` | Mostri come lavora Vivido dentro un progetto | "Cosa succede davvero nei primi 3 giorni di un MVP" |
-| `Social Proof` | Caso cliente con numeri/risultato | "Da idea a 20 utenti paganti: il sito che abbiamo rifatto" |
-| `Promo` | Spingi un deliverable/offerta (raro, max 1/sett.) | "Apriamo 2 slot Cycles per Q3" |
-| `Entertainment` | Tono leggero, meme di settore, opinione divertente | "Le 5 frasi che ogni founder dice prima di un rebrand" |
-| `Thought Leadership` | Opinione forte/contrarian sul design e le startup | "Il sito perfetto non esiste, e va benissimo così" |
+| `PAIN TARGET` | Nomini il dolore preciso del founder early-stage | "6 mesi sulla feature sbagliata" |
+| `Educational` | Insegni un metodo/framework | "Validare un'idea con un Blueprint in 2 settimane" |
+| `Behind the Scenes` | Mostri come lavora Vivido dentro un progetto | "I primi 3 giorni di un MVP" |
+| `Social Proof` | Caso cliente con numeri | "Da idea a 20 utenti paganti" |
+| `Promo` | Spingi un deliverable (raro, max 1/sett.) | "2 slot Cycles per Q3" |
+| `Entertainment` | Tono leggero, opinione di settore | "Le frasi che ogni founder dice prima di un rebrand" |
+| `Thought Leadership` | Opinione forte/contrarian | "Il sito perfetto non esiste" |
 
-**Bilanciamento settimanale (guida, non regola ferrea):** privilegia
-`PAIN TARGET` / `Educational` / `Thought Leadership` / `Social Proof`.
-`Promo` max 1 volta a settimana. `Entertainment` come jolly quando il materiale è leggero.
+Le 2 idee del giorno usano **pillar diversi**. Privilegia `PAIN TARGET` / `Educational` /
+`Thought Leadership` / `Social Proof`; `Promo` max 1/settimana.
 
-## 3. Hook — scegline uno per idea
+## 6. Formato (proprietà `Formato` del DB)
 
-1. **Vulnerabilità (MAIUSCOLE)** — "HO PERSO UN CLIENTE PER UNA HOMEPAGE." → archetipo top reach.
-2. **Contro-intuitivo** — "Il miglior sito che abbiamo fatto quest'anno è il più brutto."
-3. **Statistica shock** — "9 founder su 10 ci chiedono un sito. A 7 diciamo di no."
-4. **Domanda provocatoria** — "Perché continui a rifare il sito invece di validare l'idea?"
+- **Post Singolo** → default testo LinkedIn.
+- **Carousel** → breakdown in 3-5 step (spesso `Educational`).
+- **Articolo** → opinione lunga (`Thought Leadership`).
 
-Alterna gli archetipi: le 2 idee dello stesso giorno usano **hook diversi**, e non
-ripetere lo stesso hook+pillar di ieri (vedi anti-ripetizione §7).
+Il corpo che scrivi è sempre il copy del post (per Carousel: sequenza step come copy +
+nota "[Carousel: 1 concetto per slide]").
 
-## 4. Struttura del post
+## 7. Mapping sul DB "Piano Editoriale"
 
-```
-[HOOK 1-2 righe — MAIUSCOLE se vulnerabilità]
-[riga bianca]
-Contesto rapido (1-2 righe)
-[riga bianca]
-Il punto centrale (1-2 righe)
-[riga bianca]
-Breakdown (max 3 punti, 1 frase ognuno, con un dato dove possibile)
-[riga bianca]
-Lesson learned applicabile (1-2 righe)
-[riga bianca]
-Domanda finale specifica (NO "cosa ne pensi?")
-[riga bianca]
-#Hashtag1 #Hashtag2 #Hashtag3
-```
-
-- **Lunghezza**: max ~1.300 caratteri (spazi inclusi). Post singolo LinkedIn.
-- **Hashtag**: 3-5, sempre `#StartupItalia` come core. Set per area:
-  - Validazione/prodotto → `#MVP #ProductValidation #LeanStartup #StartupItalia`
-  - Design/sito → `#WebDesign #StartupDesign #ProductDesign #StartupItalia`
-  - Founder/crescita → `#FounderJourney #BuildInPublic #ItalianStartups #StartupItalia`
-
-## 5. Formato (proprietà `Formato` del DB)
-
-Imposta `Formato` coerente con l'idea:
-- **Post Singolo** → default per il testo LinkedIn.
-- **Carousel** → se l'idea è un breakdown in 3-5 step (spesso `Educational`).
-- **Articolo** → se è un'opinione lunga (`Thought Leadership`).
-
-Il **corpo del testo** che scrivi è comunque il copy del post (anche per Carousel:
-scrivi la sequenza degli step come copy + nota "[Carousel: 1 concetto per slide]").
-
-## 6. Mapping sul DB "Piano Editoriale"
-
-Ogni idea = 1 pagina con:
+Ogni idea = 1 pagina:
 
 | Proprietà | Valore |
 |---|---|
-| `Name` | titolo interno breve dell'idea (NON l'hook completo) — es. "PAIN: feature sbagliata 6 mesi" |
+| `Name` | titolo interno breve (NON l'hook completo) — es. "PAIN: feature sbagliata 6 mesi" |
 | `Status` | `Bozza` |
 | `Piattaforma` | `["LinkedIn"]` (JSON array) |
-| `Pillar` | uno dei valori §2 |
-| `Formato` | uno dei valori §5 |
+| `Pillar` | uno dei valori §5 |
+| `Formato` | uno dei valori §6 |
 | `Priorità` | `🔴 Alta` se angolo forte con numeri, altrimenti `🟡 Media` |
 
-**Corpo della pagina** (Notion Markdown) — replica il template "Nuovo Post":
+**Corpo pagina** (replica il template "Nuovo Post", copy in code block):
 
 ```
 # ✍️ Copy
 ​```
-<POST COMPLETO qui, esattamente come va pubblicato, hashtag inclusi>
+<POST COMPLETO, come va pubblicato, hashtag inclusi>
 ​```
 
 ---
 
 ## Fonte
-<1 riga: da quale meeting/task/email/evento delle ultime 24h nasce l'angolo>
+<1 riga: meeting/task/email/evento delle ultime 24h da cui nasce l'angolo>
 
 ## Meta
-Pillar: <pillar> · Hook: <tipo hook> · Caratteri: <n>/1300
+Pillar: <pillar> · Hook: <tipo> · Registro: <lungo-caldo | compresso> · Caratteri: <n>/1300
 
 # ✅ Checklist
 - [ ] Copy approvato
@@ -123,111 +141,92 @@ Pillar: <pillar> · Hook: <tipo hook> · Caratteri: <n>/1300
 - [ ] Contenuto programmato
 ```
 
-Il copy va dentro un **blocco di codice** (come il template), così il founder può
-copiarlo pulito con un click.
+## 8. Anti-ripetizione (storico)
 
-## 7. Anti-ripetizione
-
-Leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste). Ogni riga:
-`{date, pillar, hook_type, topic}`. Regole:
-- Le 2 idee di oggi hanno pillar+hook diversi tra loro.
-- Non ripetere lo stesso pillar+hook di ieri.
-- Non ripetere lo stesso topic entro 7 giorni.
+Leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste). Riga:
+`{date, pillar, hook_type, register, topic}`. Regole:
+- Le 2 idee di oggi: pillar + hook + registro diversi tra loro.
+- Non ripetere lo stesso pillar+hook di ieri, né lo stesso topic entro 7 giorni.
 Dopo aver creato le pagine, appendi 2 righe (una per idea).
 
-## 8. Checklist pre-salvataggio (per OGNI idea)
+## 9. Passata anti-AI (obbligatoria prima di salvare)
 
-Se una voce fallisce → riscrivi (max 2 tentativi). Non negoziabili:
-- [ ] Hook forte nelle prime 2 righe (uno dei 4 tipi)
-- [ ] MAIUSCOLE solo nell'hook
-- [ ] UN pillar, UNA idea
-- [ ] Almeno un dato/numero/esempio concreto
-- [ ] Domanda finale specifica
-- [ ] Sotto ~1.300 caratteri
-- [ ] Zero link nel corpo
-- [ ] Zero emoji sparse / bullet con simboli nel testo del post
-- [ ] Zero bold/corsivo/header markdown DENTRO il copy del post
-- [ ] 3-5 hashtag alla fine
-- [ ] Niente pitch diretto
+Per **ogni** bozza, fai due domande a te stesso e agisci:
+1. **"Cosa la fa sembrare scritta da AI?"** — scheletro-trappola? CTA binaria stampata?
+   rule of three? parole-vetrina? em dash a raffica? ritmo staccato meccanico?
+2. **"Riscrivila perché non lo sembri."** — applica la correzione, non limitarti a notarla.
+
+Poi la checklist (riscrivi se una voce non negoziabile fallisce, max 2 tentativi/idea):
+- [ ] Hook forte (uno dei 4 tipi), **diverso** dall'altra idea
+- [ ] Almeno un dato/numero/fatto concreto
+- [ ] Sotto ~1.300 caratteri, zero link nel corpo
+- [ ] Zero emoji sparse / bullet con simboli / bold-corsivo-header dentro il copy
+- [ ] 3-5 hashtag, niente pitch diretto
 - [ ] Vivido = design consultancy founder-to-founder (mai "agenzia", mai SaaS)
-- [ ] Le 2 idee sono davvero diverse (pillar + angolo)
+- [ ] **Le 2 idee non condividono lo scheletro** (§3): hook, pivot, chiusura, registro ruotati
+- [ ] Almeno una delle due nel registro lungo-caldo (§1)
+- [ ] Passata anti-AI fatta
 
-## 9. VIETATO ASSOLUTO
+## 10. VIETATO ASSOLUTO
 
 - Inventare numeri, clienti o citazioni non presenti nel materiale.
-- Parlare di Nest (Nest OS, Growth Partner, outbound Nest) — è un altro brand.
-- Buzzword: "soluzione", "sinergia", "innovativo", "disruptive", "rivoluzionario".
-- Frasi motivazionali vuote ("il successo è un viaggio").
-- Due post quasi identici.
-- Pubblicare automaticamente: la routine crea solo **Bozze**, mai `Programmato`/`Pubblicato`.
+- Parlare di Nest (Nest OS, Growth Partner, outbound Nest).
+- Due post con lo stesso scheletro / stesso ritmo / stessa chiusura.
+- Pubblicare automaticamente: la routine crea solo **Bozze**.
 
-## 10. Few-shot (archetipi target)
+## 11. Few-shot (archetipi target — NOTA: scheletri diversi tra loro)
 
-**#1 — Vulnerabilità / PAIN TARGET / Post Singolo**
+> Sono modelli di *registro e varietà*, non stampi da ricalcare. Non riusare la stessa apertura
+> o la stessa chiusura di questi esempi su un post reale.
+
+**#1 — Registro lungo-caldo / PAIN TARGET / Post Singolo (chiude in dichiarativa, niente CTA)**
 ```
-HO DETTO NO A UN CLIENTE CHE VOLEVA PAGARMI 8.000€.
+Stamattina un founder mi ha detto al telefono che era pronto a darci ottomila euro per un sito nuovo, dodici pagine, tutto bello, e mentre parlava sentivo l'entusiasmo e capivo benissimo da dove veniva, perché anch'io quando ho iniziato volevo prima la cosa bella e poi la cosa giusta.
 
-Voleva un sito nuovo. Bello, completo, 12 pagine.
+Gli ho chiesto quanti clienti paganti aveva. Zero.
 
-Il problema: non aveva ancora un solo utente che pagava.
-
-Gli ho proposto un Blueprint invece del sito:
-- 2 settimane invece di 2 mesi
-- validare l'idea prima di vestirla
-- spendere 1/5 del budget
+E allora gli ho proposto un Blueprint invece del sito, due settimane invece di due mesi, un quinto del budget, per capire se l'idea sta in piedi prima di vestirla.
 
 Ha detto no. Voleva il sito.
 
-3 mesi dopo mi ha riscritto: "avevi ragione, ho rifatto tutto".
+Tre mesi dopo mi ha riscritto: avevi ragione, ho rifatto tutto.
 
-Costruire la cosa giusta viene prima di costruirla bene.
-
-Tu quante volte hai vestito un'idea che non avevi ancora validato?
+Non mi è dispiaciuto avergli detto no. Mi è dispiaciuto che gli sia costato tre mesi per crederci.
 
 #MVP #ProductValidation #StartupItalia
 ```
 
-**#2 — Contro-intuitivo / Thought Leadership / Articolo**
+**#2 — Registro compresso / Thought Leadership / Articolo (apre con tesi, chiude con domanda)**
 ```
 Il sito perfetto è il nemico della tua startup.
 
-Ogni founder che incontro vuole la homepage definitiva.
+Ogni founder vuole la homepage definitiva. Ma la homepage definitiva presuppone che tu sappia già chi sei, e da early-stage non lo sai ancora.
 
-Ma la homepage definitiva presuppone che tu sappia già chi sei.
-
-Da early-stage non lo sai ancora. E va bene così.
-
-Quello che ti serve non è perfetto, è vivo:
-- pubblicato in giorni, non mesi
-- abbastanza chiaro da far capire cosa vendi
-- abbastanza grezzo da poterlo buttare
+Quello che ti serve non è perfetto. È vivo: pubblicato in giorni, abbastanza chiaro da far capire cosa vendi, abbastanza grezzo da poterlo buttare via senza piangere.
 
 Il sito è un'ipotesi, non un monumento.
 
-Qual è la cosa che stai rifinendo invece di pubblicare?
+Cosa stai rifinendo da settimane invece di pubblicarlo?
 
 #StartupDesign #BuildInPublic #StartupItalia
 ```
 
-**#3 — Social Proof / Carousel**
+**#3 — Scena concreta / Social Proof / Carousel (apre dentro un momento, niente pivot, niente CTA binaria)**
 ```
-Da "non capisco cosa vendete" a 20 richieste in 3 settimane.
+"Non capisco cosa vendete." Me l'ha detto un founder leggendo il suo stesso sito, ad alta voce, in call.
 [Carousel: 1 concetto per slide]
 
-Un founder è arrivato con un sito pieno di parole e zero richieste.
+Non era un problema di traffico. Le visite c'erano. Era che in cinque secondi non si capiva chi aiutavano.
 
-Non era un problema di traffico. Era un problema di messaggio.
+Abbiamo tenuto lo stesso traffico e cambiato tre cose: una frase sola sopra la piega, una prova vera al posto del "chi siamo", una call to action ripetuta invece di sei sparse.
 
-Cosa abbiamo cambiato:
-1. Una sola frase sopra la piega: chi aiuti e come
-2. Una prova sociale vera al posto del "chi siamo"
-3. Una call to action sola, ripetuta
+Tre settimane dopo: venti richieste.
 
-Stesso traffico. 20 richieste in 3 settimane.
-
-Il design non è decorazione: è chiarezza.
-
-Cosa capisce un estraneo dal tuo sito in 5 secondi?
+Il design qui non ha aggiunto niente di bello. Ha tolto il rumore.
 
 #WebDesign #StartupDesign #StartupItalia
 ```
+
+Nota su come differiscono: #1 apre con una scena lunga e chiude in dichiarativa; #2 apre con una
+tesi e chiude con domanda; #3 apre con una citazione e chiude con un'osservazione. **Nessuno dei
+tre condivide hook, pivot o chiusura** — è così che devono stare le 2 bozze di ogni giorno.

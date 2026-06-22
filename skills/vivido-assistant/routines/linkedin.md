@@ -8,8 +8,11 @@ Ogni giorno: guarda i **meeting** (Granola) e il resto del materiale reale delle
 **2 righe `Bozza`** nel DB Notion **"Piano Editoriale"** (Piattaforma = LinkedIn). Poi manda
 una DM Slack al founder con i link alle 2 bozze.
 
-Framework canonico (tono, pillar, hook, struttura, mapping, checklist, few-shot):
+Framework canonico (voce, pillar, hook, struttura, mapping, anti-template, anti-AI, few-shot):
 `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md` — **leggilo sempre per primo**.
+Il framework rimanda a due reference obbligatorie che vanno lette insieme:
+- `reference/samuele-voice-authentic.md` — la voce vera di Samuele (lunga, calda; lo staccato è la compressione).
+- `reference/linkedin-anti-template.md` — lo scheletro ripetuto è il tell #1 da AI; ruota i marker tra i 2 post.
 
 ## Coordinate del DB "Piano Editoriale"
 
@@ -22,8 +25,9 @@ Framework canonico (tono, pillar, hook, struttura, mapping, checklist, few-shot)
 
 ### 1. Leggi il framework
 
-`Read` di `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md`.
-Se il file non esiste o è ancora un placeholder → abortisci, manda DM
+`Read` di `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md` **e** delle due
+reference che richiama: `reference/samuele-voice-authentic.md` e `reference/linkedin-anti-template.md`.
+Se il framework non esiste o è ancora un placeholder → abortisci, manda DM
 `⚠️ Framework LinkedIn mancante, skip` e termina.
 
 ### 2. Raccolta materiale 24h (in parallelo)
@@ -51,20 +55,24 @@ design founder-to-founder)?" Se parla di Nest → scartalo.
 
 ### 3. Estrai DUE angoli distinti
 
-Dal materiale, scegli i **2 angoli più ricchi e diversi tra loro** (per pillar e per taglio):
-- Idea A e Idea B devono usare **pillar diversi** e **hook diversi** (vedi framework §2-§3).
+Dal materiale, scegli i **2 angoli più ricchi e diversi tra loro** (per pillar, taglio e forma):
+- Idea A e Idea B devono usare **pillar diversi**, **hook diversi** e **registro diverso**
+  (una nel registro lungo-caldo §1, l'altra più compressa) — vedi framework §3-§5.
+- **Mai lo stesso scheletro** sui due post (framework §3): ruota pivot, chiusura e CTA, non stamparli.
 - Preferisci angoli con numeri concreti (€, ore, %, n° clienti/utenti).
-- Una più "founder/personale", una più "valore/insight" è un buon bilanciamento.
-- Verifica l'anti-ripetizione su `/tmp/vivido-linkedin-history.jsonl` (framework §7).
+- Verifica l'anti-ripetizione su `/tmp/vivido-linkedin-history.jsonl` (framework §8).
 
 **Se il materiale basta solo per 1 idea onesta** → crea 1 sola bozza e dillo nel ping.
 **Se il materiale è troppo debole per qualunque post onesto** → skip onesto (§7), non inventare.
 
-### 4. Scrivi le 2 bozze
+### 4. Scrivi le 2 bozze + passata anti-AI
 
-Per ciascuna idea, applica struttura + hashtag + checklist del framework (§4, §5, §8).
+Per ciascuna idea, applica voce, hook, hashtag del framework (§1-§6).
 Assegna `Pillar`, `Formato`, `Priorità` e un `Name` interno breve (non l'hook completo).
-Riscrivi se una voce non negoziabile della checklist fallisce (max 2 tentativi per idea).
+Poi, **prima di salvare**, esegui la passata anti-AI a 2 domande del framework §9
+("cosa la fa sembrare da AI?" → "riscrivila perché non lo sembri") e la checklist.
+Confronta A e B fianco a fianco: se condividono scheletro/ritmo/chiusura → riscrivi una delle due.
+Riscrivi se una voce non negoziabile fallisce (max 2 tentativi per idea).
 
 ### 5. Crea le pagine in "Piano Editoriale"
 
@@ -122,7 +130,7 @@ Note tecniche:
 ### 6. Aggiorna l'anti-ripetizione
 
 Appendi a `/tmp/vivido-linkedin-history.jsonl` una riga per idea creata:
-`{"date":"<oggi>","pillar":"<X>","hook_type":"<Y>","topic":"<breve>"}`.
+`{"date":"<oggi>","pillar":"<X>","hook_type":"<Y>","register":"<lungo-caldo|compresso>","topic":"<breve>"}`.
 
 ### 7. Ping Slack al founder
 
