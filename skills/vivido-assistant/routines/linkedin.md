@@ -134,7 +134,7 @@ _Caratteri: <n>/1300_
 
 Poi invia con lo script dedicato al bot Vivido:
 ```bash
-bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-linkedin.md
+bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin.md
 ```
 
 **Consegna: DM diretto al founder nel workspace Vivido** (user ID `U062VMYTXDL`, bot `vivido_assistant`). NON usare `send.sh` (è il bot Nest, workspace diverso). NON postare in #company-brain del workspace Nest. Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina. Non bloccare, non chiedere conferma, non creare bozze.
