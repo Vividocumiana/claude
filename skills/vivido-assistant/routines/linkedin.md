@@ -119,25 +119,31 @@ Prima di mandare il DM, passa la checklist del file export. Se una sola voce fal
 Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
 
 ```
-📝 *Bozza LinkedIn — <data>*
-Pilastro: <pilastro> · Hook: <tipo hook>
-Fonte: <1 riga — da quale meeting/task/evento viene l'angolo>
+🟢 Bozza LinkedIn pronta
 
----
+• <hook del post — prima riga o titolo dell'idea>
 
+💡 Idea estratta da: <fonte — es. "Granola: nome meeting" o "Knowledge Log: titolo entry"> · <nome founder, es. Samuele>
+
+Status: Bozza — pronta per revisione
+```
+
+Il post completo (testo pubblicabile + hashtag) va come **reply in thread** al messaggio sopra:
+```
 <POST COMPLETO qui, come verrà pubblicato, hashtag inclusi>
-
----
 
 _Caratteri: <n>/1300_
 ```
 
-Poi invia con lo script dedicato al bot Vivido:
+Poi invia con:
 ```bash
-bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-linkedin.md
+# Messaggio principale
+TS=$(bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin.md)
+# Post completo in thread
+bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin-post.md "$TS"
 ```
 
-**Consegna: DM diretto al founder nel workspace Vivido** (user ID `U062VMYTXDL`, bot `vivido_assistant`). NON usare `send.sh` (è il bot Nest, workspace diverso). NON postare in #company-brain del workspace Nest. Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina. Non bloccare, non chiedere conferma, non creare bozze.
+**Consegna: DM diretto al founder** via user ID `U062MREADAB` (Samuele). Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina.
 
 ### 8. Skip onesto
 
