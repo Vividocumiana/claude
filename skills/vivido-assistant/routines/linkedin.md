@@ -18,30 +18,34 @@ Output: DM Slack al founder **nel workspace Vivido World** (user ID `U062VMYTXDL
 
 Se uno dei due file non esiste → abortisci, manda DM `⚠️ File reference LinkedIn mancante, skip` e termina.
 
-### 2. Raccolta materiale (parallelo)
+### 2. Raccolta materiale (tutti e 4 i source, in parallelo)
 
-**2a. Granola — meeting ultime 24h (account Vivido)**
-- `list_meetings` con `time_range: today`. Se zero, fallback `yesterday`.
-- Verifica che i meeting siano Vivido (note creator `hello@vivido.world`). Ignora meeting Nest.
-- Per ogni meeting trovato → `get_meeting_transcript` (se disponibile) o titolo + partecipanti.
-- Estrai: temi discussi, frasi del cliente, decisioni, numeri concreti, pain emersi.
+Lancia le 4 chiamate **in parallelo**. Nessuna è opzionale — se un source restituisce zero, segnalalo nel log interno ma continua con gli altri.
 
-**2b. Notion — attività ultime 24h (workspace Vivido World)**
-- Usa `notion-search` con query generica (es. "task progetto attivo aggiornato oggi"), **senza** `data_source_url`. Questo restituisce risultati dal workspace Vivido World (`6850c1bd18aa448d97fe9745f14c8ffc`).
-- In alternativa, passa `page_url: 6850c1bd18aa448d97fe9745f14c8ffc` come scope.
-- NON usare i collection ID Nest (`1e09106d-...`, `1c79106d-...`) — sono un workspace separato e restituiranno errore o dati sbagliati.
-- Cerca: task completate, meeting loggati, nuovi clienti, deliverable consegnati, note rilevanti delle ultime 24h.
+**2a. Granola — meeting ultime 24h**
+- `list_meetings` con `time_range: this_week`. Filtra per data odierna; se zero risultati oggi, prendi ieri.
+- Verifica creator `hello@vivido.world` → ignora meeting Nest.
+- Per ogni meeting trovato: chiama `get_meetings` (con `meeting_ids`) per ottenere summary, decisioni, partecipanti, numeri.
+- NON usare `get_meeting_transcript` — richiede piano a pagamento, fallirà sempre.
+- Estrai: temi, decisioni, numeri concreti, frizioni emerse, frasi significative.
 
-**2c. Gmail — email Vivido ultime 24h**
-- `search_threads` con query `newer_than:1d` sull'account `hello@vivido.world`.
-- Estrai: feedback clienti, decisioni prese, pain emersi, numeri condivisi, frasi significative.
-- Ignora newsletter, notifiche automatiche, inviti calendario senza contenuto.
+**2b. Notion — attività ultime 24h**
+- `notion-search` query "progetto task aggiornato" senza `data_source_url` (workspace Vivido World).
+- Filtro date: `created_date_range` start ieri, end oggi.
+- NON usare collection ID Nest.
+- Estrai: task completate, deliverable consegnati, note rilevanti.
 
-**2d. Filtro Vivido obbligatorio**
-Dopo la raccolta, verifica esplicitamente per ogni pezzo di materiale: "parla di Vivido (Blueprint, MVP, clienti startup, design consultancy)?" Se parla di Nest (processi agenzie, Nest OS, Growth Partner retainer, outbound Nest) → **scartalo**, anche se trovato nel workspace Vivido World. Solo materiale Vivido entra nel post.
+**2c. Slack — messaggi ultime 24h (workspace Vivido World)**
+- `slack_search_public_and_private` con query `after:yesterday` o equivalente.
+- Cerca: decisioni condivise in canale, problemi emersi, numeri citati, aggiornamenti progetto.
+- Ignora notifiche bot, messaggi automatici.
 
-**2e. Opzionale — transcript più ricco**
-Se trovi un meeting Granola particolarmente denso (insight, frase cliente memorabile, fallimento, numero), prioritizzalo come angolo principale.
+**2d. Gmail — email ultime 24h**
+- `search_threads` con query `newer_than:1d -category:promotions -category:social`.
+- Estrai: feedback clienti, decisioni, pain emersi, numeri, frasi significative.
+- Ignora newsletter e notifiche automatiche.
+
+**Filtro Vivido obbligatorio** — dopo la raccolta, per ogni pezzo: "parla di Vivido (design consultancy, clienti, Blueprint, delivery)?" Se parla solo di Nest → scartalo. Solo materiale Vivido entra nel post.
 
 ### 3. Selezione angolo
 
