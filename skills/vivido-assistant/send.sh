@@ -21,10 +21,12 @@ THREAD_TS="${3:-}"
 
 if [ -n "${VIVIDO_BOT_TOKEN:-}" ]; then
   TOKEN="$(printf '%s' "$VIVIDO_BOT_TOKEN" | tr -d '\r\n')"
+elif [ -n "${SLACK_BOT_TOKEN:-}" ]; then
+  TOKEN="$(printf '%s' "$SLACK_BOT_TOKEN" | tr -d '\r\n')"
 else
   TOKEN_FILE="$(cd "$(dirname "$0")" && pwd)/vivido-bot.token"
   if [ ! -f "$TOKEN_FILE" ]; then
-    echo "ERROR: né env VIVIDO_BOT_TOKEN né file $TOKEN_FILE" >&2
+    echo "ERROR: né env VIVIDO_BOT_TOKEN / SLACK_BOT_TOKEN né file $TOKEN_FILE" >&2
     exit 1
   fi
   TOKEN="$(tr -d '\r\n' < "$TOKEN_FILE")"

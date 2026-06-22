@@ -12,15 +12,11 @@ Output: DM Slack al founder **nel workspace Vivido World** (user ID `U062VMYTXDL
 
 ### 1. Leggi il framework
 
-`Read` del file `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md`. È la fonte canonica per:
-- Tone of voice (vulnerabilità + MAIUSCOLE solo hook + frasi brevi)
-- I 3 pilastri (Validazione / Operations / Crescita) — scegline **uno**
-- I 4 tipi di hook (Vulnerabilità, Contro-intuitivo, Statistica shock, Domanda)
-- Struttura post + regole tecniche (max 1.300 caratteri, 3-5 hashtag)
-- Checklist pre-salvataggio e VIETATO ASSOLUTO
-- Few-shot examples dei top performer (#1-#6)
+`Read` in parallelo di:
+- `~/.claude/skills/vivido-assistant/reference/linkedin-content-mining.md` — brief strategico completo (profilo, 5 pillar, voce, anti-template, formula vincente, checklist)
+- `~/.claude/skills/vivido-assistant/reference/analisi_top_post_linkedin.md` — dati empirici dei 32 post (90gg), pattern che vince vs. sotto-performa
 
-Se il file non esiste → abortisci, manda DM `⚠️ File istruzioni LinkedIn non trovato su Desktop, skip` e termina.
+Se uno dei due file non esiste → abortisci, manda DM `⚠️ File reference LinkedIn mancante, skip` e termina.
 
 ### 2. Raccolta materiale (parallelo)
 
@@ -47,97 +43,109 @@ Dopo la raccolta, verifica esplicitamente per ogni pezzo di materiale: "parla di
 **2e. Opzionale — transcript più ricco**
 Se trovi un meeting Granola particolarmente denso (insight, frase cliente memorabile, fallimento, numero), prioritizzalo come angolo principale.
 
-### 3. Content-mine framework — estrai l'angolo
+### 3. Selezione angolo
 
-Dal materiale raccolto, cerca i pattern elencati nel file export:
-- Hard Problem / Tactical / Conversazioni cliente / Learning / News-Milestone / Contrarian / Case Study / Vulnerabilità
+Dal materiale raccolto, identifica internamente **3 candidati angolo** in formato-storia. Per ciascuno: fatto reale + pillar + dettaglio operativo (numero/orario/frizione). Poi scegli il migliore:
 
-**Regole di selezione:**
-- Scegli **l'angolo più ricco**, non tutti. Una sola idea per post.
-- Preferisci angoli con **numeri concreti** (€, ore, %) — performano di più.
-- Vulnerabilità + MAIUSCOLE hook = archetipo top reach (vedi #1 e #4 del file).
-- Case study con numeri cliente = archetipo autorità (vedi #3 e #6).
-- Se l'angolo è un cliente specifico → verifica di poter parlarne (deliverable pubblico o cliente-reference già citato nel file: Virginia, Officina38, SalesMagic, Harvest).
+**Criteri di scelta (in ordine):**
+1. Ha una storia in prima persona con stakes reali? (frizione commerciale, errore, decisione difficile)
+2. Ha un dettaglio operativo concreto con numero o orario? ("14:00 → 16:15", "3 tool", "10 meeting")
+3. Pillar diverso dall'ultimo post in `/tmp/vivido-linkedin-history.jsonl`
+4. Se l'angolo riguarda un cliente → solo se deliverable pubblico o cliente già citato (SalesMagic, Vertalis, Chimera…)
 
-**Se il materiale è debole** (solo task di admin, zero insight, zero conversazioni significative) → skip onesto, non inventare.
+**Evita come prima scelta**: tesi AI astratta e prescrittiva ("ogni azienda deve…", "tutti vogliono…") — vedi analisi, sotto-performa sistematicamente.
 
-### 4. Assegna pilastro e hook
+**5 pillar** (ruotarli):
+1. Processi reali · 2. Da processo ad AI · 3. Dietro le quinte Nest/Vivido · 4. Errori e lezioni · 5. POV sull'AI nelle operations
 
-- **Pilastro** — scegli UNO tra:
-  - Validazione veloce (35%) → Blueprint Vivido, dire NO, red flag idee non validate
-  - Operations scalabili (40%) → Nest Rewind, Nest OS, n8n, SOP, time allocation
-  - Crescita reale (25%) → numeri veri, fallimenti, Nest+Vivido parallelo, team, mental load
+**Se il materiale è debole** (solo admin, zero insight, zero conversazioni) → skip onesto, non inventare.
 
-- **Hook** — scegli UNO tra: Vulnerabilità MAIUSCOLE · Contro-intuitivo · Statistica shock · Domanda provocatoria. Alterna: evita di ripetere lo stesso archetipo due giorni di fila (vedi §6).
+### 4. Hook e voce
+
+**Hook** — scegli UNO, in MAIUSCOLO, prime 1-2 righe del post:
+- MAIUSCOLE vulnerabilità · Contro-intuitivo · Statistica shock · Domanda provocatoria
+- Non ripetere lo stesso tipo del giorno prima (controlla history)
+
+**Voce** — segui §5 del reference:
+- Frase lunga che si srotola → frase corta che chiude
+- Ancore concrete: cliente, numero, task specifico
+- Max 1 marker-firma (pivot / CTA binaria / aforisma) — non cumulare
+- Passata anti-AI obbligatoria: "cosa lo rende da AI?" → riscrivi quei passaggi
 
 ### 5. Scrivi la bozza
 
-Segui la **struttura del post** del file export:
+Struttura libera ma con questi elementi fissi:
 ```
 [HOOK 1-2 righe MAIUSCOLE]
-[riga bianca]
-Contesto rapido (1-2 righe)
-[riga bianca]
-Il punto centrale (1-2 righe)
-[riga bianca]
-Breakdown (max 3 punti, 1 frase ognuno, con dati)
-[riga bianca]
-Lesson learned applicabile (1-2 righe)
-[riga bianca]
-Domanda finale specifica (NO "cosa ne pensi?")
-[riga bianca]
-#Hashtag1 #Hashtag2 #Hashtag3
+
+[Contesto / fatto reale che ha generato l'idea]
+
+[Punto centrale con dato o dettaglio concreto]
+
+[Sviluppo — flusso lungo + chiusura corta, NO bullet meccanici]
+
+[Domanda finale specifica]
+
+#hashtag1 #hashtag2 #hashtag3
 ```
 
-**Hashtag per pilastro** (3-5 max, sempre `#StartupItalia` come core):
-- Validazione → `#MVPDesign #ProductValidation #LeanStartup #StartupItalia`
-- Operations → `#AgencyOps #AgencyGrowth #Automation #StartupItalia`
-- Crescita → `#FounderJourney #BuildInPublic #ItalianStartups #StartupItalia`
+**Hashtag** (3-5, sempre `#StartupItalia`):
+- Processi / AI ops → `#AgencyOps #Automation #AIOperations #StartupItalia`
+- Dietro le quinte / Errori → `#FounderJourney #BuildInPublic #ItalianStartups #StartupItalia`
+- POV / Controcorrente → `#FuturoDelLavoro #AIStrategy #StartupItalia`
 
 ### 6. Checklist pre-consegna
 
-Prima di mandare il DM, passa la checklist del file export. Se una sola voce fallisce → **riscrivi** (max 2 tentativi). Voci non negoziabili:
-- [ ] Hook forte nelle prime 2 righe (uno dei 4 tipi)
-- [ ] MAIUSCOLE solo hook (non ovunque)
-- [ ] UN pilastro, UNA idea
-- [ ] Almeno un dato/numero/esempio concreto
-- [ ] Domanda finale specifica
-- [ ] Sotto 1.300 caratteri (inclusi spazi)
-- [ ] Zero link nel corpo
-- [ ] Zero emoji sparse / bullet con simboli
-- [ ] Zero bold/corsivo/header markdown nel testo del post
+Se una voce fallisce → riscrivi (max 2 tentativi):
+- [ ] Fatto reale di Nest/Vivido (non genericità)
+- [ ] Parla a un founder operativo, di un problema vero
+- [ ] Pillar diverso dall'ultima bozza
+- [ ] Hook in MAIUSCOLO, solo prime 1-2 righe
+- [ ] Max 1 marker-firma, diverso dai post recenti
+- [ ] Almeno un dato/numero/dettaglio concreto
+- [ ] Domanda finale specifica (NO "cosa ne pensi?")
+- [ ] Sotto 1.300 caratteri
+- [ ] Zero link nel corpo, zero emoji sparse, zero markdown nel testo
+- [ ] Zero buzzword (sinergia, ecosistema, disruptive, innovativo, valore aggiunto)
+- [ ] Zero hype AI fine a sé
+- [ ] Suona come Samuele, non come un modello che spiega
+- [ ] Nest = Growth Partner consultancy (non SaaS)
+- [ ] Vivido = design consultancy (non agenzia)
 - [ ] 3-5 hashtag alla fine
-- [ ] Niente pitch diretto ("prenota una call", "scopri di più")
-- [ ] Niente "Soluzione", "sinergia", "innovativo", "disruptive"
-- [ ] Parla di Nest come Growth Partner consultancy (non SaaS/prodotto)
-- [ ] Parla di Vivido come design consultancy (non agenzia)
 
-**Anti-ripetizione**: leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste). Contiene le ultime 7 bozze con {date, pilastro, hook_type, topic}. Evita di ripetere stesso pilastro+hook due giorni di fila, e stesso topic entro 7 giorni. Appendi la bozza di oggi in coda dopo l'invio.
+**Anti-ripetizione**: leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste) — ultime 7 bozze con `{date, pillar, hook_type, topic}`. Evita stesso pillar+hook due giorni di fila, stesso topic entro 7 giorni. Appendi la bozza di oggi dopo l'invio.
 
 ### 7. Consegna via DM Slack
 
 Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
 
 ```
-📝 *Bozza LinkedIn — <data>*
-Pilastro: <pilastro> · Hook: <tipo hook>
-Fonte: <1 riga — da quale meeting/task/evento viene l'angolo>
+🟢 <https://notion.so/<page-id>|Bozza LinkedIn pronta>
+• <HOOK IN MAIUSCOLO — prima riga del post>
+💡 <fonte — es. "Granola: nome meeting" o "Knowledge Log: titolo entry"> · Samuele
+```
 
----
+Regole formato:
+- Hook **sempre in MAIUSCOLO**
+- Niente righe vuote tra le voci (compatto)
+- Il link Notion punta alla bozza salvata (o al workspace se non salvata)
 
+Il post completo (testo pubblicabile + hashtag) va come **reply in thread** al messaggio sopra:
+```
 <POST COMPLETO qui, come verrà pubblicato, hashtag inclusi>
-
----
 
 _Caratteri: <n>/1300_
 ```
 
-Poi invia con lo script dedicato al bot Vivido:
+Poi invia con:
 ```bash
-bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-linkedin.md
+# Messaggio principale
+TS=$(bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin.md)
+# Post completo in thread
+bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin-post.md "$TS"
 ```
 
-**Consegna: DM diretto al founder nel workspace Vivido** (user ID `U062VMYTXDL`, bot `vivido_assistant`). NON usare `send.sh` (è il bot Nest, workspace diverso). NON postare in #company-brain del workspace Nest. Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina. Non bloccare, non chiedere conferma, non creare bozze.
+**Consegna: DM diretto al founder** via user ID `U062MREADAB` (Samuele). Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina.
 
 ### 8. Skip onesto
 
