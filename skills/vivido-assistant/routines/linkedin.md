@@ -114,30 +114,46 @@ Prima di mandare il DM, passa la checklist del file export. Se una sola voce fal
 
 **Anti-ripetizione**: leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste). Contiene le ultime 7 bozze con {date, pilastro, hook_type, topic}. Evita di ripetere stesso pilastro+hook due giorni di fila, e stesso topic entro 7 giorni. Appendi la bozza di oggi in coda dopo l'invio.
 
-### 7. Consegna via DM Slack
+### 7. Salva su Notion (Piano Editoriale)
 
-Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
+Crea un'entry nel database **Piano Editoriale** (`collection://92b0aae4-bcc5-8326-9483-078b106b51f9`) con:
+- `Name`: titolo breve del post (prime parole dell'hook, max 60 char)
+- `Status`: `Bozza`
+- `Piattaforma`: `["LinkedIn"]`
+- `Formato`: `Post Singolo`
+- `Pillar`: mappa così → Validazione = `Thought Leadership` · Operations = `Educational` · Crescita = `Behind the Scenes`
+- `Priorità`: `🟡 Media`
+- `date:Data pubblicazione:start`: data di oggi (YYYY-MM-DD)
+- Corpo della pagina: hook + tipo + fonte + testo completo del post
 
+### 8. Consegna via DM Slack (2 messaggi)
+
+**Messaggio principale** — breve, va in `/tmp/vivido-linkedin-main.md`:
 ```
-📝 *Bozza LinkedIn — <data>*
-Pilastro: <pilastro> · Hook: <tipo hook>
-Fonte: <1 riga — da quale meeting/task/evento viene l'angolo>
+🟢 *Bozza LinkedIn pronta*
+• <HOOK (prima riga del post, MAIUSCOLE)>
+💡 <fonte 1 riga: es. Granola "titolo meeting" · Samuele>
+```
 
----
+Invia il main:
+```bash
+bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-linkedin-main.md
+# salva il ts restituito in THREAD_TS
+```
 
-<POST COMPLETO qui, come verrà pubblicato, hashtag inclusi>
-
----
+**Thread reply** — il post completo in `/tmp/vivido-assistant-linkedin.md`:
+```
+<POST COMPLETO, come verrà pubblicato, hashtag inclusi>
 
 _Caratteri: <n>/1300_
 ```
 
-Poi invia con lo script dedicato al bot Vivido:
+Invia come reply al main:
 ```bash
-bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin.md
+bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-linkedin.md $THREAD_TS
 ```
 
-**Consegna: DM diretto al founder nel workspace Vivido** (user ID `U062VMYTXDL`, bot `vivido_assistant`). NON usare `send.sh` (è il bot Nest, workspace diverso). NON postare in #company-brain del workspace Nest. Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga l'errore nella riga di output finale e termina. Non bloccare, non chiedere conferma, non creare bozze.
+Se l'invio fallisce → retry una volta dopo 8s. Se fallisce ancora → logga e termina.
 
 ### 8. Skip onesto
 
