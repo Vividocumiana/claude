@@ -119,12 +119,50 @@ Se una voce fallisce → riscrivi (max 2 tentativi):
 
 **Anti-ripetizione**: leggi `/tmp/vivido-linkedin-history.jsonl` (crealo se non esiste) — ultime 7 bozze con `{date, pillar, hook_type, topic}`. Evita stesso pillar+hook due giorni di fila, stesso topic entro 7 giorni. Appendi la bozza di oggi dopo l'invio.
 
-### 7. Consegna via DM Slack
+### 7. Salva nel Piano Editoriale + Consegna via DM Slack
 
-Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
+**7a. Crea la pagina nel Piano Editoriale** (`collection://92b0aae4-bcc5-8326-9483-078b106b51f9`):
+
+Crea la pagina **senza `content`** (il template default si applica automaticamente) con queste properties:
+```
+Name: "LinkedIn draft — <YYYY-MM-DD> — <topic breve>"
+Status: "Bozza"
+Piattaforma: ["LinkedIn"]
+Pillar: "<pillar corrispondente tra: PAIN TARGET, Educational, Behind the Scenes, Social Proof, Promo, Entertainment, Thought Leadership>"
+Formato: "Post Singolo"
+Priorità: "🔴 Alta"
+date:Data pubblicazione:start: "<YYYY-MM-DD>"
+```
+
+Poi usa `notion-update-page` con `replace_content` per riempire le sezioni del template:
+
+```markdown
+## ✍️ Copy
+
+<POST COMPLETO qui, come verrà pubblicato, hashtag inclusi>
+
+## Fonte
+
+<fonte — es. "Granola: nome meeting (data)" — descrizione breve del materiale usato>
+
+## Meta
+
+Pillar: <X> · Hook: <tipo hook> · Registro: <lungo-caldo / staccato / etc.> · Caratteri: <n>/1300
+
+## ✅ Checklist
+
+- [ ] Copy approvato
+- [ ] Grafica/Video pronta
+- [ ] Orario confermato
+- [ ] Contenuto programmato
+```
+
+Salva il `page_id` restituito per il link Slack.
+
+**7b. Scrivi il messaggio Slack** in `/tmp/vivido-assistant-linkedin.md`:
 
 ```
-🟢 <https://notion.so/<page-id>|Bozza LinkedIn pronta>
+🟢 <https://www.notion.so/<page-id>|Bozza LinkedIn pronta>
 • <HOOK IN MAIUSCOLO — prima riga del post>
 💡 <fonte — es. "Granola: nome meeting" o "Knowledge Log: titolo entry"> · Samuele
 ```
@@ -132,7 +170,7 @@ Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo for
 Regole formato:
 - Hook **sempre in MAIUSCOLO**
 - Niente righe vuote tra le voci (compatto)
-- Il link Notion punta alla bozza salvata (o al workspace se non salvata)
+- Il link usa `https://www.notion.so/<page-id>` (senza dashes)
 
 Il post completo (testo pubblicabile + hashtag) va come **reply in thread** al messaggio sopra:
 ```
