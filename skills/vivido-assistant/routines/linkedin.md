@@ -133,7 +133,20 @@ Usa `notion-create-pages` con `data_source_id: 92b0aae4-bcc5-8326-9483-078b106b5
 - `Pillar`: il pillar più vicino tra `PAIN TARGET / Educational / Behind the Scenes / Social Proof / Promo / Entertainment / Thought Leadership`
 - `Priorità`: `🔴 Alta`
 - `date:Data pubblicazione:start`: data odierna ISO-8601
-- `content`: il testo completo del post + hashtag
+- `content`: rispetta **esattamente** il template "Nuovo Post" (`bcf0aae4-bcc5-8289-afee-0196a8dd4109`):
+
+```
+# ✍️ Copy
+\`\`\`javascript
+<POST COMPLETO con hashtag>
+\`\`\`
+---
+# ✅ Checklist
+- [ ] Copy approvato
+- [ ] Grafica/Video pronta
+- [ ] Orario confermato
+- [ ] Contenuto programmato
+```
 
 Cattura l'URL della pagina creata (`https://app.notion.com/p/<id>`).
 
