@@ -36,8 +36,8 @@ Il tell più forte da "scritto da AI" non è la singola frase: è lo **stesso sc
 Regole:
 - **Max 1 marker-firma per post**, ruotati tra post diversi (non tutti col pivot, non tutti con CTA binaria).
 - Il pivot ("ho cambiato idea") **solo se la convinzione precedente era reale** — mai uno strawman finto.
-- **Tagliare senza pietà**: 3+ em dash, parole-vetrina, rule of three meccanica, transizioni didattiche, conclusioni positive generiche.
-- **Passata anti-AI obbligatoria**: chiedi "cosa lo rende da AI?" → riscrivi quei passaggi.
+- **Tagliare senza pietà**: em dash (—) e doppio trattino (--) vietati — sostituire con virgola, punto o riformulare. Parole-vetrina, rule of three meccanica, transizioni didattiche, conclusioni positive generiche.
+- **Passata anti-AI obbligatoria**: chiedi "cosa lo rende da AI?" → riscrivi quei passaggi. In particolare: zero em dash, zero "Non è X. È Y." meccanico, zero punchline aforistica finale.
 
 ### 5b. Registro autentico
 
