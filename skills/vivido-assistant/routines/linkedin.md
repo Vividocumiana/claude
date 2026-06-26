@@ -121,10 +121,28 @@ Se una voce fallisce → riscrivi (max 2 tentativi):
 
 ### 7. Consegna via DM Slack
 
+**⚠️ Ordine obbligatorio: prima salva su Notion, poi invia su Slack.**
+
+#### 7a. Salva la bozza nel Piano Editoriale Notion
+
+Usa `notion-create-pages` con `data_source_id: 92b0aae4-bcc5-8326-9483-078b106b51f9` e queste properties:
+- `Name`: hook del post (prima riga MAIUSCOLA)
+- `Status`: `Bozza`
+- `Piattaforma`: `["LinkedIn"]`
+- `Formato`: `Post Singolo`
+- `Pillar`: il pillar più vicino tra `PAIN TARGET / Educational / Behind the Scenes / Social Proof / Promo / Entertainment / Thought Leadership`
+- `Priorità`: `🔴 Alta`
+- `date:Data pubblicazione:start`: data odierna ISO-8601
+- `content`: il testo completo del post + hashtag
+
+Cattura l'URL della pagina creata (`https://app.notion.com/p/<id>`).
+
+#### 7b. Invia il DM Slack
+
 Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo formato:
 
 ```
-🟢 <https://notion.so/<page-id>|Bozza LinkedIn pronta>
+🟢 <https://app.notion.com/p/<page-id>|Bozza LinkedIn pronta>
 • <HOOK IN MAIUSCOLO — prima riga del post>
 💡 <fonte — es. "Granola: nome meeting" o "Knowledge Log: titolo entry"> · Samuele
 ```
@@ -132,7 +150,7 @@ Scrivi il messaggio finale in `/tmp/vivido-assistant-linkedin.md` con questo for
 Regole formato:
 - Hook **sempre in MAIUSCOLO**
 - Niente righe vuote tra le voci (compatto)
-- Il link Notion punta alla bozza salvata (o al workspace se non salvata)
+- Il link Notion punta alla pagina appena creata (URL reale, non placeholder)
 
 Il post completo (testo pubblicabile + hashtag) va come **reply in thread** al messaggio sopra:
 ```
