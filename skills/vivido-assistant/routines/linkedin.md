@@ -97,21 +97,18 @@ pages: [
 ]
 ```
 
-**Corpo `content`** (replica il template "Nuovo Post", copy dentro code block):
+**Corpo `content`** — replica **esattamente** il template "Nuovo Post" (`bcf0aae4-…`): solo
+`✍️ Copy` → `---` → `✅ Checklist`. Il copy va dentro un blocco di codice **```javascript**
+(è ciò che dà il pulsante "copia testo pulito"). **Niente sezioni extra** (no Fonte, no Meta):
+la provenienza va solo nel ping Slack (§7), non nella pagina.
 
 ```
 # ✍️ Copy
-​```
+​```javascript
 <POST COMPLETO, come va pubblicato, hashtag inclusi>
 ​```
 
 ---
-
-## Fonte
-<1 riga: meeting/task/email/evento da cui nasce l'angolo>
-
-## Meta
-Pillar: <pillar> · Hook: <tipo hook> · Caratteri: <n>/1300
 
 # ✅ Checklist
 - [ ] Copy approvato
@@ -124,7 +121,8 @@ Note tecniche:
 - `Piattaforma` è multi_select → passa una **stringa JSON array** `"[\"LinkedIn\"]"`.
 - `Pillar`/`Formato`/`Priorità`/`Status` sono select/status → passa il nome esatto dell'opzione.
 - NON impostare `Data pubblicazione` (la decide il founder in revisione).
-- NON usare `template_id` (impedirebbe di iniettare il copy).
+- NON usare `template_id` (impedirebbe di iniettare il copy; replichi la struttura a mano).
+- Il body deve avere **solo** i due blocchi del template — nessuna sezione aggiuntiva.
 - Dalla risposta, recupera gli `url` delle 2 pagine create per il ping.
 
 ### 6. Aggiorna l'anti-ripetizione
