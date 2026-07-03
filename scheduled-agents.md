@@ -17,7 +17,7 @@ Da creare **sull'account Claude di Vivido**, con lo skill `/schedule` di Claude 
 | `vivido-eod` | `30 18 * * 1-5` | 18:30 lun-ven | `Invoca la skill vivido-assistant con argomento "eod".` |
 | `vivido-log-ingest-reminder` | `0 19 * * 1-5` | 19:00 lun-ven | `Invoca la skill vivido-assistant con argomento "log-ingest-reminder".` |
 | `vivido-log-ingest` | `0 22 * * 1-5` | 22:00 lun-ven | `Invoca la skill vivido-assistant con argomento "log-ingest".` |
-| `vivido-linkedin` | `45 18 * * *` | 18:45 ogni giorno (fine giornata) | `Invoca la skill vivido-assistant con argomento "linkedin".` |
+| `vivido-linkedin` | `45 17 * * *` UTC (= 18:45 Europe/London, BST) | ogni giorno | `Invoca la skill vivido-assistant con argomento "linkedin".` — **ATTIVO**: trigger `trig_016NUxAx1AKhspWLcYguadLf` (fresh session, push on) |
 
 ## Note
 
@@ -29,6 +29,10 @@ Da creare **sull'account Claude di Vivido**, con lo skill `/schedule` di Claude 
   un ping Slack al founder con i link. L'orario è modificabile (è indipendente dal loop POV).
   - **Caveat consegna**: il ping Slack richiede il bot Vivido (`VIVIDO_BOT_TOKEN`). Finché non è
     impostato, le 2 bozze vengono comunque create su Notion ma il ping fallisce (vedi `SETUP.md §5`).
+  - **Cron in UTC**: `45 17` = 18:45 durante l'ora legale (BST). In inverno (GMT=UTC) diventa 17:45
+    Europe/London → per riallineare a 18:45 metti `45 18` a fine ottobre.
+  - **Caveat Granola headless**: in sessione autonoma il connettore meeting può non essere
+    disponibile; in quel caso la routine ripiega su Notion + Gmail (niente meeting come fonte).
 - **Dopo la creazione**: lancia un **run manuale di test** di ogni agent e controlla l'output
   (specie i connettori — vedi caveat headless in `SETUP.md §6`). Solo se tutti girano puliti, lasciali attivi.
 - Se l'ambiente cloud passa `currentDate`, le routine la useranno per "oggi"; altrimenti usano la data
