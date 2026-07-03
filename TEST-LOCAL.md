@@ -8,7 +8,13 @@
 ## Valori già verificati (dal workspace Vivido World)
 - DB mappati in `skills/vivido-assistant/config.json` — Projects / Tasks / Knowledge log / Sales CRM / Clienti / Invoices / Contracts.
 - Founder Notion person: `09ff0769-85fd-4a7e-a637-b8164b9c3c5b`
-- Founder Slack user: `U062VMYTXDL` · DM channel: `D0634QNLF52`
+- Founder Slack user (Samuele, `samuele@vivido.world`): `U062MREADAB`
+- Bot Vivido Assistant: `user_id U0AVDMSQXDW` · `bot_id B0AUG1NA7N1` · DM bot↔Samuele: `D0AU40G2DDM`
+- `U062VMYTXDL` / `D0634QNLF52` = account condiviso `hello@vivido.world` ("Vivido Administration") e la
+  sua DM personale con Samuele — **non** il founder, e il bot non ne fa parte (`channel_not_found` se usato
+  con `send.sh`/token bot). Con un token utente `xoxp-...` invece funziona (posta come `hello@`, che è
+  comunque nella stessa DM di Samuele) — per questo il passo 5 sotto lo usava; se testi col bot token usa
+  `D0AU40G2DDM` o direttamente `U062MREADAB`.
 - Timezone: `Europe/London`
 
 ## Passi
@@ -46,6 +52,8 @@ python3 ~/.claude/skills/vivido-assistant/bin/notion_snapshot.py --today 2026-06
 ```bash
 echo "test vivido assistant" | bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 -
 # atteso: stampa un ts e ti arriva il messaggio in DM
+# NOTA: questo funziona SOLO col token xoxp- del passo 2 (posta come hello@, già nella DM con Samuele).
+# Con un vero token bot xoxb- questo canale dà channel_not_found: usa U062MREADAB o D0AU40G2DDM.
 ```
 
 ### 6. Test routine end-to-end

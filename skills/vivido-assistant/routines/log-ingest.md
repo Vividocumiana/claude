@@ -1,6 +1,6 @@
 # Routine: Knowledge Log Auto-Ingest
 
-Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido Assistant ↔ Samuele** (`U062VMYTXDL`), la sintetizza e scrive un'entry nel **Founder Knowledge Log** Notion. Chiude il loop: la reply alla sera diventa il POV layer del morning successivo.
+Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido Assistant ↔ Samuele** (`U062MREADAB`), la sintetizza e scrive un'entry nel **Founder Knowledge Log** Notion. Chiude il loop: la reply alla sera diventa il POV layer del morning successivo.
 
 **Quando gira**: 22:00 lun-ven (cron `0 22 * * 1-5`), ~3.5h dopo l'EOD delle 18:30. Lascia tempo al founder di rispondere senza tagliare reply tardive.
 
@@ -12,7 +12,7 @@ Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido A
 
 ### 1. Trova il messaggio EOD di oggi nella DM bot ↔ Samuele
 
-Channel: `D0634QNLF52` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele `U062VMYTXDL`).
+Channel: `D0AU40G2DDM` (DM bot Vivido Assistant `U0AVDMSQXDW` ↔ Samuele `U062MREADAB`; verificata via `conversations.list?types=im` col bot token — NON `D0634QNLF52`, quel canale è la DM hello@↔Samuele, il bot non ne fa parte → `channel_not_found`).
 
 **Regola inviolabile — niente `slack_search` su DM bot↔utente**: l'MCP `slack_search_*` autenticato come account utente NON indicizza le DM con i bot (falso negativo confermato il 2026-05-20). La lettura va fatta con `conversations.history` autenticato come **bot Vivido Assistant**, oppure via lo helper `read.sh` qui sotto (curl diretto con bot token).
 
@@ -22,12 +22,12 @@ Channel: `D0634QNLF52` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele 
 TOKEN="$(tr -d '\r\n' < ~/.claude/skills/vivido-assistant/bot.token)"
 curl -sS -G https://slack.com/api/conversations.history \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=D0634QNLF52" \
+  --data-urlencode "channel=D0AU40G2DDM" \
   --data-urlencode "limit=30"
 ```
 
 1. Recupera gli ultimi 30 messaggi della DM.
-2. Filtra i messaggi inviati dal bot Vivido Assistant (`bot_id = <VIVIDO_BOT_ID>`, `user = <VIVIDO_BOT_USER>`) che iniziano con `🌙 *EOD Debrief` AND la cui `ts` cade oggi (>= oggi 17:00 Europe/Rome).
+2. Filtra i messaggi inviati dal bot Vivido Assistant (`bot_id = B0AUG1NA7N1`, `user = U0AVDMSQXDW`) che iniziano con `🌙 *EOD Debrief` AND la cui `ts` cade oggi (>= oggi 17:00 Europe/Rome).
 3. Tieni il messaggio **più recente** che matcha → `eod_message`.
 4. Se nessun match → **skip silenzioso**: logga `ℹ️ Nessun EOD oggi nella DM bot↔Samu. Nessuna entry creata.` e termina con `ℹ️ Log-ingest skippato — nessun EOD oggi.`
 
@@ -36,14 +36,14 @@ curl -sS -G https://slack.com/api/conversations.history \
 ```bash
 curl -sS -G https://slack.com/api/conversations.replies \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=D0634QNLF52" \
+  --data-urlencode "channel=D0AU40G2DDM" \
   --data-urlencode "ts=<eod_message.ts>" \
   --data-urlencode "limit=100"
 ```
 
-1. Filtra le reply scritte dal **founder** (`U062VMYTXDL`). In una DM bot↔Samu non ci possono essere altri sender umani, ma il filtro evita di re-ingerire eventuali ack del bot stesso.
+1. Filtra le reply scritte dal **founder** (`U062MREADAB`). In una DM bot↔Samu non ci possono essere altri sender umani, ma il filtro evita di re-ingerire eventuali ack del bot stesso.
 2. Mantieni ordine cronologico. Concatena testo (separa con `\n---\n` se più di una reply).
-3. Memorizza `sender_user_id` = `U062VMYTXDL` — serve per popolare `Person` nello step 5.
+3. Memorizza `sender_user_id` = `U062MREADAB` (Samuele) — serve per popolare `Person` nello step 5.
 
 **Nota**: in questa DM solo il founder può rispondere; le reply di altri membri team (Dami, Wagane, Elia, Gabri) avvengono nelle rispettive DM bot↔membro tramite il flusso `nest-dami-log-ingest` / analoghi, non qui.
 
@@ -116,7 +116,7 @@ Properties da scrivere:
 `Created time` è auto-set da Notion.
 
 **Mapping autore → Notion user ID** (sender della reply EOD → user da scrivere in `Person`):
-- Samuele (Slack `U062VMYTXDL`, email `hello@vivido.world`) → `09ff0769-85fd-4a7e-a637-b8164b9c3c5b`
+- Samuele (Slack `U062MREADAB`, email `samuele@vivido.world`) → `09ff0769-85fd-4a7e-a637-b8164b9c3c5b` (unico "person" Notion reale — vedi `VIVIDO.md §3`)
 - Damiano (Slack `U0AD5E1UTK8`, email `<VIVIDO_TEAMMATE_EMAIL>`) → `<VIVIDO_PERSON_2>`
 - Future estensioni: leggere da `collection://<VIVIDO_DS_TEAM>` (Team Members DB) per matchare slack_id/email del sender.
 
@@ -130,7 +130,7 @@ Usa `notion-create-pages` con il data source URL della Knowledge Log. Body in ma
 
 ### 6. Notifica founder (DM, non canale)
 
-Invia un DM al founder via `send.sh D0634QNLF52`:
+Invia un DM al founder via `send.sh U062MREADAB` (MAI `D0634QNLF52`, il bot non la vede):
 
 ```
 🧠 Knowledge Log <YYYY-MM-DD> ✓

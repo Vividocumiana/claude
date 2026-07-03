@@ -16,8 +16,9 @@ Founder: **Samuele Poggio** (Cofounder, Growth — `samuele@vivido.world`). Cofo
 `hello@vivido.world` è l'account **admin/condiviso** (è quello loggato su Slack/Notion/Calendar in questa
 sessione). Timezone operativo: **Europe/London**.
 
-> **Fase test (oggi):** le routine girano e consegnano **solo al founder** (DM `D0634QNLF52`). Il routing
-> multi-owner verso il team è disattivato finché non mappiamo gli UUID Notion/Slack di ogni membro (§3).
+> **Fase test (oggi):** le routine girano e consegnano **solo al founder** (bot → `U062MREADAB`, vedi §4).
+> Il routing multi-owner verso il team è disattivato finché non mappiamo gli UUID Notion/Slack di ogni
+> membro (§3).
 
 ---
 
@@ -50,27 +51,37 @@ membri ancora da mappare (servono `notion-get-users` con email aziendali + Slack
 
 | Membro | Ruolo | Slack ID | Notion Person UUID |
 |---|---|---|---|
-| Samuele Poggio | Cofounder · Growth | `U062VMYTXDL` (admin) | `09ff0769-85fd-4a7e-a637-b8164b9c3c5b` (admin) |
+| Samuele Poggio | Cofounder · Growth | `U062MREADAB` (persona reale, `samuele@vivido.world`) | `09ff0769-85fd-4a7e-a637-b8164b9c3c5b` |
 | Federico Garzena | Cofounder · Design/Product | _da mappare_ | _da mappare_ |
 | Zeeshan / Nicolas / Gabriel | Team | _da mappare_ | _da mappare_ |
 
-> Nota: in Notion il workspace ha un solo "person" reale (`hello@`/Vivido Administration). Gli altri
-> membri hanno account Google (`@vivido.world`) ma potrebbero non essere ancora utenti Notion: verifica
-> prima di abilitare l'owner-mapping per-persona.
+> ⚠️ **Correzione (2026-07-03)**: `U062VMYTXDL` **non è Samuele** — è l'account condiviso/admin
+> `hello@vivido.world` ("Vivido Administration"), usato per autenticare gli MCP di questa sessione
+> (Notion/Slack/Gmail/Calendar). Va usato solo come account tecnico, mai come identità del founder.
+> Il vero Slack ID di Samuele è `U062MREADAB` (verificato via `slack_read_user_profile`).
+>
+> Nota: in Notion il workspace ha un solo "person" reale (l'oggetto dietro `09ff0769-...`, mappato su
+> Samuele). Gli altri membri hanno account Google (`@vivido.world`) ma potrebbero non essere ancora
+> utenti Notion: verifica prima di abilitare l'owner-mapping per-persona.
 
 ---
 
 ## 4. Slack — delivery
 
-- **DM operativa** founder: channel `D0634QNLF52` (user `U062VMYTXDL` = `hello@vivido.world`, "Vivido
-  Administration"). È dove arrivano tutte le routine e dove il founder risponde all'EOD. Il send.sh/MCP
-  accetta anche lo user ID come destinatario (chat.postMessage lo risolve sulla stessa DM).
-- **Bot Vivido**: ⚠️ **non ancora creato.** Finché non esiste il bot + `VIVIDO_BOT_TOKEN`, la consegna
-  finale autonoma (cloud) non funziona. Per i test interattivi "solo con me" si consegna via MCP Slack
-  alla DM del founder. Vedi `SETUP.md §5` per creare il bot e il secret.
+- **DM operativa** founder ↔ bot: destinatario `U062MREADAB` (Samuele; `send.sh` risolve via chat.postMessage
+  sulla DM `D0AU40G2DDM`, verificata via `conversations.list?types=im` col bot token). È qui che arrivano
+  tutte le routine e dove il founder risponde all'EOD.
+  ⚠️ **NON usare `D0634QNLF52`**: è la DM `hello@vivido.world` ↔ Samuele (due umani), il bot non ne fa
+  parte → `chat.postMessage`/`conversations.history` rispondono `channel_not_found`. Bug confermato il
+  2026-07-03 (era hardcoded così in morning/eod/weekly/log-ingest — corretto).
+- **Bot Vivido**: ✅ **esiste già** — app Slack `vivido_assistant` (workspace Vivido World, `user_id
+  U0AVDMSQXDW`, `bot_id B0AUG1NA7N1`, verificato via `auth.test`). Il token bot è disponibile in questo
+  ambiente come env `SLACK_BOT_TOKEN` (xoxb-...) e `send.sh` lo usa come fallback quando `VIVIDO_BOT_TOKEN`
+  non è settato. Per allinearsi al design (secret dedicato) resta da impostare esplicitamente
+  `VIVIDO_BOT_TOKEN` = lo stesso valore, sui secret dello scheduled agent — vedi `SETUP.md §5`.
 
-Quando il bot esiste: consegna sempre via `~/.claude/skills/vivido-assistant/send.sh` (token da env
-`VIVIDO_BOT_TOKEN` o file `vivido-bot.token`), mai `slack_send_message` MCP per la consegna finale.
+Consegna sempre via `~/.claude/skills/vivido-assistant/send.sh` (token da env `VIVIDO_BOT_TOKEN` →
+`SLACK_BOT_TOKEN` → file `vivido-bot.token`), mai `slack_send_message` MCP per la consegna finale.
 
 ---
 

@@ -18,11 +18,14 @@ snapshot li risolve. Nei `.md` servono solo come riferimento leggibile.)
 
 | Placeholder | Valore | Dove prenderlo |
 |---|---|---|
-| `<VIVIDO_FOUNDER_SLACK>` | **`U062MREADAB`** ✅ (noto) | User ID di Samuele nel workspace Vivido |
-| `<VIVIDO_DM_CHANNEL>` | `D...` | ID della DM bot Vivido ↔ Samuele. Aprila e leggi `conversations.list`/URL, oppure usa `<VIVIDO_FOUNDER_SLACK>` come fallback (chat.postMessage lo risolve sulla stessa DM) |
-| `<VIVIDO_BOT_USER>` | `U...` | User ID del bot `vivido_assistant` (Slack app → Bot user) |
-| `<VIVIDO_BOT_ID>` | `B...` | bot_id del bot (compare in `conversations.history` come `bot_id`) — serve al log-ingest per filtrare i messaggi EOD del bot |
-| `VIVIDO_BOT_TOKEN` (secret) | `xoxb-...` | Bot User OAuth Token della Slack app Vivido |
+| `<VIVIDO_FOUNDER_SLACK>` | **`U062MREADAB`** ✅ (noto, verificato via `slack_read_user_profile` = Samuele Poggio, `samuele@vivido.world`) | User ID di Samuele nel workspace Vivido |
+| `<VIVIDO_DM_CHANNEL>` | **`D0AU40G2DDM`** ✅ (noto, verificato via `conversations.list?types=im` col bot token) | DM bot Vivido ↔ Samuele. In pratica basta passare `<VIVIDO_FOUNDER_SLACK>` a `send.sh`, chat.postMessage la risolve da solo |
+| `<VIVIDO_BOT_USER>` | **`U0AVDMSQXDW`** ✅ (noto, verificato via `auth.test`) | User ID del bot `vivido_assistant` |
+| `<VIVIDO_BOT_ID>` | **`B0AUG1NA7N1`** ✅ (noto, verificato via `auth.test`) | bot_id del bot (compare in `conversations.history` come `bot_id`) — serve al log-ingest per filtrare i messaggi EOD del bot |
+| `VIVIDO_BOT_TOKEN` (secret) | `xoxb-...` | Bot User OAuth Token della Slack app Vivido. ⚠️ **Non ancora impostato come `VIVIDO_BOT_TOKEN`** in questo ambiente, ma il bot esiste già e il suo token è raggiungibile qui come env `SLACK_BOT_TOKEN` (fallback già supportato da `send.sh`) |
+
+> ⚠️ `U062VMYTXDL` (che appare in alcuni file più vecchi come "Samuele") è in realtà l'account condiviso
+> `hello@vivido.world` ("Vivido Administration"), non Samuele. Non usarlo come identità del founder.
 
 ## Email
 

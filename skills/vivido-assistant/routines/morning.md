@@ -138,7 +138,7 @@ Vietato scrivere "contesto?" per pigrizia. Il founder ha più lead di quanto ric
 `search_threads` `after:oggi-5g`. Per ogni cliente attivo: traccia ultima mail IN/OUT.
 
 ### 4. Slack mentions ultime 12h
-`slack_search_public_and_private` query `to:<@U062VMYTXDL> -is:read` limit=10. Conta + top 3 mittenti.
+`slack_search_public_and_private` query `to:<@U062MREADAB> -is:read` limit=10. Conta + top 3 mittenti.
 
 ### 4.5. Slack canale strategico Massi/Gabri/Samu (REGOLA E)
 
@@ -417,8 +417,8 @@ _(se 0: "🎯 Today's Action: 0 — pipeline pulita oggi")_
 ## Consegna
 
 1. Scrivi il testo in `/tmp/vivido-assistant-morning.md`.
-2. `bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-morning.md` (DM bot ↔ Samuele).
-3. Retry 8s → `send.sh D0634QNLF52` (stessa DM, indirizzata via user ID).
+2. `bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-morning.md` (DM bot ↔ Samuele; MAI `D0634QNLF52`, il bot non la vede → `channel_not_found`).
+3. Retry 8s → `send.sh U062MREADAB` (stessa DM).
 4. Rispondi all'utente: `✅ Morning inviato (🧠 POV: <KL_status> · <P> progetti con segnali · 🔍<C> crepe POV · 🔴<D> decisioni · CRM:<R> azioni · 💸<U> urgenze · <M> meeting)`.
 
 ---
