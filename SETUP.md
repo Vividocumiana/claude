@@ -29,7 +29,7 @@ Il lavoro di setup è quindi: (1) account+connettori Vivido, (2) repo con la ski
    - **Gmail** (`samuele@vivido.world`) — morning/eod/linkedin
    - **Google Calendar** (Vivido) — morning/eod
    - **Granola** (`hello@vivido.world`) — linkedin/meeting (⚠️ vedi caveat §6)
-3. **Bot Slack Vivido** già esistente (`vivido_assistant`). Recupera il suo **Bot User OAuth Token** (`xoxb-...`) dalla pagina dell'app Slack → diventa il secret `VIVIDO_BOT_TOKEN`.
+3. **Bot Slack Vivido** già esistente (`vivido_assistant`, workspace "Vivido World", `bot_id B0AUG1NA7N1` — verificato via `auth.test` il 2026-07-05). Recupera il suo **Bot User OAuth Token** (`xoxb-...`) dalla pagina dell'app Slack (già disponibile in questo ambiente come env `SLACK_BOT_TOKEN`) → aggiungilo come secret **`VIVIDO_BOT_TOKEN`** nelle impostazioni dell'ambiente/scheduled agent.
 4. **Integrazione interna Notion** ("Vivido Assistant") su https://www.notion.so/my-integrations → token `ntn_...` = secret `NOTION_TOKEN`. **Condividi con l'integrazione i DB** Progetti/Tasks/Knowledge Log/CRM Vivido (altrimenti lo snapshot non li vede).
 
 ---
