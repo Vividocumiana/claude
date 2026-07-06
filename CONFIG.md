@@ -20,9 +20,9 @@ snapshot li risolve. Nei `.md` servono solo come riferimento leggibile.)
 |---|---|---|
 | `<VIVIDO_FOUNDER_SLACK>` | **`U062MREADAB`** ✅ (noto) | User ID di Samuele nel workspace Vivido |
 | `<VIVIDO_DM_CHANNEL>` | `D...` | ID della DM bot Vivido ↔ Samuele. Aprila e leggi `conversations.list`/URL, oppure usa `<VIVIDO_FOUNDER_SLACK>` come fallback (chat.postMessage lo risolve sulla stessa DM) |
-| `<VIVIDO_BOT_USER>` | `U...` | User ID del bot `vivido_assistant` (Slack app → Bot user) |
-| `<VIVIDO_BOT_ID>` | `B...` | bot_id del bot (compare in `conversations.history` come `bot_id`) — serve al log-ingest per filtrare i messaggi EOD del bot |
-| `VIVIDO_BOT_TOKEN` (secret) | `xoxb-...` | Bot User OAuth Token della Slack app Vivido |
+| `<VIVIDO_BOT_USER>` | **`U0AVDMSQXDW`** ✅ (noto, verificato `auth.test` 2026-07-06) | User ID del bot `vivido_assistant` (Slack app → Bot user) |
+| `<VIVIDO_BOT_ID>` | **`B0AUG1NA7N1`** ✅ (noto, verificato `auth.test` 2026-07-06) | bot_id del bot (compare in `conversations.history` come `bot_id`) — serve al log-ingest per filtrare i messaggi EOD del bot |
+| `VIVIDO_BOT_TOKEN` (secret) | `xoxb-...` — bot già esistente, token oggi in env come `SLACK_BOT_TOKEN` (`send.sh` lo accetta come fallback). Va comunque impostato come secret `VIVIDO_BOT_TOKEN` sullo scheduled agent (azione manuale, dashboard Claude Code) per allinearsi al naming del kit | Bot User OAuth Token della Slack app Vivido (workspace `Vivido World`, `team_id` `T062ZDRPEP7`) |
 
 ## Email
 

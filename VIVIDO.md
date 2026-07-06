@@ -65,8 +65,13 @@ membri ancora da mappare (servono `notion-get-users` con email aziendali + Slack
 - **DM operativa** founder: channel `D0634QNLF52` (user `U062VMYTXDL` = `hello@vivido.world`, "Vivido
   Administration"). È dove arrivano tutte le routine e dove il founder risponde all'EOD. Il send.sh/MCP
   accetta anche lo user ID come destinatario (chat.postMessage lo risolve sulla stessa DM).
-- **Bot Vivido**: ⚠️ **non ancora creato.** Finché non esiste il bot + `VIVIDO_BOT_TOKEN`, la consegna
-  finale autonoma (cloud) non funziona. Per i test interattivi "solo con me" si consegna via MCP Slack
+- **Bot Vivido**: ✅ **creato** — app `vivido_assistant` nel workspace "Vivido World" (`team_id`
+  `T062ZDRPEP7`, bot user `U0AVDMSQXDW`, `bot_id` `B0AUG1NA7N1`). Verificato con `auth.test` il
+  2026-07-06. Il Bot User OAuth Token è presente nell'ambiente cloud come env `SLACK_BOT_TOKEN` (`send.sh`
+  lo accetta come fallback se `VIVIDO_BOT_TOKEN` non è impostato — vedi `send.sh`). ⚠️ Per allinearsi al
+  naming atteso dal kit (§5 `SETUP.md`), imposta comunque il secret `VIVIDO_BOT_TOKEN` con lo stesso
+  valore sullo scheduled agent: è un'azione nella dashboard/settings di Claude Code (secret dell'agent
+  cloud), non automatizzabile da qui. Per i test interattivi "solo con me" si consegna via MCP Slack
   alla DM del founder. Vedi `SETUP.md §5` per creare il bot e il secret.
 
 Quando il bot esiste: consegna sempre via `~/.claude/skills/vivido-assistant/send.sh` (token da env
