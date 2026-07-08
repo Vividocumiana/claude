@@ -29,7 +29,10 @@ Il lavoro di setup è quindi: (1) account+connettori Vivido, (2) repo con la ski
    - **Gmail** (`samuele@vivido.world`) — morning/eod/linkedin
    - **Google Calendar** (Vivido) — morning/eod
    - **Granola** (`hello@vivido.world`) — linkedin/meeting (⚠️ vedi caveat §6)
-3. **Bot Slack Vivido** già esistente (`vivido_assistant`). Recupera il suo **Bot User OAuth Token** (`xoxb-...`) dalla pagina dell'app Slack → diventa il secret `VIVIDO_BOT_TOKEN`.
+3. **Bot Slack Vivido** ✅ esiste (`vivido_assistant`, workspace "Vivido World", `bot_id` `B0AUG1NA7N1`,
+   verificato via `auth.test` il 2026-07-08). Il suo **Bot User OAuth Token** (`xoxb-...`) va impostato
+   come secret `VIVIDO_BOT_TOKEN` sull'ambiente/scheduled agent — vedi §5. Nel frattempo `send.sh`
+   funziona comunque via fallback `SLACK_BOT_TOKEN` (già presente in questa sessione).
 4. **Integrazione interna Notion** ("Vivido Assistant") su https://www.notion.so/my-integrations → token `ntn_...` = secret `NOTION_TOKEN`. **Condividi con l'integrazione i DB** Progetti/Tasks/Knowledge Log/CRM Vivido (altrimenti lo snapshot non li vede).
 
 ---
@@ -64,6 +67,12 @@ Due opzioni:
 ---
 
 ## 5. Secret / env dell'agent cloud
+
+**Il bot esiste già** (§1.3) — resta solo da registrare il suo token come secret dedicato. Questo
+passo è una configurazione dell'ambiente/scheduled agent cloud (pannello Claude Code on the web →
+impostazioni ambiente/secret), **non eseguibile da dentro una sessione** per motivi di sicurezza:
+nessun tool di sessione può scrivere secret nell'ambiente. Vai sulle impostazioni dell'ambiente/agent
+schedulato e imposta:
 
 Imposta queste variabili come **secret dello scheduled agent** (o env dell'ambiente cloud):
 

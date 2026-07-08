@@ -65,9 +65,12 @@ membri ancora da mappare (servono `notion-get-users` con email aziendali + Slack
 - **DM operativa** founder: channel `D0634QNLF52` (user `U062VMYTXDL` = `hello@vivido.world`, "Vivido
   Administration"). È dove arrivano tutte le routine e dove il founder risponde all'EOD. Il send.sh/MCP
   accetta anche lo user ID come destinatario (chat.postMessage lo risolve sulla stessa DM).
-- **Bot Vivido**: ⚠️ **non ancora creato.** Finché non esiste il bot + `VIVIDO_BOT_TOKEN`, la consegna
-  finale autonoma (cloud) non funziona. Per i test interattivi "solo con me" si consegna via MCP Slack
-  alla DM del founder. Vedi `SETUP.md §5` per creare il bot e il secret.
+- **Bot Vivido**: ✅ **esiste già** — app `vivido_assistant` installata sul workspace "Vivido World"
+  (`user_id` `U0AVDMSQXDW`, `bot_id` `B0AUG1NA7N1`), verificato via `auth.test` il 2026-07-08. Il suo
+  Bot User OAuth Token è attualmente esposto in sessione come env `SLACK_BOT_TOKEN` (che `send.sh` accetta
+  come fallback di `VIVIDO_BOT_TOKEN`, vedi commit `a096753`). **Resta da fare**: impostare lo stesso
+  token anche come secret dedicato `VIVIDO_BOT_TOKEN` sull'ambiente/scheduled agent (vedi `SETUP.md §5`)
+  — è una configurazione a livello di ambiente cloud, non eseguibile da dentro una sessione.
 
 Quando il bot esiste: consegna sempre via `~/.claude/skills/vivido-assistant/send.sh` (token da env
 `VIVIDO_BOT_TOKEN` o file `vivido-bot.token`), mai `slack_send_message` MCP per la consegna finale.
