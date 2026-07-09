@@ -12,17 +12,17 @@ Legge la reply del founder al messaggio EOD più recente nella **DM bot Vivido A
 
 ### 1. Trova il messaggio EOD di oggi nella DM bot ↔ Samuele
 
-Channel: `D0634QNLF52` (DM bot Vivido Assistant `<VIVIDO_BOT_USER>` ↔ Samuele `U062VMYTXDL`).
+Channel: `D0AU40G2DDM` (= `config.json` → `slack.founder_dm_channel`; DM bot Vivido Assistant ↔ Samuele `U062VMYTXDL`, risolta via `conversations.open` il 2026-07-09). ⚠️ NON `D0634QNLF52`: quell'ID è la DM founder↔hello@, il bot Vivido non la vede (`channel_not_found` anche su `conversations.info`) — era hardcoded qui da versioni precedenti ed è la causa più probabile per cui il Knowledge Log risultava sempre vuoto (nessun `eod_message` mai trovato). Se in futuro il bot viene reinstallato/il canale cambia, riottieni l'ID con `conversations.open` (`users=<founder_dm da config.json>`) e aggiorna `config.json`, non solo questo file.
 
 **Regola inviolabile — niente `slack_search` su DM bot↔utente**: l'MCP `slack_search_*` autenticato come account utente NON indicizza le DM con i bot (falso negativo confermato il 2026-05-20). La lettura va fatta con `conversations.history` autenticato come **bot Vivido Assistant**, oppure via lo helper `read.sh` qui sotto (curl diretto con bot token).
 
-**Comando consigliato** (usa il bot token che già abbiamo in `bot.token`):
+**Comando consigliato** (token: env `VIVIDO_BOT_TOKEN`/`SLACK_BOT_TOKEN` in cloud, altrimenti file `vivido-bot.token` accanto a questo script — stessa precedenza di `send.sh`):
 
 ```bash
-TOKEN="$(tr -d '\r\n' < ~/.claude/skills/vivido-assistant/bot.token)"
+TOKEN="${VIVIDO_BOT_TOKEN:-${SLACK_BOT_TOKEN:-$(tr -d '\r\n' < ~/.claude/skills/vivido-assistant/vivido-bot.token)}}"
 curl -sS -G https://slack.com/api/conversations.history \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=D0634QNLF52" \
+  --data-urlencode "channel=D0AU40G2DDM" \
   --data-urlencode "limit=30"
 ```
 
@@ -36,7 +36,7 @@ curl -sS -G https://slack.com/api/conversations.history \
 ```bash
 curl -sS -G https://slack.com/api/conversations.replies \
   -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode "channel=D0634QNLF52" \
+  --data-urlencode "channel=D0AU40G2DDM" \
   --data-urlencode "ts=<eod_message.ts>" \
   --data-urlencode "limit=100"
 ```
@@ -130,7 +130,7 @@ Usa `notion-create-pages` con il data source URL della Knowledge Log. Body in ma
 
 ### 6. Notifica founder (DM, non canale)
 
-Invia un DM al founder via `send.sh D0634QNLF52`:
+Invia un DM al founder via `send.sh U062MREADAB` (mai `D0634QNLF52`, vedi step 1):
 
 ```
 🧠 Knowledge Log <YYYY-MM-DD> ✓

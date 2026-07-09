@@ -25,9 +25,10 @@
 
   "done_statuses": ["Done", "Archived"],
 
-  "_delivery_README": "Recipient Slack del daily. founder_dm = Samuele. team = mappa nome-Notion → Slack ID (per i daily per-persona). team_broadcast=false → i brief team NON vengono inviati ai membri (solo Samuele+Federico ai loro DM); metti true per attivare la consegna a ciascun membro.",
+  "_delivery_README": "Recipient Slack del daily. founder_dm = Samuele (user ID; send.sh lo passa a chat.postMessage che apre/risolve la DM automaticamente). founder_dm_channel = ID canale DM bot↔Samuele già risolto via conversations.open il 2026-07-09 — usalo SOLO dove serve un vero channel ID (es. conversations.history/replies in log-ingest.md, che non accettano uno user ID). ⚠️ D0634QNLF52 (hardcoded in vecchie versioni delle routine) NON è questa DM: è founder↔hello@, il bot Vivido non la vede (channel_not_found) — non riusarlo, causava fallback ogni giorno su morning/eod/weekly e lettura EOD sempre vuota su log-ingest. team = mappa nome-Notion → Slack ID (per i daily per-persona). team_broadcast=false → i brief team NON vengono inviati ai membri (solo Samuele+Federico ai loro DM); metti true per attivare la consegna a ciascun membro.",
   "slack": {
     "founder_dm": "U062MREADAB",
+    "founder_dm_channel": "D0AU40G2DDM",
     "federico_dm": "U063RBJDVTJ",
     "team": {
       "Federico Garzena": "U063RBJDVTJ",

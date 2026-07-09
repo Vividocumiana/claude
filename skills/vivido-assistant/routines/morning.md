@@ -417,8 +417,8 @@ _(se 0: "🎯 Today's Action: 0 — pipeline pulita oggi")_
 ## Consegna
 
 1. Scrivi il testo in `/tmp/vivido-assistant-morning.md`.
-2. `bash ~/.claude/skills/vivido-assistant/send.sh D0634QNLF52 /tmp/vivido-assistant-morning.md` (DM bot ↔ Samuele).
-3. Retry 8s → `send.sh D0634QNLF52` (stessa DM, indirizzata via user ID).
+2. `bash ~/.claude/skills/vivido-assistant/send.sh U062MREADAB /tmp/vivido-assistant-morning.md` (DM bot ↔ Samuele, via user ID — mai `D0634QNLF52`: quella DM non è visibile al bot, vedi SKILL.md).
+3. Retry 8s → stesso comando, se ancora fallisce riprova con `founder_dm_channel` da `config.json` (`D0AU40G2DDM`).
 4. Rispondi all'utente: `✅ Morning inviato (🧠 POV: <KL_status> · <P> progetti con segnali · 🔍<C> crepe POV · 🔴<D> decisioni · CRM:<R> azioni · 💸<U> urgenze · <M> meeting)`.
 
 ---
