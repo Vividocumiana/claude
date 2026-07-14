@@ -110,9 +110,12 @@
   --ink: #000014;
   --bg: #f0f0f2;
   --dark: #1a1a1a;
-  --panel: #070733;
-  --grid-minor: rgba(207, 1, 1, 0.28);
-  --grid-major: rgba(255, 42, 42, 0.82);
+  /* two panel treatments */
+  --panel-navy-bg: #070733;
+  --panel-navy-line: rgba(207, 1, 1, 0.45);
+  --panel-red-bg: #2a0606;
+  --panel-red-line: rgba(224, 22, 22, 0.9);
+  --grid-cell: 40px;
 
   --sans: "Hanken Grotesk", "Switzer", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --serif: "Source Serif 4", "Sole Serif Text", Georgia, "Times New Roman", serif;
@@ -322,24 +325,30 @@ a { color: inherit; text-decoration: none; }
 .bar__grid {
   position: absolute;
   inset: 0;
-  background-color: var(--panel);
-  /* two-tier graph: faint minor lines + emphasized red major lines */
+  /* default = navy panel */
+  --gl: var(--panel-navy-line);
+  --gt: 1px;
+  background-color: var(--panel-navy-bg);
   background-image:
-    linear-gradient(var(--grid-minor) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
-    linear-gradient(var(--grid-major) 1.5px, transparent 1.5px),
-    linear-gradient(90deg, var(--grid-major) 1.5px, transparent 1.5px);
-  background-size: 26px 26px, 26px 26px, 104px 104px, 104px 104px;
-  background-position: center top;
+    linear-gradient(var(--gl) var(--gt), transparent var(--gt)),
+    linear-gradient(90deg, var(--gl) var(--gt), transparent var(--gt));
+  background-size: var(--grid-cell) var(--grid-cell);
+  background-position: left top;
 }
-/* soft vertical depth + top glow */
+/* dark-maroon panel with bright-red gridlines */
+.bar__grid.is-red {
+  --gl: var(--panel-red-line);
+  --gt: 1.4px;
+  background-color: var(--panel-red-bg);
+}
+/* soft vertical depth */
 .bar__grid::after {
   content: "";
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 60% at 50% 0%, rgba(255, 79, 79, 0.22), transparent 60%),
-    linear-gradient(180deg, rgba(4, 5, 56, 0) 55%, rgba(2, 2, 20, 0.55) 100%);
+    radial-gradient(120% 55% at 50% 0%, rgba(255, 80, 80, 0.12), transparent 60%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.45) 100%);
 }
 
 /* dots */
@@ -457,16 +466,11 @@ a { color: inherit; text-decoration: none; }
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-7px); }
 }
-@keyframes gridShift {
-  0% { background-position: center 0, center 0, center 0, center 0; }
-  100% { background-position: center -104px, center -104px, center -104px, center -104px; }
-}
 @keyframes pulseRing {
   0% { transform: scale(1); opacity: 0.55; }
   70%, 100% { transform: scale(2.6); opacity: 0; }
 }
 .is-alive .dot { animation: floatY 5s ease-in-out infinite; animation-delay: var(--fd, 0s); }
-.is-alive .bar__grid { animation: gridShift 9s linear infinite; }
 .is-alive .dot__pulse { animation: pulseRing 3.4s ease-out infinite; animation-delay: var(--fd, 0s); }
 
 /* ============================================================
@@ -500,7 +504,7 @@ a { color: inherit; text-decoration: none; }
     gap: 10px;
     overflow: hidden;
   }
-  .m-bar { flex: 1; position: relative; overflow: hidden; }
+  .m-bar { flex: 1; position: relative; overflow: hidden; --grid-cell: 22px; }
   .m-cards { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
   .m-cards .card { position: static; width: 100%; }
 }
@@ -555,9 +559,9 @@ a { color: inherit; text-decoration: none; }
         <!-- bars -->
         <div class="layer layer-bars" data-depth="8">
           <div class="bar bar-1" style="--d:.45s"><div class="bar__grid"></div></div>
-          <div class="bar bar-2" style="--d:.55s"><div class="bar__grid"></div></div>
+          <div class="bar bar-2" style="--d:.55s"><div class="bar__grid is-red"></div></div>
           <div class="bar bar-3" style="--d:.65s"><div class="bar__grid"></div></div>
-          <div class="bar bar-4" style="--d:.75s"><div class="bar__grid"></div></div>
+          <div class="bar bar-4" style="--d:.75s"><div class="bar__grid is-red"></div></div>
           <div class="bar bar-5" style="--d:.85s"><div class="bar__grid"></div></div>
         </div>
 
@@ -642,9 +646,9 @@ a { color: inherit; text-decoration: none; }
 
       <div class="m-chart">
         <div class="m-bar bar__grid" style="height:36%"></div>
-        <div class="m-bar bar__grid" style="height:52%"></div>
+        <div class="m-bar bar__grid is-red" style="height:52%"></div>
         <div class="m-bar bar__grid" style="height:68%"></div>
-        <div class="m-bar bar__grid" style="height:84%"></div>
+        <div class="m-bar bar__grid is-red" style="height:84%"></div>
         <div class="m-bar bar__grid" style="height:100%"></div>
       </div>
 
