@@ -111,7 +111,8 @@
   --bg: #f0f0f2;
   --dark: #1a1a1a;
   --panel: #070733;
-  --grid-line: rgba(207, 1, 1, 0.5);
+  --grid-minor: rgba(207, 1, 1, 0.28);
+  --grid-major: rgba(255, 42, 42, 0.82);
 
   --sans: "Hanken Grotesk", "Switzer", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --serif: "Source Serif 4", "Sole Serif Text", Georgia, "Times New Roman", serif;
@@ -322,10 +323,13 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   inset: 0;
   background-color: var(--panel);
+  /* two-tier graph: faint minor lines + emphasized red major lines */
   background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 26px 26px;
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(var(--grid-major) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, var(--grid-major) 1.5px, transparent 1.5px);
+  background-size: 26px 26px, 26px 26px, 104px 104px, 104px 104px;
   background-position: center top;
 }
 /* soft vertical depth + top glow */
@@ -336,17 +340,6 @@ a { color: inherit; text-decoration: none; }
   background:
     radial-gradient(120% 60% at 50% 0%, rgba(255, 79, 79, 0.22), transparent 60%),
     linear-gradient(180deg, rgba(4, 5, 56, 0) 55%, rgba(2, 2, 20, 0.55) 100%);
-}
-
-/* trend line svg overlay */
-.trend-svg { position: absolute; inset: 0; width: 1280px; height: 754px; overflow: visible; }
-.trend-line {
-  fill: none;
-  stroke: rgba(207, 1, 1, 0.55);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 0 6px rgba(255, 79, 79, 0.35));
 }
 
 /* dots */
@@ -383,8 +376,14 @@ a { color: inherit; text-decoration: none; }
   transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out);
 }
 .card:hover {
-  transform: translateY(-6px) !important;
   box-shadow: 0 34px 60px -26px rgba(4, 5, 56, 0.6);
+}
+/* hover replays the entrance animation */
+.card.replay { animation: cardPop 0.72s var(--ease-out) both; }
+@keyframes cardPop {
+  0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+  55% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .card__num {
   font-family: var(--serif-num);
@@ -443,16 +442,6 @@ a { color: inherit; text-decoration: none; }
 
 .is-revealed .dot .dot__core { transform: scale(1); transition-delay: var(--d, 0s); }
 
-.trend-line {
-  stroke-dasharray: var(--len, 2000);
-  stroke-dashoffset: var(--len, 2000);
-}
-.is-revealed .trend-line {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1.5s var(--ease-out);
-  transition-delay: 1s;
-}
-
 .headline .word {
   opacity: 0;
   transform: translateY(38px) rotate(2deg);
@@ -469,15 +458,15 @@ a { color: inherit; text-decoration: none; }
   50% { transform: translateY(-7px); }
 }
 @keyframes gridShift {
-  0% { background-position: center top; }
-  100% { background-position: center -26px; }
+  0% { background-position: center 0, center 0, center 0, center 0; }
+  100% { background-position: center -104px, center -104px, center -104px, center -104px; }
 }
 @keyframes pulseRing {
   0% { transform: scale(1); opacity: 0.55; }
   70%, 100% { transform: scale(2.6); opacity: 0; }
 }
 .is-alive .dot { animation: floatY 5s ease-in-out infinite; animation-delay: var(--fd, 0s); }
-.is-alive .bar__grid { animation: gridShift 6s linear infinite; }
+.is-alive .bar__grid { animation: gridShift 9s linear infinite; }
 .is-alive .dot__pulse { animation: pulseRing 3.4s ease-out infinite; animation-delay: var(--fd, 0s); }
 
 /* ============================================================
@@ -525,7 +514,7 @@ a { color: inherit; text-decoration: none; }
   .bar { transform: scaleY(1); }
   .dot .dot__core { transform: scale(1); }
   .headline .word { opacity: 1; transform: none; }
-  .trend-line { stroke-dashoffset: 0 !important; }
+  .card.replay { animation: none !important; }
   .is-alive .dot, .is-alive .bar__grid, .is-alive .dot__pulse { animation: none !important; }
   .btn::before { display: none; }
 }
@@ -570,14 +559,6 @@ a { color: inherit; text-decoration: none; }
           <div class="bar bar-3" style="--d:.65s"><div class="bar__grid"></div></div>
           <div class="bar bar-4" style="--d:.75s"><div class="bar__grid"></div></div>
           <div class="bar bar-5" style="--d:.85s"><div class="bar__grid"></div></div>
-        </div>
-
-        <!-- trend line -->
-        <div class="layer layer-trend" data-depth="14">
-          <svg class="trend-svg" viewBox="0 0 1280 754" preserveAspectRatio="none">
-            <polyline class="trend-line" id="trendLine"
-              points="82.05,718.71 341.47,638.34 642.00,553.84 932.66,470.45 1203.18,237.53" />
-          </svg>
         </div>
 
         <!-- dots -->
@@ -709,16 +690,7 @@ a { color: inherit; text-decoration: none; }
   fitStage();
   window.addEventListener("resize", fitStage, { passive: true });
 
-  /* ---------- 2. Trend line length (for the draw animation) ---------- */
-  var trend = document.getElementById("trendLine");
-  if (trend && trend.getTotalLength) {
-    try {
-      var len = trend.getTotalLength();
-      trend.style.setProperty("--len", len);
-    } catch (e) { /* noop */ }
-  }
-
-  /* ---------- 3. Orchestrate entrance ---------- */
+  /* ---------- 2. Orchestrate entrance ---------- */
   function reveal() {
     document.body.classList.add("is-revealed");
     runCounters();
@@ -737,31 +709,48 @@ a { color: inherit; text-decoration: none; }
     });
   }
 
-  /* ---------- 4. Number counters ---------- */
+  /* ---------- 3. Number counters ---------- */
+  function animateCount(el, delay) {
+    var to = parseFloat(el.getAttribute("data-to")) || 0;
+    var prefix = el.getAttribute("data-prefix") || "";
+    var suffix = el.getAttribute("data-suffix") || "";
+    if (reduce) { el.textContent = prefix + to + suffix; return; }
+    var start = null;
+    var dur = 1200;
+    function step(ts) {
+      if (start === null) start = ts;
+      var p = Math.min(1, (ts - start) / dur);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + Math.round(to * eased) + suffix;
+      if (p < 1) window.requestAnimationFrame(step);
+      else el.textContent = prefix + to + suffix;
+    }
+    window.setTimeout(function () { window.requestAnimationFrame(step); }, delay || 0);
+  }
   function runCounters() {
-    var nums = document.querySelectorAll(".stage .card__num[data-to]");
-    nums.forEach(function (el) {
-      var to = parseFloat(el.getAttribute("data-to")) || 0;
-      var prefix = el.getAttribute("data-prefix") || "";
-      var suffix = el.getAttribute("data-suffix") || "";
-      if (reduce) { el.textContent = prefix + to + suffix; return; }
-      var start = null;
-      var dur = 1200;
+    document.querySelectorAll(".stage .card__num[data-to]").forEach(function (el) {
       // sync start with the card's reveal delay
-      var delay = 1250;
-      function step(ts) {
-        if (start === null) start = ts;
-        var p = Math.min(1, (ts - start) / dur);
-        var eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = prefix + Math.round(to * eased) + suffix;
-        if (p < 1) window.requestAnimationFrame(step);
-        else el.textContent = prefix + to + suffix;
-      }
-      window.setTimeout(function () { window.requestAnimationFrame(step); }, delay);
+      animateCount(el, 1250);
     });
   }
 
   if (reduce) return; // skip interactive motion below
+
+  /* ---------- 4. Hover a stat card → replay its entrance ---------- */
+  document.querySelectorAll(".stage .layer-cards .card").forEach(function (card) {
+    var num = card.querySelector(".card__num[data-to]");
+    card.addEventListener("mouseenter", function () {
+      // restart the reveal animation
+      card.classList.remove("replay");
+      void card.offsetWidth; // force reflow so the animation re-triggers
+      card.classList.add("replay");
+      // and re-run the count-up in sync
+      if (num) animateCount(num, 120);
+    });
+    card.addEventListener("animationend", function (e) {
+      if (e.animationName === "cardPop") card.classList.remove("replay");
+    });
+  });
 
   /* ---------- 5. Magnetic buttons ---------- */
   document.querySelectorAll("[data-magnetic]").forEach(function (btn) {

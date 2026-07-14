@@ -12,7 +12,8 @@
   --bg: #f0f0f2;
   --dark: #1a1a1a;
   --panel: #070733;
-  --grid-line: rgba(207, 1, 1, 0.5);
+  --grid-minor: rgba(207, 1, 1, 0.28);
+  --grid-major: rgba(255, 42, 42, 0.82);
 
   --sans: "Hanken Grotesk", "Switzer", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --serif: "Source Serif 4", "Sole Serif Text", Georgia, "Times New Roman", serif;
@@ -223,10 +224,13 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   inset: 0;
   background-color: var(--panel);
+  /* two-tier graph: faint minor lines + emphasized red major lines */
   background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 26px 26px;
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(var(--grid-major) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, var(--grid-major) 1.5px, transparent 1.5px);
+  background-size: 26px 26px, 26px 26px, 104px 104px, 104px 104px;
   background-position: center top;
 }
 /* soft vertical depth + top glow */
@@ -237,17 +241,6 @@ a { color: inherit; text-decoration: none; }
   background:
     radial-gradient(120% 60% at 50% 0%, rgba(255, 79, 79, 0.22), transparent 60%),
     linear-gradient(180deg, rgba(4, 5, 56, 0) 55%, rgba(2, 2, 20, 0.55) 100%);
-}
-
-/* trend line svg overlay */
-.trend-svg { position: absolute; inset: 0; width: 1280px; height: 754px; overflow: visible; }
-.trend-line {
-  fill: none;
-  stroke: rgba(207, 1, 1, 0.55);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 0 6px rgba(255, 79, 79, 0.35));
 }
 
 /* dots */
@@ -284,8 +277,14 @@ a { color: inherit; text-decoration: none; }
   transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out);
 }
 .card:hover {
-  transform: translateY(-6px) !important;
   box-shadow: 0 34px 60px -26px rgba(4, 5, 56, 0.6);
+}
+/* hover replays the entrance animation */
+.card.replay { animation: cardPop 0.72s var(--ease-out) both; }
+@keyframes cardPop {
+  0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+  55% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .card__num {
   font-family: var(--serif-num);
@@ -344,16 +343,6 @@ a { color: inherit; text-decoration: none; }
 
 .is-revealed .dot .dot__core { transform: scale(1); transition-delay: var(--d, 0s); }
 
-.trend-line {
-  stroke-dasharray: var(--len, 2000);
-  stroke-dashoffset: var(--len, 2000);
-}
-.is-revealed .trend-line {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1.5s var(--ease-out);
-  transition-delay: 1s;
-}
-
 .headline .word {
   opacity: 0;
   transform: translateY(38px) rotate(2deg);
@@ -370,15 +359,15 @@ a { color: inherit; text-decoration: none; }
   50% { transform: translateY(-7px); }
 }
 @keyframes gridShift {
-  0% { background-position: center top; }
-  100% { background-position: center -26px; }
+  0% { background-position: center 0, center 0, center 0, center 0; }
+  100% { background-position: center -104px, center -104px, center -104px, center -104px; }
 }
 @keyframes pulseRing {
   0% { transform: scale(1); opacity: 0.55; }
   70%, 100% { transform: scale(2.6); opacity: 0; }
 }
 .is-alive .dot { animation: floatY 5s ease-in-out infinite; animation-delay: var(--fd, 0s); }
-.is-alive .bar__grid { animation: gridShift 6s linear infinite; }
+.is-alive .bar__grid { animation: gridShift 9s linear infinite; }
 .is-alive .dot__pulse { animation: pulseRing 3.4s ease-out infinite; animation-delay: var(--fd, 0s); }
 
 /* ============================================================
@@ -426,7 +415,7 @@ a { color: inherit; text-decoration: none; }
   .bar { transform: scaleY(1); }
   .dot .dot__core { transform: scale(1); }
   .headline .word { opacity: 1; transform: none; }
-  .trend-line { stroke-dashoffset: 0 !important; }
+  .card.replay { animation: none !important; }
   .is-alive .dot, .is-alive .bar__grid, .is-alive .dot__pulse { animation: none !important; }
   .btn::before { display: none; }
 }

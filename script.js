@@ -20,16 +20,7 @@
   fitStage();
   window.addEventListener("resize", fitStage, { passive: true });
 
-  /* ---------- 2. Trend line length (for the draw animation) ---------- */
-  var trend = document.getElementById("trendLine");
-  if (trend && trend.getTotalLength) {
-    try {
-      var len = trend.getTotalLength();
-      trend.style.setProperty("--len", len);
-    } catch (e) { /* noop */ }
-  }
-
-  /* ---------- 3. Orchestrate entrance ---------- */
+  /* ---------- 2. Orchestrate entrance ---------- */
   function reveal() {
     document.body.classList.add("is-revealed");
     runCounters();
@@ -48,31 +39,48 @@
     });
   }
 
-  /* ---------- 4. Number counters ---------- */
+  /* ---------- 3. Number counters ---------- */
+  function animateCount(el, delay) {
+    var to = parseFloat(el.getAttribute("data-to")) || 0;
+    var prefix = el.getAttribute("data-prefix") || "";
+    var suffix = el.getAttribute("data-suffix") || "";
+    if (reduce) { el.textContent = prefix + to + suffix; return; }
+    var start = null;
+    var dur = 1200;
+    function step(ts) {
+      if (start === null) start = ts;
+      var p = Math.min(1, (ts - start) / dur);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + Math.round(to * eased) + suffix;
+      if (p < 1) window.requestAnimationFrame(step);
+      else el.textContent = prefix + to + suffix;
+    }
+    window.setTimeout(function () { window.requestAnimationFrame(step); }, delay || 0);
+  }
   function runCounters() {
-    var nums = document.querySelectorAll(".stage .card__num[data-to]");
-    nums.forEach(function (el) {
-      var to = parseFloat(el.getAttribute("data-to")) || 0;
-      var prefix = el.getAttribute("data-prefix") || "";
-      var suffix = el.getAttribute("data-suffix") || "";
-      if (reduce) { el.textContent = prefix + to + suffix; return; }
-      var start = null;
-      var dur = 1200;
+    document.querySelectorAll(".stage .card__num[data-to]").forEach(function (el) {
       // sync start with the card's reveal delay
-      var delay = 1250;
-      function step(ts) {
-        if (start === null) start = ts;
-        var p = Math.min(1, (ts - start) / dur);
-        var eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = prefix + Math.round(to * eased) + suffix;
-        if (p < 1) window.requestAnimationFrame(step);
-        else el.textContent = prefix + to + suffix;
-      }
-      window.setTimeout(function () { window.requestAnimationFrame(step); }, delay);
+      animateCount(el, 1250);
     });
   }
 
   if (reduce) return; // skip interactive motion below
+
+  /* ---------- 4. Hover a stat card → replay its entrance ---------- */
+  document.querySelectorAll(".stage .layer-cards .card").forEach(function (card) {
+    var num = card.querySelector(".card__num[data-to]");
+    card.addEventListener("mouseenter", function () {
+      // restart the reveal animation
+      card.classList.remove("replay");
+      void card.offsetWidth; // force reflow so the animation re-triggers
+      card.classList.add("replay");
+      // and re-run the count-up in sync
+      if (num) animateCount(num, 120);
+    });
+    card.addEventListener("animationend", function (e) {
+      if (e.animationName === "cardPop") card.classList.remove("replay");
+    });
+  });
 
   /* ---------- 5. Magnetic buttons ---------- */
   document.querySelectorAll("[data-magnetic]").forEach(function (btn) {
