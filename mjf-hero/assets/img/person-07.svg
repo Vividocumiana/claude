@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="83" height="83" viewBox="0 0 83 83" role="img" aria-label="Ritratto professionista 07">
+  <defs>
+    <linearGradient id="bg07" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#e7ddd6"/>
+      <stop offset="1" stop-color="#cbb49f"/>
+    </linearGradient>
+    <radialGradient id="vig07" cx="0.5" cy="0.38" r="0.75">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.14"/>
+    </radialGradient>
+    <clipPath id="clip07"><rect width="83" height="83" rx="6.4"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip07)">
+    <rect width="83" height="83" fill="url(#bg07)"/>
+    <!-- shoulders -->
+    <path d="M 10.399999999999999 83 Q 14.399999999999999 50.9 40.4 50.9 Q 66.4 50.9 70.4 83 Z" fill="#4a3a4d"/>
+    <!-- neck -->
+    <rect x="35.4" y="40.9" width="10" height="12" rx="4" fill="#e6c19e"/>
+    <!-- head -->
+    <circle cx="40.4" cy="30" r="16.9" fill="#e6c19e"/>
+    <!-- hair hint -->
+    <path d="M 23.5 28 A 16.9 16.9 0 0 1 57.3 28 Q 40.4 10.100000000000001 23.5 28 Z" fill="#000000" fill-opacity="0.22"/>
+    <rect width="83" height="83" fill="url(#vig07)"/>
+  </g>
+</svg>

@@ -1,0 +1,459 @@
+/* ============================================================================
+   MJF Professional Network — Hero
+   Values transcribed 1:1 from Figma (node 31:1537). Colors, type, spacing exact.
+   ============================================================================ */
+
+:root {
+  --blue:            #3a96fe;
+  --blue-dark:       #1f7ff0;   /* hover darken for primary button */
+  --blue-tint:       rgba(58, 150, 254, 0.10);
+  --blue-box-bg:     #ebf4ff;
+  --grey-tile:       #f7f5f4;
+  --ink:             #000000;
+  --ink-60:          rgba(0, 0, 0, 0.60);
+  --hairline:        rgba(0, 0, 0, 0.10);
+  --white:           #ffffff;
+
+  --stage-w: 1280px;
+  --stage-h: 754px;
+  --tile:    83.2px;
+  --tile-radius: 6.4px;
+
+  --font: "Switzer", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { overflow-x: hidden; }
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; margin: 0; padding: 0; }
+
+/* ------------------------------------------------------------------ hero shell */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scaler: JS sets --scale so the fixed 1280 stage scales down proportionally.
+   transform-origin top center keeps it centered. */
+.hero__scaler {
+  position: relative;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  transform: scale(var(--scale, 1));
+  transform-origin: top center;
+  flex: 0 0 auto;
+}
+
+.stage {
+  position: relative;
+  width: var(--stage-w);
+  height: var(--stage-h);
+}
+
+/* --------------------------------------------------------------- scatter tiles */
+.tiles { position: absolute; inset: 0; }
+
+.tile {
+  position: absolute;
+  width: var(--tile);
+  height: var(--tile);
+  border-radius: var(--tile-radius);
+  overflow: hidden;
+  will-change: transform, opacity;
+  /* base opacity comes from data-op, applied inline by JS via --base-op */
+  opacity: var(--base-op, 1);
+}
+
+.tile img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  border-radius: var(--tile-radius);
+}
+
+.tile--grey { background: var(--grey-tile); }
+
+/* The grey overlay used for the person<->grey state crossfade */
+.tile__grey-layer {
+  position: absolute;
+  inset: 0;
+  background: var(--grey-tile);
+  border-radius: var(--tile-radius);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------- nav pill */
+.nav {
+  position: absolute;
+  top: 35.67px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: var(--white);
+  border: 1px solid var(--hairline);
+  border-radius: 15px;
+  padding: 8px 8px 8px 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+.nav__logo {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding-right: 4px;
+}
+.nav__logo-mjf {
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif; /* MJF wordmark is a serif logotype */
+}
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  font-size: 13px;
+  color: var(--ink-60);
+}
+.nav__links a {
+  position: relative;
+  color: var(--ink-60);
+  transition: color 0.25s ease;
+  padding: 2px 0;
+  white-space: nowrap;
+}
+/* animated underline on hover */
+.nav__links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1.5px;
+  background: var(--blue);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav__links a:hover { color: var(--blue); }
+.nav__links a:hover::after { transform: scaleX(1); }
+
+/* -------------------------------------------------------------------- buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 0;
+  white-space: nowrap;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              background 0.25s ease, box-shadow 0.28s ease, color 0.25s ease;
+}
+
+.btn--nav {
+  background: var(--blue);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 7px 12px;
+  border-radius: 8px;
+}
+.btn--nav:hover {
+  background: var(--blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(58, 150, 254, 0.35);
+}
+
+.btn--primary {
+  background: var(--blue);
+  color: var(--white);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+.btn--primary:hover {
+  background: var(--blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(58, 150, 254, 0.35);
+}
+
+.btn--secondary {
+  background: var(--white);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+.btn--secondary:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue);
+  color: var(--blue);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.btn:active { transform: translateY(0) scale(0.98); }
+
+/* ------------------------------------------------------------------ hero content */
+.hero__content {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 10.6px);
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  width: 761.5px;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue-tint);
+  color: var(--blue);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 4px 16px;
+  border-radius: 32px;
+}
+
+.hero__title {
+  margin: 0;
+  font-size: 56px;
+  line-height: 64px;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+
+/* inline "persone" badge that gets typewritten */
+.persone {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+  background: var(--blue-box-bg);
+  border: 1px solid var(--blue);
+  border-radius: 12px;
+  padding: 2px 16px 6px;
+  color: var(--blue);
+  transform: translateY(4px); /* optical alignment onto the text baseline */
+  line-height: 1;
+}
+.persone__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--blue);
+}
+.persone__icon svg { width: 28px; height: 28px; display: block; }
+
+.persone__text {
+  font-size: 40px;
+  line-height: 40px;
+  color: var(--blue);
+  white-space: nowrap;
+  font-weight: 400;
+}
+.persone__caret {
+  width: 2px;
+  height: 34px;
+  background: var(--blue);
+  border-radius: 2px;
+  margin-left: 1px;
+  opacity: 0;
+}
+.persone__caret.is-on { opacity: 1; }
+
+.hero__subtitle {
+  margin: 0;
+  width: 422.5px;
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* burger hidden on desktop */
+.nav__burger { display: none; }
+
+/* ============================================================================
+   Entrance animation initial states (GSAP reveals them). Fallback: if JS never
+   runs, .no-js on <html> keeps everything visible.
+   ============================================================================ */
+.js .hero__content > *,
+.js .nav { opacity: 0; }
+.js .tile { opacity: 0; }
+
+/* ============================================================================
+   RESPONSIVE
+   Desktop/tablet: the JS scaler shrinks the whole 1280 stage (pixel-faithful).
+   <=720px: switch to a clean flow layout — reduced scatter, readable content.
+   ============================================================================ */
+@media (max-width: 720px) {
+  .hero { align-items: flex-start; }
+  .hero__scaler {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+    transform: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 96px 20px 48px;
+  }
+  .stage {
+    width: 100%;
+    height: auto;
+    min-height: calc(100vh - 144px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Nav becomes a compact top bar */
+  .nav {
+    top: 16px;
+    left: 50%;
+    width: calc(100% - 32px);
+    max-width: 420px;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 8px 8px 8px 14px;
+  }
+  .nav__links,
+  .btn--nav { display: none; }
+  .nav__burger {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 40px;
+    height: 34px;
+    background: var(--blue);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .nav__burger span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Burger open: dropdown menu of links + call button */
+  .nav.is-open {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .nav.is-open .nav__links,
+  .nav.is-open .btn--nav {
+    display: flex;
+    flex-basis: 100%;
+    order: 3;
+  }
+  .nav.is-open .nav__links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 8px 6px 4px;
+    border-top: 1px solid var(--hairline);
+    margin-top: 6px;
+    font-size: 15px;
+  }
+  .nav.is-open .btn--nav {
+    justify-content: center;
+    margin-top: 4px;
+  }
+  .nav.is-open .nav__burger span:first-child { transform: translateY(3.5px) rotate(45deg); }
+  .nav.is-open .nav__burger span:last-child { transform: translateY(-3.5px) rotate(-45deg); }
+
+  /* Content flows normally */
+  .hero__content {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: 520px;
+    gap: 18px;
+  }
+  .js .hero__content > *,
+  .js .nav { opacity: 1; } /* mobile: no scaler entrance offsets, show immediately */
+
+  .hero__title { font-size: clamp(30px, 8.5vw, 40px); line-height: 1.15; }
+  .title-br { display: none; }
+  .persone { padding: 2px 12px 4px; transform: translateY(2px); }
+  .persone__icon svg { width: 22px; height: 22px; }
+  .persone__text { font-size: clamp(24px, 7vw, 32px); line-height: 1; }
+  .persone__caret { height: clamp(22px, 6vw, 28px); }
+  .hero__subtitle { width: 100%; font-size: 15px; }
+
+  .hero__actions { flex-direction: column; width: 100%; }
+  .hero__actions .btn { width: 100%; }
+
+  /* Reduced scatter: keep a sparse set of tiles at the edges, hide the rest.
+     JS repositions the survivors to the corners so text stays clear. */
+  .tiles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .tile { display: none; }
+  .tile.is-mobile { display: block; }
+}
+
+/* very small phones: trim the mobile scatter further */
+@media (max-width: 380px) {
+  .tile.is-mobile.is-mobile-extra { display: none; }
+}
+
+/* ---------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn, .nav__links a, .nav__links a::after { transition: none; }
+}
