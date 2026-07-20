@@ -75,6 +75,17 @@ Imposta queste variabili come **secret dello scheduled agent** (o env dell'ambie
 
 `send.sh` e `notion_snapshot.py` leggono **prima** l'env, poi il file locale — quindi in cloud bastano i secret, in locale bastano i file. Niente token nel repo.
 
+> **Stato attuale (2026-07-20):** la consegna funziona già — `send.sh` trova un token bot valido
+> nell'env `SLACK_BOT_TOKEN` (fallback esplicito, vedi codice) e l'invio di test alla DM del founder
+> è andato a buon fine. Non esiste ancora un secret separato chiamato `VIVIDO_BOT_TOKEN`: se lo si
+> vuole (per avere un bot dedicato distinto da altri usi di `SLACK_BOT_TOKEN`), i passi sono:
+> **(A)** creare/recuperare l'app Slack (`api.slack.com/apps` → workspace Vivido World) e copiarne il
+> Bot User OAuth Token (`xoxb-...`) — richiede un umano con accesso admin al workspace Slack, l'agent
+> non può farlo; **(B)** aggiungere quel valore come secret `VIVIDO_BOT_TOKEN` nell'ambiente
+> cloud/agent — anche questo è un passo di configurazione ambiente che l'agent non ha i permessi per
+> fare autonomamente. Finché questi due passi non vengono fatti a mano, il fallback su
+> `SLACK_BOT_TOKEN` resta sufficiente e non c'è nulla di rotto.
+
 Se l'ambiente cloud **non** supporta env-secret per gli script bash/python, due fallback:
 - usa `config.json` per i DB (non è segreto) e committa i token solo in un repo **privato** (accettabile, non ideale);
 - oppure salta `notion_snapshot.py` e fai enumerare alle routine via MCP Notion (più semplice ma fuzzy — ok solo se i DB Vivido sono piccoli; vedi `routines/_data-layer.md`).
