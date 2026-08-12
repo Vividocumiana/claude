@@ -8,30 +8,21 @@ All classes are suffixed `_theia`; variants are combo classes (`is-blue_theia`,
 
 ---
 
-## What is in Webflow already
-
-Structure and styling were built headlessly via the Webflow MCP:
+## Structure
 
 ```
-section.hero_theia
-├── img.hero_bg_theia                     background vector
-├── div.nav_theia                         fixed top nav pill
-│   ├── .nav_left_theia  → logo + .nav_menu_theia (5 links, 2 with caret)
-│   └── a.nav_btn_theia  → "Area Riservata"
-├── div.hero_inner_theia                  max-width 1440, 64px side padding
-│   ├── .hero_rating_theia                Trustpilot rating + subline
-│   └── .hero_headrow_theia               h1 + subcopy, bottom-aligned
-├── div.marquee_wrap_theia                credential pills + edge fades
-│   └── .marquee_theia[data-draggable-marquee-init]
-│       └── .marquee_collection_theia[data-draggable-marquee-collection]
-│           └── .marquee_list_theia[data-draggable-marquee-list]
-│               └── .pill_theia × 5
-├── div.radial_theia[data-radial-slider-init]
-│   └── .radial_collection_theia[data-radial-slider-collection]
-│       └── .radial_list_theia[data-radial-slider-list]
-│           └── .radial_item_theia[data-radial-slider-item] × 5
-│               └── .doccard_theia
-└── a.hero_cta_theia                      fixed bottom CTA pill
+body
+├── section.hero_theia
+│   ├── img.hero_bg_theia                 background vector
+│   ├── div.nav_theia                     fixed top nav pill
+│   ├── div.hero_inner_theia              rating + h1 + subcopy
+│   ├── div.marquee_wrap_theia            credential pills + edge fades
+│   ├── div.radial_theia                  5 doctor cards on an arc
+│   └── a.hero_cta_theia                  fixed bottom CTA pill
+└── div.codes_theia  ("codes")
+    ├── embed  code / global — deps + base
+    ├── embed  code / marquee — style + script
+    └── embed  code / radial slider — style + script
 ```
 
 Card order in the DOM is **not** left-to-right. The script places item 0 at the
@@ -39,35 +30,106 @@ centre and fans the rest out as offsets `0, +1, +2, −2, −1`, so the DOM orde
 `blue → violet → coral → olive → amber` renders as the Figma order
 `olive, amber, blue, violet, coral` left-to-right.
 
-### Site-level custom code (already written)
+---
 
-Lives in Site settings → Custom code → Head. It carries the Google Fonts link
-and the attribute-selector rules that cannot be expressed as Webflow classes:
-the slider's `--slider-rotate` / `--slider-radius`, the grab cursors, and the
-Designer-mode rule that lays the cards out in a scrollable row so they stay
-editable on canvas.
+## Sizing system — no fixed pixels
 
-Arc geometry was derived from the Figma placement: cards sit 411px apart at
-1440px wide, which is `4deg` of step at a `1375%` transform origin.
+Two rules carry the whole layout.
+
+**1. Fluid rem via `clamp()`.** Every root-level size interpolates between a
+20rem (320px) and a 90rem (1440px) viewport, holding flat outside that range:
+
+| Role | Value |
+| --- | --- |
+| small text | `clamp(0.875rem, 0.8393rem + 0.1786vw, 1rem)` |
+| lead text | `clamp(1rem, 0.9643rem + 0.1786vw, 1.125rem)` |
+| display | `clamp(2.125rem, 1.4464rem + 3.3929vw, 4.5rem)` |
+| page gutter | `clamp(1.25rem, 0.4643rem + 3.9286vw, 4rem)` |
+| card scale | `clamp(0.9375rem, 0.7885rem + 0.745vw, 1.459rem)` |
+
+**2. Components scale as one block.** Each component sets its own fluid
+`font-size` and lays its internals out in `em`. A doctor card is `16em` wide
+with every inset, radius, gap and label expressed against that same em, so the
+card resizes as a single object rather than as loose parts drifting apart.
+The nav, the pills and the CTA work the same way.
+
+Consequences worth knowing:
+
+- Widths that were fixed in Figma became ratios: the headline is `60.3%` and
+  the subcopy `32.45%` of the container, which is exactly their Figma ratio.
+- Letter-spacing and line-height are unitless or `em`, so they track font size
+  instead of breaking at odd viewports.
+- Hairlines stay at `0.0625rem` — borders should not scale with the layout, but
+  they should still respond to a user's root font-size preference.
+- Media queries now carry **layout changes only** — `width: 100%`,
+  `display: none`, `flex-direction: column`. There is not a single pixel
+  sizing override left to fight the fluid scale.
+
+The slider arc scales the same way: `--slider-radius` is a percentage of card
+height, so the wheel's geometry is proportional at every width. Only the
+angular step is tuned per breakpoint, because a tighter screen wants a denser
+arc, not merely a smaller one.
 
 ---
 
-## Remaining manual steps
+## The `codes` div
 
-### 1. Fonts
+All component CSS and JS live in HTML embeds inside a `codes` div at the end of
+the body, one embed per component. Page-level custom code returns HTTP 406 on
+this site's plan, so embeds are also the only writable place for the
+attribute-driven CSS the sliders need.
 
-`Host Grotesk` and `DM Sans` are pulled from Google Fonts by the custom code, so
-the page renders correctly on publish. They are **not** in the Webflow style
-panel dropdown yet. To get them there: Site settings → Fonts → Google Fonts →
-add `Host Grotesk` (300–800) and `DM Sans` (400–700).
+Order matters: the **global** embed loads GSAP and its plugins, so the two
+component embeds below it can rely on those globals being present.
 
-### 2. Assets
+Site settings → Custom code → Head holds **only** the Google Fonts links, which
+need to resolve before first paint.
 
-Every `<img>` was created without a bound asset — Webflow only accepts images
-that already exist in the site's asset library, and the build environment cannot
-reach `figma.com` to upload them. Assets must be uploaded with the Webflow
-Designer open (the `asset_tool` MCP bridge), then bound to the existing image
-elements.
+To move a component to Slater later, replace that embed's `<script>` body with a
+`<script src>` — the `<style>` block stays where it is.
+
+---
+
+## Slider behaviour changes
+
+The Osmo radial slider ships as a click/drag carousel. Five changes were made,
+each marked `THEIA:` in the source:
+
+1. **Autoplay.** A looping relative tween rotates the wheel continuously.
+   `repeatRefresh: true` re-reads the relative target every loop so a drag never
+   makes it snap back to a stale start value.
+2. **No prev/next.** The buttons are simply absent from the Webflow markup. The
+   control code is left intact, so adding dots or arrows later still works — the
+   only addition is an `onComplete` that hands the wheel back to autoplay.
+3. **Smooth hover pause.** Speed is a `timeScale` eased between 1 and 0 rather
+   than a hard pause, so hovering coasts to a stop over `0.6s` and spins back up
+   over `0.9s`.
+4. **Drag interop.** Autoplay pauses on press and resyncs after the throw
+   settles. A tap with no throw never fires `onThrowComplete`, so `onRelease`
+   resyncs when `isThrowing` is false.
+5. **Reduced motion.** `prefers-reduced-motion: reduce` leaves the wheel static
+   and draggable; the marquee stops looping entirely.
+
+Tuning lives in the `THEIA_RADIAL` object at the top of the file.
+
+---
+
+## Assets — still outstanding
+
+Every `<img>` element exists but has no bound asset. Webflow only accepts images
+already present in the site's asset library, and there are exactly two ways in:
+
+- **Designer bridge.** `asset_tool` has Webflow's own servers fetch the Figma
+  URL. It needs the Designer opened through the MCP app link — having the
+  Designer merely open is not enough, the app has to be running inside it.
+- **Manual upload.** Export from Figma, drag into the Webflow asset manager.
+  The assets API is readable headlessly, so binding them to the right elements
+  afterwards is automatic and needs no Designer.
+
+Downloading the bytes here and pushing them over the REST API is **not**
+available: `www.figma.com` is blocked by this environment's egress policy
+(403 on CONNECT), and the proxy documentation is explicit that policy denials
+must be reported rather than routed around.
 
 Figma asset URLs expire ~7 days after they are issued, so re-pull them from the
 Figma MCP if this is picked up later.
@@ -85,57 +147,27 @@ Figma MCP if this is picked up later.
 | `.doccard_img_theia` olive + amber | `e282e0b3-…png` |
 | `.doccard_badge-glyph_theia` | `9251e078` blue, `e2f518ae` violet, `b8fc28fd` coral, `bf691512` amber |
 
-### 3. Slater
-
-Load these dependencies, then the two files in this folder:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/Draggable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/InertiaPlugin.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/CustomEase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/Observer.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/ScrollTrigger.min.js"></script>
-```
-
-- `radial-cards-slider.js` — Osmo base **plus** the requested behaviour changes
-- `draggable-marquee.js` — Osmo base, unmodified
-
 ---
 
-## Slider behaviour changes
+## Also outstanding
 
-The Osmo radial slider ships as a click/drag carousel. Four changes were made,
-each marked `THEIA:` in the source:
-
-1. **Autoplay.** A looping relative tween rotates the wheel continuously.
-   `repeatRefresh: true` re-reads the relative target every loop so a drag never
-   makes it snap back to a stale start value.
-2. **No prev/next.** The buttons are simply absent from the Webflow markup. The
-   control code is left intact, so adding dots or arrows later still works — the
-   only addition is an `onComplete` that hands the wheel back to autoplay.
-3. **Smooth hover pause.** Speed is a `timeScale` eased between 1 and 0 rather
-   than a hard pause, so hovering coasts to a stop over `0.6s` and spins back up
-   over `0.9s`.
-4. **Drag interop.** Autoplay pauses on press and resyncs after the throw
-   settles. A tap with no throw never fires `onThrowComplete`, so `onRelease`
-   resyncs when `isThrowing` is false.
-
-Tuning lives in the `THEIA_RADIAL` object at the top of the file.
+**Fonts.** `Host Grotesk` and `DM Sans` load from Google Fonts, so the page
+renders correctly on publish, but they are not in the Webflow style panel
+dropdown. Add them under Site settings → Fonts → Google Fonts:
+Host Grotesk 300–800, DM Sans 400–700.
 
 ---
 
 ## Decisions worth a second look
 
-- **Nav and CTA are `position: fixed`.** The Figma frame is viewport-height and
-  both pills are viewport-anchored, which reads as a floating nav plus a
-  persistent booking CTA. If they should scroll away with the hero instead,
-  change `position` to `absolute` on `.nav_theia` and `.hero_cta_theia`.
-- **Card corner radius unified to 24px.** Figma has 27px on three cards and 20px
-  on two, which looks like drift rather than intent.
+- **Nav and CTA are `position: fixed`.** Both are viewport-anchored in Figma,
+  which reads as a floating nav plus a persistent booking CTA. One property to
+  flip if they should scroll away with the hero instead.
+- **Card corner radius unified.** Figma has 27px on three cards and 20px on two,
+  which looks like drift rather than intent.
 - **No mobile nav yet.** `.nav_menu_theia` is hidden below 991px because the
   design has no mobile menu — the burger and its panel still need designing.
 - **The arc is a compromise.** Figma's card rotations (±4°, ±7.3°) do not sit on
   the same circle as their positions, so no single radius reproduces both. The
   rotation was matched, since tilt reads more strongly than a ~20px difference in
-  vertical drop. Adjust `--slider-radius` in the site custom code to taste.
+  vertical drop.

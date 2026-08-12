@@ -13,6 +13,8 @@
 gsap.registerPlugin(Observer, ScrollTrigger);
 
 function initDraggableMarquee() {
+  // THEIA: respect the OS "reduce motion" setting — items stay put, no loop, no drag.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const wrappers = document.querySelectorAll("[data-draggable-marquee-init]");
 
   const getNumberAttr = (el, name, fallback) => {
@@ -22,6 +24,7 @@ function initDraggableMarquee() {
 
   wrappers.forEach((wrapper) => {
     if (wrapper.getAttribute("data-draggable-marquee-init") === "initialized") return;
+    if (reduceMotion) { wrapper.setAttribute("data-draggable-marquee-init", "initialized"); return; }
 
     const collection = wrapper.querySelector("[data-draggable-marquee-collection]");
     const list = wrapper.querySelector("[data-draggable-marquee-list]");

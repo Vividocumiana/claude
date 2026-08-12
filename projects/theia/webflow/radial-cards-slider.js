@@ -27,6 +27,8 @@ const THEIA_RADIAL = {
 function initRadialCardsSlider() {
   const slideDuration = 1;
   const clickEase = 'radial';
+  // THEIA: respect the OS "reduce motion" setting — drag still works, autoplay does not run.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   document.querySelectorAll('[data-radial-slider-init]').forEach(container => {
     if (container._radialSliderDraggable) container._radialSliderDraggable.kill();
@@ -350,6 +352,7 @@ function initRadialCardsSlider() {
       ease: 'none',
       repeat: -1,
       repeatRefresh: true, // re-reads the relative value each loop, so it never snaps back
+      paused: reduceMotion,
       onUpdate: render
     });
 
@@ -364,18 +367,21 @@ function initRadialCardsSlider() {
 
     // Picks the tween back up from wherever the drag left the wheel.
     const resyncAutoplay = () => {
+      if (reduceMotion) return;
       autoplay.invalidate().restart();
       applySpeed();
     };
 
     applySpeed();
 
-    const onEnter = () => easeSpeedTo(0, THEIA_RADIAL.hoverSlowDown);
-    const onLeave = () => easeSpeedTo(1, THEIA_RADIAL.hoverSpeedUp);
+    if (!reduceMotion) {
+      const onEnter = () => easeSpeedTo(0, THEIA_RADIAL.hoverSlowDown);
+      const onLeave = () => easeSpeedTo(1, THEIA_RADIAL.hoverSpeedUp);
 
-    container.addEventListener('mouseenter', onEnter);
-    container.addEventListener('mouseleave', onLeave);
-    container._theiaHover = { enter: onEnter, leave: onLeave };
+      container.addEventListener('mouseenter', onEnter);
+      container.addEventListener('mouseleave', onLeave);
+      container._theiaHover = { enter: onEnter, leave: onLeave };
+    }
     /* ---------------------------- end THEIA ---------------------------- */
 
     controls.forEach(btn => {
