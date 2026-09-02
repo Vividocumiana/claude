@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| `index.html` | **The page to send now.** Three sections: *the packages*, *side by side*, *add-ons & ongoing care*. |
+| `index.html` | **The page to send now.** Three sections, in order: *the packages*, *add-ons & ongoing care*, *side by side*. |
 | `full-page.html` | The complete version kept for later — adds hero, marquee, *meet the designer*, process, working rules, FAQ and the closing CTA. |
 
 No build step — open the file, or drop it on any static host (Netlify, Vercel, GitHub Pages, a `/packages`
@@ -80,4 +80,7 @@ studio for websites (in `full-page.html`), without commercial terms.
 ## Content
 
 Prices, deliverables, timelines, revision counts, payment splits, add-ons and the Brand Care retainer
-all match the approved offer. All prices exclude VAT; the footer states a 30-day validity.
+all match the approved offer: Launch Kit €490, Identity €990, Brand System €2,490, Custom from €3,500,
+Brand Care €290/month. The Launch Kit's €490 is credited against Identity if the client moves up within
+30 days — stated on the card and under the comparison table. All prices exclude VAT; the footer states a
+30-day validity.
