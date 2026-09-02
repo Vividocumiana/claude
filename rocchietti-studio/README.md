@@ -1,43 +1,49 @@
-# Rocchietti Studio — Quote / Packages page
+# Rocchietti Studio — Packages page
 
-Single self-contained page (`index.html`) to send to leads: they discover the packages and book a call.
-No build step — open the file, or drop it on any static host (Netlify, Vercel, GitHub Pages, a `/quote`
-folder on the studio site).
+| File | What it is |
+|---|---|
+| `index.html` | **The page to send now.** Three sections: *the packages*, *side by side*, *add-ons & ongoing care*. |
+| `full-page.html` | The complete version kept for later — adds hero, marquee, *meet the designer*, process, working rules, FAQ and the closing CTA. |
 
-**Stack:** Tailwind (Play CDN) + GSAP 3.12.5 (ScrollTrigger + Draggable), Google Fonts
-(Quicksand / Caveat / Caveat Brush). Everything else is inline.
+No build step — open the file, or drop it on any static host (Netlify, Vercel, GitHub Pages, a `/packages`
+folder on the studio site). Keep `assets/` next to the HTML.
+
+**Stack:** Tailwind (Play CDN) + GSAP 3.12.5 (ScrollTrigger), Google Fonts (Quicksand / Caveat /
+Caveat Brush). Everything else is inline.
 
 ---
 
-## Before sending it out — 3 things to change
+## Before sending it out
 
-1. **Booking link and email** — at the top of the `<script>` block near the end of `index.html`:
+### 1. The logo asset
 
-   ```js
-   const BOOKING_URL   = "https://cal.com/rocchietti-studio/intro-call";  // ← real Cal.com / Calendly link
-   const CONTACT_EMAIL = "hello@rocchiettistudio.com";                    // ← real email
-   ```
+Save it in `assets/` as **`rocchietti-logo.svg`** (preferred) or **`rocchietti-logo.png`**.
+The page tries the SVG first, then the PNG, and only falls back to a typeset wordmark if neither is
+there — so nothing ever looks broken, but the real mark only appears once the file exists.
 
-   Every "Book a call" button on the page reads from those two constants.
+Export it **trimmed to the artwork**: no square canvas, no white padding. A square export renders as a
+small square in the header instead of a wide wordmark. Transparent background is best; white also works
+(the page blends it out with `mix-blend-mode: multiply`).
 
-2. **Logo** — the wordmark is currently typeset in Caveat (a close match to the real mark, not the mark
-   itself). Drop the real file at `assets/rocchietti-logo.svg` and replace the marked block in the nav
-   (and the same one in the footer) with:
+### 2. Booking link and email
 
-   ```html
-   <img src="assets/rocchietti-logo.svg" alt="Rocchietti Studio" class="h-9 w-auto">
-   ```
+Top of the `<script>` block near the end of the file:
 
-3. **Designer photo** — the "meet the designer" block uses a designed placeholder (grid card with the
-   monogram). Swap it for a real cut-out portrait, black & white, per the Figma moodboard:
+```js
+const BOOKING_URL   = "https://cal.com/rocchietti-studio/intro-call";  // ← real Cal.com / Calendly link
+const CONTACT_EMAIL = "hello@rocchiettistudio.com";                    // ← real email
+```
 
-   ```html
-   <img src="assets/designer.jpg" alt="" class="relative w-full rounded-[28px] border-[1.5px] border-ink grayscale">
-   ```
+Every "Book a call" button reads from those two constants.
 
-   The yellow sticker glow behind it is already in place.
+### 3. Only for `full-page.html`
 
-Optional: the About copy is deliberately written without a first name — add one if you want it warmer.
+The *meet the designer* block uses a designed placeholder (grid card with the monogram). Swap it for a
+black & white cut-out portrait, per the Figma moodboard — the yellow sticker glow is already behind it:
+
+```html
+<img src="assets/designer.jpg" alt="" class="relative w-full rounded-[28px] border-[1.5px] border-ink grayscale">
+```
 
 ---
 
@@ -52,29 +58,26 @@ Optional: the About copy is deliberately written without a first name — add on
 | `peri` | `#C7D0EE` | secondary shadows, featured card |
 | `grid` | `#D3DDF2` | graph-paper lines |
 
-Type: **Quicksand** (UI/body), **Caveat** (logo + handwritten notes), **Caveat Brush** (highlighted
-headline words). Cards are white with a 1.5px ink outline and a hard offset shadow — the paper /
-scrapbook look from the moodboard.
+Type: **Quicksand** (UI/body), **Caveat** (handwritten notes), **Caveat Brush** (highlighted headline
+words). Cards are white with a 1.5px ink outline and a hard offset shadow — the paper / scrapbook look
+from the moodboard.
 
 ## Animations (GSAP)
 
 - Highlighter sweep on every `.hl` word, fired by ScrollTrigger
-- Staggered scroll reveals (`[data-reveal]`, grouped by `[data-reveal-group]`)
-- Infinite marquee strip
-- Floating + parallax confetti dots
-- Draggable scrapbook stickers in the hero (`.drag-sticker`)
-- GSAP-animated FAQ accordion
+- Staggered reveals (`[data-reveal]`, grouped by `[data-reveal-group]`)
+- Floating confetti dots
 
-All of it is skipped under `prefers-reduced-motion: reduce` (highlights snap on instead).
+`full-page.html` adds the infinite marquee, dot parallax, draggable hero stickers and the animated FAQ
+accordion. Everything is skipped under `prefers-reduced-motion: reduce` (highlights snap on instead).
 
-## What is deliberately **not** on this page
+## What is deliberately **not** on these pages
 
 The pricing strategy notes stay internal: the reasoning behind the price ladder, how to present prices
-on Instagram vs LinkedIn, and the referral arrangement with Vivido. The client-facing page mentions
-Vivido only as the partner studio for websites, without commercial terms.
+on Instagram vs LinkedIn, and the referral arrangement with Vivido. Vivido appears only as the partner
+studio for websites (in `full-page.html`), without commercial terms.
 
 ## Content
 
-Prices, deliverables, timelines, revision counts, payment splits, add-ons, the Brand Care retainer and
-the working rules all match the approved offer. All prices exclude VAT; the footer states a 30-day
-validity on the quote.
+Prices, deliverables, timelines, revision counts, payment splits, add-ons and the Brand Care retainer
+all match the approved offer. All prices exclude VAT; the footer states a 30-day validity.
