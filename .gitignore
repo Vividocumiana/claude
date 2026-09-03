@@ -11,3 +11,6 @@ skills/vivido-assistant/cache/*
 /tmp/vivido-assistant-*
 *.pyc
 __pycache__/
+
+# Dati del dev server locale del sito Rocchietti
+rocchietti-studio/.dev-data.json

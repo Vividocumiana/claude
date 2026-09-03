@@ -6,6 +6,7 @@
 | `admin.html` + `admin.js` | Password-protected dashboard at `/admin` — write, save and publish per-client quotes. |
 | `api/` | Vercel serverless functions: login/session, quote CRUD, and the server-rendered client page. |
 | `full-page.html` | The long version kept for later — hero, marquee, *meet the designer*, process, working rules, FAQ, closing CTA. Not deployed. |
+| `dev-server.js` | Runs the whole site locally with a stand-in database, so you can try the quote flow with nothing installed. Not deployed. |
 
 No build step and no dependencies to install. The pages are hand-written HTML; the functions in `api/`
 are plain CommonJS and talk to Redis over its REST API with `fetch`, so there is no `package.json` and
@@ -117,6 +118,31 @@ descriptions and timelines. The discount applies to either.
 **Draft vs published.** A draft is invisible from outside: its URL answers 404 exactly like a wrong
 link. **Unpublish** puts a live quote back to draft and the client link stops working immediately.
 Deleting removes it for good.
+
+### Trying it locally first
+
+There is no default password anywhere in the code — it is whatever you put in `ADMIN_PASSWORD`. To see
+the whole thing working before touching Vercel or Upstash, run the bundled dev server:
+
+```bash
+cd rocchietti-studio
+node dev-server.js
+```
+
+```
+packages   http://localhost:7788/
+admin      http://localhost:7788/admin
+password   dev
+```
+
+It serves the site exactly the way Vercel does — static files, the `api/` functions, the `/q/:slug`
+rewrite, clean URLs — and stands in for Upstash with a small local store, so nothing needs to be
+installed or signed up for. Quotes you make land in `.dev-data.json` next to the file (git-ignored) and
+survive a restart; delete it to start clean.
+
+Use your own password with `ADMIN_PASSWORD=whatever node dev-server.js`. The server needs Node 18 or
+newer, is excluded from the deploy in `.vercelignore`, and is the only place a fallback password
+exists — in production, no `ADMIN_PASSWORD` means no login at all.
 
 ### One-time setup
 

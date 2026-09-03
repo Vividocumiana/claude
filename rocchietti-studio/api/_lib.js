@@ -37,21 +37,18 @@ function sign(payload) {
   return crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
 }
 
+/* Secure is always on in production. Only the local dev server opts out, because
+   some browsers refuse a Secure cookie over plain http://localhost. */
+const SECURE = process.env.ALLOW_INSECURE_COOKIE === '1' ? '' : '; Secure';
+
 function createSessionCookie() {
   const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_DAYS * 86400000 })).toString('base64url');
   const token = payload + '.' + sign(payload);
-  return [
-    COOKIE + '=' + token,
-    'Path=/',
-    'HttpOnly',
-    'Secure',
-    'SameSite=Lax',
-    'Max-Age=' + SESSION_DAYS * 86400,
-  ].join('; ');
+  return COOKIE + '=' + token + '; Path=/; HttpOnly' + SECURE + '; SameSite=Lax; Max-Age=' + SESSION_DAYS * 86400;
 }
 
 function clearSessionCookie() {
-  return COOKIE + '=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+  return COOKIE + '=; Path=/; HttpOnly' + SECURE + '; SameSite=Lax; Max-Age=0';
 }
 
 function verifySession(token) {
