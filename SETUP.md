@@ -29,7 +29,10 @@ Il lavoro di setup è quindi: (1) account+connettori Vivido, (2) repo con la ski
    - **Gmail** (`samuele@vivido.world`) — morning/eod/linkedin
    - **Google Calendar** (Vivido) — morning/eod
    - **Granola** (`hello@vivido.world`) — linkedin/meeting (⚠️ vedi caveat §6)
-3. **Bot Slack Vivido** già esistente (`vivido_assistant`). Recupera il suo **Bot User OAuth Token** (`xoxb-...`) dalla pagina dell'app Slack → diventa il secret `VIVIDO_BOT_TOKEN`.
+3. **Bot Slack Vivido** — se non esiste ancora, crealo in 2 passi:
+   - **Passo A — crea l'app/bot.** Vai su https://api.slack.com/apps → *Create New App* → *From an app manifest* → seleziona il workspace **Vivido World** → incolla il contenuto di `skills/vivido-assistant/slack-app-manifest.json` → *Create*. Poi *Install to Workspace* e autorizza. Se il bot esiste già, salta questo passo e recupera solo il token da *OAuth & Permissions*.
+   - **Passo B — imposta il secret.** Copia il **Bot User OAuth Token** (`xoxb-...`) da *OAuth & Permissions* → aggiungilo come secret/env `VIVIDO_BOT_TOKEN` sullo scheduled agent cloud (vedi §5). In locale, in alternativa, salvalo in `skills/vivido-assistant/vivido-bot.token` (mai committato).
+   - Il manifest chiede solo gli scope minimi usati da `send.sh` (`chat:write`, `im:write`, `users:read`). Se il bot esiste già con scope diversi, verifica che `chat:write` sia presente.
 4. **Integrazione interna Notion** ("Vivido Assistant") su https://www.notion.so/my-integrations → token `ntn_...` = secret `NOTION_TOKEN`. **Condividi con l'integrazione i DB** Progetti/Tasks/Knowledge Log/CRM Vivido (altrimenti lo snapshot non li vede).
 
 ---
