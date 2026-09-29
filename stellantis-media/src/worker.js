@@ -33,7 +33,7 @@ export default {
       return env.ASSETS.fetch(req);
     } catch (e) {
       if (!e.status) console.error(e);
-      return cors(json({ error: e.status ? e.message : "Server error: " + (e.message || "unknown"), }, e.status || 500));
+      return cors(json({ error: e.status ? e.message : "Errore del server: " + (e.message || "unknown"), }, e.status || 500));
     }
   },
 };
@@ -62,20 +62,20 @@ function slug(s) {
 function slugPart(s) { return String(s).split("/").map(slug).filter(Boolean).join("-"); }
 function cleanFolder(f) {
   const parts = String(f).split("/").map(slug).filter(Boolean);
-  if (parts.length > 4) fail("Folder too deep");
+  if (parts.length > 4) fail("Cartella troppo annidata");
   return parts.join("/");
 }
 function cleanName(n) {
   const name = String(n).replace(/[\\/\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim().slice(0, 180);
-  if (!name || name.startsWith(".")) fail("Invalid file name");
+  if (!name || name.startsWith(".")) fail("Nome del file non valido");
   return name;
 }
 // "Press photos/Day 1/img.jpg": every segment cleaned like a file name
 function cleanPath(p) {
   const parts = String(p).split("/").map((x) => x.replace(/[\\\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim()).filter(Boolean);
-  if (!parts.length || parts.length > 8) fail("Invalid file name");
+  if (!parts.length || parts.length > 8) fail("Nome del file non valido");
   const out = parts.map(cleanName).join("/");
-  if (out.length > 700) fail("File path too long");
+  if (out.length > 700) fail("Percorso del file troppo lungo");
   return out;
 }
 // Media folder of a document = first two segments (brand/document)
@@ -101,7 +101,7 @@ async function listAll(env, prefix) {
 }
 
 async function listFolder(env, folder, origin) {
-  if (!folder) fail("Missing folder");
+  if (!folder) fail("Cartella mancante");
   const prefix = folder + "/";
   const [objs, derived] = await Promise.all([listAll(env, prefix), listAll(env, DERIVED + prefix)]);
   const have = new Set(derived.map((o) => o.key));
@@ -203,11 +203,11 @@ function safeEqual(a, b) {
   return d === 0;
 }
 async function login(req, env) {
-  if (!env.UPLOAD_PASSWORD) return json({ error: "Upload password not configured" }, 503);
+  if (!env.UPLOAD_PASSWORD) return json({ error: "Password di upload non configurata" }, 503);
   const { password } = await req.json().catch(() => ({}));
   if (typeof password !== "string" || !safeEqual(password, env.UPLOAD_PASSWORD)) {
     await new Promise((r) => setTimeout(r, 800)); // slow down guessing
-    return json({ error: "Wrong password" }, 401);
+    return json({ error: "Password errata" }, 401);
   }
   const exp = String(Date.now() + TOKEN_TTL);
   return json({ token: exp + "." + (await hmac(env, exp)), expires: +exp });
@@ -231,7 +231,7 @@ function metaFrom(url) {
 }
 function targetKey(url) {
   const folder = cleanFolder(url.searchParams.get("folder") || "");
-  if (!folder || !folder.includes("/")) fail("Choose a brand and a folder");
+  if (!folder || !folder.includes("/")) fail("Scegli un brand e una cartella");
   return folder + "/" + cleanPath(url.searchParams.get("name") || "");
 }
 
@@ -258,19 +258,19 @@ async function deleteFolder(env, folder) {
 }
 async function readJson(req) {
   const j = await req.json().catch(() => null);
-  if (!j || typeof j !== "object") fail("Invalid request");
+  if (!j || typeof j !== "object") fail("Richiesta non valida");
   return j;
 }
 function docInput(j, types, partial) {
   const out = {};
   if (!partial || "name" in j) {
     const name = String(j.name || "").replace(/\s+/g, " ").trim();
-    if (!name) fail("Please enter a title");
-    if (name.length > 200) fail("The title is too long (200 characters max)");
+    if (!name) fail("Inserisci un titolo");
+    if (name.length > 200) fail("Il titolo è troppo lungo (massimo 200 caratteri)");
     out.name = name;
   }
   if (!partial || "type" in j) {
-    if (!j.type || !types.some((t) => t.id === j.type)) fail("Please choose a category");
+    if (!j.type || !types.some((t) => t.id === j.type)) fail("Scegli una categoria");
     out.type = j.type;
   }
   if (!partial || "desc" in j) out.desc = String(j.desc || "").replace(/\s+/g, " ").trim().slice(0, 500);
@@ -285,6 +285,7 @@ async function documents(req, env, url, action) {
   if (action === "state" && m === "GET") {
     const [brands, docs, schema, folders] = await Promise.all([wf.brands(), wf.listDocs(), wf.schema(), folderStats(env)]);
     await saveSheets(env, docs).catch(() => {});
+    await wf.syncBrandField(docs, brands).catch((e) => console.error("brand sync", e.message));
     const extra = Object.entries(cmsConfig(env)).map(([key, c]) => ({ key, title: c.title || key }));
     return json({ brands, docs, types: schema.types, folders, site: env.SITE_URL || "", cms: extra, listLimit: 100 });
   }
@@ -292,15 +293,15 @@ async function documents(req, env, url, action) {
     const j = await readJson(req);
     const [brands, docs, schema] = await Promise.all([wf.brands(), wf.listDocs(), wf.schema()]);
     const brand = brands.find((b) => b.id === j.brand);
-    if (!brand) fail("Please choose a brand");
+    if (!brand) fail("Scegli un brand");
     const input = docInput(j, schema.types, false);
     const slugs = new Set(docs.map((d) => d.slug)), used = new Set(docs.map((d) => d.folder).filter(Boolean));
     // Optional: link a folder that already has files (uploaded before the document existed)
     let existing = null;
     if (j.folder) {
       existing = cleanFolder(j.folder);
-      if (!existing.startsWith(brand.slug + "/")) fail("This folder belongs to another brand");
-      if (used.has(existing)) fail("This folder is already used by another document", 409);
+      if (!existing.startsWith(brand.slug + "/")) fail("Questa cartella appartiene a un altro brand");
+      if (used.has(existing)) fail("Questa cartella è già usata da un altro documento", 409);
     }
     const doc = await wf.createDoc(input, brand, async (slug, folder) => slugs.has(slug) || (folder && (used.has(folder) || (await folderUsed(env, folder)))), existing);
     if (doc.sheet) await saveSheets(env, docs.concat(doc)).catch(() => {});
@@ -369,16 +370,16 @@ async function cmsSchema(wf, conf) {
 }
 function cmsValue(f, v, refIds) {
   const empty = v == null || v === "" || (Array.isArray(v) && !v.length);
-  if (empty) { if (f.required) fail("Please fill in “" + f.name + "”"); return f.type === "Switch" ? false : f.type === "MultiReference" ? [] : null; }
+  if (empty) { if (f.required) fail("Compila il campo “" + f.name + "”"); return f.type === "Switch" ? false : f.type === "MultiReference" ? [] : null; }
   switch (f.type) {
     case "Switch": return !!v;
-    case "Number": { const n = Number(v); if (!isFinite(n)) fail("“" + f.name + "” must be a number"); return n; }
-    case "Email": { const e = String(v).trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) fail("“" + f.name + "” is not a valid email address"); return e; }
-    case "Link": { let u = String(v).trim(); if (!/^https?:\/\//i.test(u)) u = "https://" + u; try { new URL(u); } catch (e) { fail("“" + f.name + "” is not a valid link"); } return u; }
-    case "Option": if (!f.options.some((o) => o.id === v)) fail("Invalid choice for “" + f.name + "”"); return v;
-    case "Reference": if (!refIds.has(v)) fail("Invalid choice for “" + f.name + "”"); return v;
+    case "Number": { const n = Number(v); if (!isFinite(n)) fail("“" + f.name + "” deve essere un numero"); return n; }
+    case "Email": { const e = String(v).trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) fail("L’indirizzo email non è valido"); return e; }
+    case "Link": { let u = String(v).trim(); if (!/^https?:\/\//i.test(u)) u = "https://" + u; try { new URL(u); } catch (e) { fail("“" + f.name + "” non è un link valido"); } return u; }
+    case "Option": if (!f.options.some((o) => o.id === v)) fail("Scelta non valida per “" + f.name + "”"); return v;
+    case "Reference": if (!refIds.has(v)) fail("Scelta non valida per “" + f.name + "”"); return v;
     case "MultiReference": { const a = [].concat(v).filter((x) => refIds.has(x)); return a; }
-    default: { const t = String(v).replace(/\s+/g, " ").trim(); if (f.max && t.length > f.max) fail("“" + f.name + "” is too long"); return t; }
+    default: { const t = String(v).replace(/\s+/g, " ").trim(); if (f.max && t.length > f.max) fail("“" + f.name + "” è troppo lungo"); return t; }
   }
 }
 async function cms(req, env, url, rest) {
@@ -435,18 +436,18 @@ async function admin(req, env, url, action) {
     const [srcHead, dstHead] = await Promise.all([env.MEDIA.head(src), env.MEDIA.head(dst)]);
     // Retried request whose first attempt already went through
     if (!srcHead && dstHead) return json({ ok: true, key: dst });
-    if (!srcHead) fail("File not found, please reload the page", 404);
-    if (dstHead) fail("A file with this name already exists in this folder", 409);
+    if (!srcHead) fail("File non trovato, ricarica la pagina", 404);
+    if (dstHead) fail("In questa cartella esiste già un file con questo nome", 409);
     const obj = await env.MEDIA.get(src);
-    if (!obj) fail("File not found, please reload the page", 404);
-    if (obj.size > 4.9 * 1024 ** 3) { await obj.body.cancel(); fail("Files over 4.9 GB cannot be renamed: upload it again with the new name", 413); }
+    if (!obj) fail("File non trovato, ricarica la pagina", 404);
+    if (obj.size > 4.9 * 1024 ** 3) { await obj.body.cancel(); fail("I file oltre 4,9 GB non si possono rinominare: caricalo di nuovo con il nome nuovo", 413); }
     await env.MEDIA.put(dst, obj.body, { httpMetadata: obj.httpMetadata, customMetadata: obj.customMetadata });
     for (const d of ["thumb", "preview"]) {
       const o = await env.MEDIA.get(DERIVED + src + "." + d + ".jpg");
       if (o) await env.MEDIA.put(DERIVED + dst + "." + d + ".jpg", o.body, { httpMetadata: o.httpMetadata });
     }
     const check = await env.MEDIA.head(dst);
-    if (!check || check.size !== obj.size) fail("Rename failed, the original file was kept", 500);
+    if (!check || check.size !== obj.size) fail("Rinomina non riuscita, il file originale è stato mantenuto", 500);
     await env.MEDIA.delete([src, DERIVED + src + ".thumb.jpg", DERIVED + src + ".preview.jpg"]);
     return json({ ok: true, key: dst });
   }
@@ -489,11 +490,11 @@ async function admin(req, env, url, action) {
   if (action === "folder" && m === "DELETE") {
     // A sub-folder of a document (sub=...) or a whole folder that no document uses
     const folder = cleanFolder(url.searchParams.get("folder") || "");
-    if (!folder || folder.split("/").length !== 2) fail("Invalid folder");
+    if (!folder || folder.split("/").length !== 2) fail("Cartella non valida");
     const sub = url.searchParams.get("sub");
     if (sub) { await deleteFolder(env, folder + "/" + cleanPath(sub)); return json({ ok: true }); }
     const docs = await new Webflow(env).listDocs();
-    if (docs.some((d) => d.folder === folder)) fail("This folder belongs to a document: delete the document instead", 409);
+    if (docs.some((d) => d.folder === folder)) fail("Questa cartella appartiene a un documento: elimina il documento", 409);
     await deleteFolder(env, folder);
     return json({ ok: true });
   }

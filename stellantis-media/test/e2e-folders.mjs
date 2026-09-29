@@ -30,7 +30,7 @@ await p.screenshot({ path: OUT + '10-modal.png' });
 await p.click('#n-type [data-v]:first-child');
 await p.click('#n-create');
 await p.waitForSelector('#v-doc:not([hidden])', { timeout: 60000 });
-await toast(/Upload complete|could not/);
+await toast(/Upload completato|non (è|sono) stat/);
 await p.waitForFunction(() => document.querySelectorAll('#files .f').length === 5, null, { timeout: 30000 });
 const groups = await p.$$eval('#files .fd b', els => els.map(e => e.textContent));
 step('doc created with 5 files, folders: ' + JSON.stringify(groups));
@@ -39,7 +39,7 @@ const folder = await p.evaluate(() => location.hash);
 
 // Add another folder from the document view: kept as a sub-folder
 await p.setInputFiles('#dir-input', DIR + 'files');
-await toast(/Upload complete|could not/);
+await toast(/Upload completato|non (è|sono) stat/);
 await p.waitForFunction(() => [...document.querySelectorAll('#files .fd b')].some(b => b.textContent === 'files'), null, { timeout: 30000 });
 step('folder added as sub-folder "files"');
 
@@ -67,19 +67,19 @@ require: {
 // Delete a sub-folder
 await p.click('#files .fd:has(b:text-is("files")) .del');
 await p.click('#c-yes');
-await toast(/Folder deleted/);
+await toast(/Cartella eliminata/);
 await p.waitForFunction(() => document.querySelectorAll('#files .f').length === 5);
 step('sub-folder deleted');
 // Rename inside a sub-folder
 const idx = await p.evaluate(() => [...document.querySelectorAll('#files .f b')].findIndex(b => b.title === 'Interior/dash.jpg'));
 const row = p.locator('#files .f').nth(idx);
 await row.locator('[data-a=rename]').click(); await row.locator('.ren input').fill('Dashboard'); await row.locator('.ren .primary').click();
-await toast(/renamed/);
+await toast(/rinominato/);
 await p.waitForSelector('#files .f b[title="Interior/Dashboard.jpg"]');
 step('renamed inside sub-folder');
 
 // Clean up: delete the document
-await p.click('#doc-delete'); await p.click('#c-yes'); await toast(/Document deleted/);
+await p.click('#doc-delete'); await p.click('#c-yes'); await toast(/Documento eliminato/);
 step('document deleted');
 console.log('ERRORS', JSON.stringify(errs));
 await b.close();

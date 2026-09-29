@@ -7,7 +7,7 @@
   var SINGLE_MAX = 90 * 1024 * 1024;     // above this, multipart upload
   var PART = 50 * 1024 * 1024;           // multipart part size
   var PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-  var TYPE_LABEL = { foto: "Photos", video: "Videos", documento: "Documents", embargo: "Embargo" };
+  var TYPE_LABEL = { foto: "Foto", video: "Video", documento: "Documenti", embargo: "Embargo" };
   var ICON = {
     foto: '<svg viewBox="0 0 24 24"><path d="M4 7h3l2-3h6l2 3h3v13H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
     video: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m16 10 5-3v10l-5-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
@@ -16,7 +16,7 @@
     contact: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
     other: '<svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v11H3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
   };
-  var STATUS = { live: ["live", "Live on the website"], draft: ["draft", "Draft · not visible"], changes: ["changes", "Live · changes not published"] };
+  var STATUS = { live: ["live", "Online sul sito"], draft: ["draft", "Bozza · non visibile"], changes: ["changes", "Online · modifiche non pubblicate"] };
   var $ = function (id) { return document.getElementById(id); };
   var token = "";
   try { token = sessionStorage.getItem("stl26_up") || ""; } catch (e) {}
@@ -44,12 +44,12 @@
       return fetch(path, opts).then(function (r) { clearTimeout(t); return r; }, function () {
         clearTimeout(t);
         if (n + 1 < tries) return new Promise(function (r) { setTimeout(r, 1000 * (n + 1)); }).then(function () { return attempt(n + 1); });
-        throw new Error("No connection. Check your internet and try again.");
+        throw new Error("Connessione assente. Controlla internet e riprova.");
       });
     }
     return attempt(0).then(function (r) {
-      if (r.status === 401) { logout(true); throw new Error("Your session has expired, please sign in again"); }
-      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Something went wrong (" + r.status + ")"); return j; });
+      if (r.status === 401) { logout(true); throw new Error("La sessione è scaduta, accedi di nuovo"); }
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Qualcosa è andato storto (" + r.status + ")"); return j; });
     });
   }
   // Run an action with a spinner on its button; errors become a red toast
@@ -59,13 +59,13 @@
     return Promise.resolve().then(fn).catch(function (e) { toast(e.message, true); }).then(function () { btn.classList.remove("busy"); });
   }
   function typeName(id) { for (var i = 0; i < S.types.length; i++) if (S.types[i].id === id) return S.types[i].name; return ""; }
-  function typeLabel(id) { var n = typeName(id); return TYPE_LABEL[n] || (n ? n.charAt(0).toUpperCase() + n.slice(1) : "No category"); }
+  function typeLabel(id) { var n = typeName(id); return TYPE_LABEL[n] || (n ? n.charAt(0).toUpperCase() + n.slice(1) : "Senza categoria"); }
   function brandById(id) { for (var i = 0; i < S.brands.length; i++) if (S.brands[i].id === id) return S.brands[i]; return null; }
   function brandBySlug(s) { for (var i = 0; i < S.brands.length; i++) if (S.brands[i].slug === s) return S.brands[i]; return null; }
   function docById(id) { for (var i = 0; i < S.docs.length; i++) if (S.docs[i].id === id) return S.docs[i]; return null; }
   function stats(folder) { for (var i = 0; i < S.folders.length; i++) if (S.folders[i].folder === folder) return S.folders[i]; return { count: 0, size: 0 }; }
   function docUrl(d) { return S.site ? S.site.replace(/\/$/, "") + "/all-documents/" + d.slug : ""; }
-  function when(iso) { if (!iso) return ""; var d = new Date(iso); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
+  function when(iso) { if (!iso) return ""; var d = new Date(iso); return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }); }
   function show(view) { ["loading", "v-error", "v-brand", "v-doc", "v-folder", "v-help", "v-cms"].forEach(function (v) { $(v).hidden = v !== view; }); window.scrollTo(0, 0); }
 
   function confirmBox(title, text, yes, danger) {
@@ -83,17 +83,17 @@
   function showLogin() { $("app").hidden = true; $("login").hidden = false; setTimeout(function () { $("pwd").focus(); }, 0); }
   function logout(expired) {
     token = ""; try { sessionStorage.removeItem("stl26_up"); } catch (e) {}
-    if (expired) $("login-err").textContent = "Your session has expired, please sign in again.";
+    if (expired) $("login-err").textContent = "La sessione è scaduta, accedi di nuovo.";
     showLogin();
   }
-  $("logout").onclick = function () { if (!running || confirm("Uploads in progress will stop. Sign out anyway?")) logout(); };
+  $("logout").onclick = function () { if (!running || confirm("Gli upload in corso verranno interrotti. Uscire comunque?")) logout(); };
   $("login-form").addEventListener("submit", function (e) {
     e.preventDefault();
     var btn = this.querySelector("button");
     $("login-err").textContent = "";
     btn.classList.add("busy");
     fetch("/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: $("pwd").value }) })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error === "Wrong password" ? "Wrong password, please try again." : j.error || "Sign-in failed"); return j; }); }, function () { throw new Error("No connection. Check your internet and try again."); })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error === "Password errata" ? "Password errata, riprova." : j.error || "Accesso non riuscito"); return j; }); }, function () { throw new Error("Connessione assente. Controlla internet e riprova."); })
       .then(function (j) { token = j.token; try { sessionStorage.setItem("stl26_up", token); } catch (x) {} $("pwd").value = ""; start(); })
       .catch(function (err) { $("login-err").textContent = err.message; $("pwd").select(); })
       .then(function () { btn.classList.remove("busy"); });
@@ -139,18 +139,18 @@
 
   // ---------- sidebar ----------
   function renderSide() {
-    if (S.offline) { $("side").innerHTML = '<h4>Brands</h4><p class="sub" style="padding:0 12px">Unavailable while Webflow is not responding.</p>'; return; }
+    if (S.offline) { $("side").innerHTML = '<h4>Brand</h4><p class="sub" style="padding:0 12px">Non disponibili finché Webflow non risponde.</p>'; return; }
     var view = S.view || "";
-    $("side").innerHTML = "<h4>Brands</h4>" + S.brands.map(function (b) {
+    $("side").innerHTML = "<h4>Brand</h4>" + S.brands.map(function (b) {
       var n = S.docs.filter(function (d) { return d.brand === b.id; }).length;
       var active = view === "brand" && S.brand && S.brand.id === b.id;
-      return '<button type="button" data-brand="' + esc(b.slug) + '" class="' + (active ? "is-active" : "") + '"' + (active ? ' aria-current="page"' : "") + ">" + esc(b.name) + "<span>" + n + (b.draft ? " · hidden" : "") + "</span></button>";
+      return '<button type="button" data-brand="' + esc(b.slug) + '" class="' + (active ? "is-active" : "") + '"' + (active ? ' aria-current="page"' : "") + ">" + esc(b.name) + "<span>" + n + (b.draft ? " · nascosto" : "") + "</span></button>";
     }).join("") +
-      (S.cms.length ? "<h4>Website content</h4>" + S.cms.map(function (c) {
+      (S.cms.length ? "<h4>Contenuti del sito</h4>" + S.cms.map(function (c) {
         var active = view === "cms:" + c.key;
         return '<button type="button" data-go="#cms=' + esc(c.key) + '" class="' + (active ? "is-active" : "") + '">' + esc(c.title) + "</button>";
       }).join("") : "") +
-      '<h4>Help</h4><button type="button" data-go="#help" class="' + (view === "help" ? "is-active" : "") + '">How it works</button>';
+      '<h4>Aiuto</h4><button type="button" data-go="#help" class="' + (view === "help" ? "is-active" : "") + '">Come funziona</button>';
   }
   $("side").addEventListener("click", function (e) {
     var b = e.target.closest("[data-brand]"), g = e.target.closest("[data-go]");
@@ -161,15 +161,16 @@
   // ---------- brand view ----------
   function openBrand(b) {
     S.brand = b; S.doc = null; S.view = "brand";
-    var lw = $("limit-warn"), near = S.docs.length >= S.listLimit - 10;
+    // Each brand page lists at most 100 documents (Webflow collection list limit)
+    var lw = $("limit-warn"), near = S.docs.filter(function (d) { return d.brand === b.id; }).length >= S.listLimit - 10;
     lw.hidden = !near;
-    if (near) lw.textContent = "The website currently has " + S.docs.length + " documents. Brand pages can show up to " + S.listLimit + " documents in total: ask the web team to filter the brand page list by brand before adding more.";
+    if (near) lw.textContent = "Il brand " + b.name + " ha " + S.docs.filter(function (d) { return d.brand === b.id; }).length + " documenti: la pagina del brand ne mostra al massimo " + S.listLimit + ". Contatta il team web prima di aggiungerne altri.";
     renderSide();
     $("brand-title").textContent = b.name;
     var docs = S.docs.filter(function (d) { return d.brand === b.id; });
     var live = docs.filter(function (d) { return d.status !== "draft"; }).length;
-    $("brand-sub").textContent = docs.length ? docs.length + (docs.length === 1 ? " document" : " documents") + " · " + live + " live" + (b.draft ? " · this brand page is hidden on the website" : "") : (b.draft ? "This brand page is hidden on the website" : "");
-    var chips = [["", "All"]].concat(S.types.map(function (t) { return [t.id, TYPE_LABEL[t.name] || t.name]; }));
+    $("brand-sub").textContent = docs.length ? docs.length + (docs.length === 1 ? " documento" : " documenti") + " · " + live + " online" + (b.draft ? " · la pagina di questo brand è nascosta sul sito" : "") : (b.draft ? "La pagina di questo brand è nascosta sul sito" : "");
+    var chips = [["", "Tutti"]].concat(S.types.map(function (t) { return [t.id, TYPE_LABEL[t.name] || t.name]; }));
     $("chips").innerHTML = chips.map(function (c) {
       var n = c[0] ? docs.filter(function (d) { return d.type === c[0]; }).length : docs.length;
       return '<button type="button" role="tab" data-f="' + c[0] + '" class="' + (S.filter === c[0] ? "is-active" : "") + '" aria-selected="' + (S.filter === c[0]) + '">' + esc(c[1]) + " " + n + "</button>";
@@ -180,15 +181,15 @@
     });
     $("docs").innerHTML = list.length ? list.map(function (d) {
       var st = stats(d.folder), s = STATUS[d.status];
-      var files = d.folder ? (st.count ? st.count + (st.count === 1 ? " file · " : " files · ") + size(st.size) : "No files yet") : "No files yet";
-      return '<a class="doc" href="#doc=' + d.id + '"><div class="ic">' + (ICON[typeName(d.type)] || ICON.other) + '</div><div class="t"><b>' + esc(d.name) + "</b><span>" + esc(typeLabel(d.type)) + " · " + files + (d.desc ? " · " + esc(d.desc) : "") + '</span></div><div class="r">' + (d.sheet ? '<span class="pill sheet">Technical sheet</span>' : "") + '<span class="pill ' + s[0] + '">' + (d.status === "live" ? "Live" : d.status === "draft" ? "Draft" : "Changes pending") + "</span></div></a>";
-    }).join("") : '<div class="none">' + (docs.length ? "No documents in this category." : "No documents for " + esc(b.name) + " yet.<br>Click <b>+ New document</b> to create the first one.") + "</div>";
+      var files = d.folder ? (st.count ? st.count + (st.count === 1 ? " file · " : " file · ") + size(st.size) : "Nessun file") : "Nessun file";
+      return '<a class="doc" href="#doc=' + d.id + '"><div class="ic">' + (ICON[typeName(d.type)] || ICON.other) + '</div><div class="t"><b>' + esc(d.name) + "</b><span>" + esc(typeLabel(d.type)) + " · " + files + (d.desc ? " · " + esc(d.desc) : "") + '</span></div><div class="r">' + (d.sheet ? '<span class="pill sheet">Scheda tecnica</span>' : "") + '<span class="pill ' + s[0] + '">' + (d.status === "live" ? "Online" : d.status === "draft" ? "Bozza" : "Modifiche da pubblicare") + "</span></div></a>";
+    }).join("") : '<div class="none">' + (docs.length ? "Nessun documento in questa categoria." : "Ancora nessun documento per " + esc(b.name) + ".<br>Clicca <b>+ Nuovo documento</b> per creare il primo.") + "</div>";
     // Folders with files that no document uses (e.g. uploaded before documents existed)
     var usedF = S.docs.map(function (d) { return d.folder; });
     var loose = S.folders.filter(function (f) { return f.folder.split("/")[0] === b.slug && usedF.indexOf(f.folder) < 0 && f.count; });
     $("loose").hidden = !loose.length || !!S.filter;
     $("loose-list").innerHTML = loose.map(function (f) {
-      return '<div class="doc loose-row"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder.split("/").slice(1).join(" / ")) + "</b><span>" + f.count + (f.count === 1 ? " file · " : " files · ") + size(f.size) + ' · not on the website</span></div><div class="r"><a class="btn small ghost" href="#folder=' + encodeURIComponent(f.folder) + '">View files</a><button class="btn small ghost danger-txt" type="button" data-delfolder="' + esc(f.folder) + '">Delete</button><button class="btn small primary" type="button" data-link="' + esc(f.folder) + '">Create document</button></div></div>';
+      return '<div class="doc loose-row"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder.split("/").slice(1).join(" / ")) + "</b><span>" + f.count + (f.count === 1 ? " file · " : " file · ") + size(f.size) + ' · non presente sul sito</span></div><div class="r"><a class="btn small ghost" href="#folder=' + encodeURIComponent(f.folder) + '">Vedi file</a><button class="btn small ghost danger-txt" type="button" data-delfolder="' + esc(f.folder) + '">Elimina</button><button class="btn small primary" type="button" data-link="' + esc(f.folder) + '">Crea documento</button></div></div>';
     }).join("");
     show("v-brand");
   }
@@ -215,9 +216,9 @@
     var l = e.target.closest("[data-link]"); if (l) return openNew(l.dataset.link);
     var d = e.target.closest("[data-delfolder]"); if (!d) return;
     var f = d.dataset.delfolder, st = stats(f);
-    confirmBox("Delete the folder “" + f + "”?", "Its " + st.count + (st.count === 1 ? " file" : " files") + " (" + size(st.size) + ") will be deleted. This cannot be undone.", "Delete folder", true).then(function (ok) {
+    confirmBox("Eliminare la cartella “" + f + "”?", (st.count === 1 ? "Il suo file" : "I suoi " + st.count + " file") + " (" + size(st.size) + ") " + (st.count === 1 ? "verrà eliminato" : "verranno eliminati") + ". L’operazione non si può annullare.", "Elimina cartella", true).then(function (ok) {
       if (!ok) return;
-      busy(d, function () { return api("/api/admin/folder?" + qs({ folder: f }), { method: "DELETE", timeout: 300000 }).then(function () { toast("Folder deleted"); S.folders = S.folders.filter(function (x) { return x.folder !== f; }); openBrand(S.brand); }); });
+      busy(d, function () { return api("/api/admin/folder?" + qs({ folder: f }), { method: "DELETE", timeout: 300000 }).then(function () { toast("Cartella eliminata"); S.folders = S.folders.filter(function (x) { return x.folder !== f; }); openBrand(S.brand); }); });
     });
   });
   $("new-doc").onclick = function () { openNew(null); };
@@ -236,7 +237,7 @@
     staged = staged.concat(items);
     var bytes = staged.reduce(function (a, x) { return a + x.file.size; }, 0);
     $("n-staged").hidden = !staged.length;
-    $("n-staged").querySelector("span").textContent = staged.length + (staged.length === 1 ? " file" : " files") + " · " + size(bytes) + " ready to upload";
+    $("n-staged").querySelector("span").textContent = staged.length + " file · " + size(bytes) + " pronti da caricare";
   }
   var nDrop = $("n-drop");
   ["dragenter", "dragover"].forEach(function (ev) { nDrop.addEventListener(ev, function (e) { e.preventDefault(); nDrop.classList.add("is-over"); }); });
@@ -252,7 +253,7 @@
     S.newFolder = folder;
     staged = []; $("n-staged").hidden = true;
     $("n-files-f").hidden = !!folder;
-    $("n-folder").hidden = !folder; $("n-folder").textContent = folder ? "The files already in the folder “" + folder + "” will be part of this document." : "";
+    $("n-folder").hidden = !folder; $("n-folder").textContent = folder ? "I file già presenti nella cartella “" + folder + "” faranno parte di questo documento." : "";
     $("n-brand").disabled = !!folder;
     $("n-brand").innerHTML = S.brands.map(function (b) { return '<option value="' + b.id + '"' + (S.brand && S.brand.id === b.id ? " selected" : "") + ">" + esc(b.name) + "</option>"; }).join("");
     $("n-name").value = ""; $("n-desc").value = ""; $("n-sheet").checked = false; $("n-err").textContent = "";
@@ -268,15 +269,15 @@
     e.preventDefault();
     var body = { brand: $("n-brand").value, name: $("n-name").value.trim(), type: $("n-type").dataset.value, desc: $("n-desc").value.trim(), sheet: $("n-sheet").checked, folder: S.newFolder || undefined };
     $("n-err").textContent = "";
-    if (!body.name) { $("n-err").textContent = "Please enter a title."; return $("n-name").focus(); }
-    if (!body.type) { $("n-err").textContent = "Please choose a category."; return; }
+    if (!body.name) { $("n-err").textContent = "Inserisci un titolo."; return $("n-name").focus(); }
+    if (!body.type) { $("n-err").textContent = "Scegli una categoria."; return; }
     var btn = $("n-create");
     if (btn.classList.contains("busy")) return;
     btn.classList.add("busy");
     api("/api/admin/docs", { method: "POST", json: body, once: true }).then(function (j) {
       putDoc(j.doc); $("m-new").hidden = true;
       S.brand = brandById(j.doc.brand) || S.brand;
-      toast("Document created as a draft" + (staged.length ? ", uploading the files…" : ""));
+      toast("Documento creato come bozza" + (staged.length ? ", caricamento dei file in corso…" : ""));
       try { history.pushState(null, "", "#doc=" + j.doc.id); } catch (x) { location.hash = "#doc=" + j.doc.id; }
       openDoc(j.doc);
       if (staged.length) { var st = staged; staged = []; enqueue(st); }
@@ -285,7 +286,7 @@
       // The connection dropped: the document may have been created anyway, never create it twice
       return load().then(function () {
         var made = S.docs.filter(function (d) { return d.brand === body.brand && d.name === body.name && Date.now() - Date.parse(d.updated) < 5 * 60000; })[0];
-        if (made) { $("m-new").hidden = true; toast("Document created as a draft"); go("#doc=" + made.id); }
+        if (made) { $("m-new").hidden = true; toast("Documento creato come bozza"); go("#doc=" + made.id); }
         else $("n-err").textContent = err.message;
       });
     }).then(function () { btn.classList.remove("busy"); });
@@ -297,7 +298,7 @@
     S.doc = d; S.folderOnly = null; S.brand = brandById(d.brand) || S.brand; S.view = "brand";
     renderSide();
     var b = brandById(d.brand);
-    $("back").querySelector("span").textContent = (b ? b.name : "All") + " documents";
+    $("back").querySelector("span").textContent = "Documenti " + (b ? b.name : "");
     $("back").href = b ? "#brand=" + b.slug : "#";
     $("details").hidden = false; document.querySelector(".danger").hidden = false;
     renderDocHead();
@@ -310,14 +311,14 @@
     $("doc-crumb").textContent = (b ? b.name : "") + " · " + typeLabel(d.type);
     $("doc-title").textContent = d.name;
     $("doc-pill").className = "pill " + s[0]; $("doc-pill").textContent = s[1];
-    $("doc-sub").textContent = d.status !== "draft" && d.published ? "Published " + when(d.published) : "";
+    $("doc-sub").textContent = d.status !== "draft" && d.published ? "Pubblicato il " + when(d.published) : "";
     $("doc-view").hidden = d.status === "draft" || !S.site; $("doc-view").href = docUrl(d);
     $("doc-unpublish").hidden = d.status === "draft";
     $("doc-publish").hidden = d.status === "live";
-    $("doc-publish").textContent = d.status === "changes" ? "Publish changes" : "Publish";
+    $("doc-publish").textContent = d.status === "changes" ? "Pubblica modifiche" : "Pubblica";
     var n = $("doc-notice");
-    if (d.status === "draft") { n.className = "notice"; n.innerHTML = "<b>Draft.</b> Journalists can’t see this document yet. Add the files, check the details, then click <b>Publish</b>."; n.hidden = false; }
-    else if (b && b.draft) { n.className = "notice warn"; n.textContent = "This document is published, but the " + b.name + " brand page is hidden on the website, so journalists can only reach it with the direct link."; n.hidden = false; }
+    if (d.status === "draft") { n.className = "notice"; n.innerHTML = "<b>Bozza.</b> I giornalisti non vedono ancora questo documento. Aggiungi i file, controlla i dettagli e poi clicca <b>Pubblica</b>."; n.hidden = false; }
+    else if (b && b.draft) { n.className = "notice warn"; n.textContent = "Questo documento è pubblicato, ma la pagina del brand " + b.name + " è nascosta sul sito: i giornalisti possono raggiungerlo solo con il link diretto."; n.hidden = false; }
     else n.hidden = true;
   }
   $("doc-notice").addEventListener("click", function (e) { var l = e.target.closest("[data-link]"); if (l) openNew(l.dataset.link); });
@@ -325,28 +326,28 @@
     var btn = this, d = S.doc;
     busy(btn, function () {
       var st = stats(d.folder);
-      return (d.folder && st.count ? Promise.resolve(true) : confirmBox("Publish without files?", "This document has no files yet. Journalists will see an empty page.", "Publish anyway")).then(function (ok) {
+      return (d.folder && st.count ? Promise.resolve(true) : confirmBox("Pubblicare senza file?", "Questo documento non ha ancora file: i giornalisti vedranno una pagina vuota.", "Pubblica comunque")).then(function (ok) {
         if (!ok) return;
-        return api("/api/admin/docs/" + d.id + "/publish", { method: "POST" }).then(function (j) { putDoc(j.doc); if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); } toast("Published: it is now live on the website"); });
+        return api("/api/admin/docs/" + d.id + "/publish", { method: "POST" }).then(function (j) { putDoc(j.doc); if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); } toast("Pubblicato: ora è online sul sito"); });
       });
     });
   };
   $("doc-unpublish").onclick = function () {
     var btn = this, d = S.doc;
-    confirmBox("Unpublish this document?", "It will be removed from the website. Its files are kept and you can publish it again at any time.", "Unpublish").then(function (ok) {
+    confirmBox("Ritirare questo documento?", "Verrà tolto dal sito. I file restano e puoi ripubblicarlo quando vuoi.", "Ritira").then(function (ok) {
       if (!ok) return;
-      busy(btn, function () { return api("/api/admin/docs/" + d.id + "/unpublish", { method: "POST" }).then(function (j) { putDoc(j.doc); if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); } toast("Unpublished: no longer visible on the website"); }); });
+      busy(btn, function () { return api("/api/admin/docs/" + d.id + "/unpublish", { method: "POST" }).then(function (j) { putDoc(j.doc); if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); } toast("Ritirato: non è più visibile sul sito"); }); });
     });
   };
   $("doc-delete").onclick = function () {
     var btn = this, d = S.doc, st = stats(d.folder);
-    if (running) return toast("Please wait for the uploads to finish", true);
-    confirmBox("Delete “" + d.name + "”?", "The document will be removed from the website" + (st.count ? " and its " + st.count + (st.count === 1 ? " file" : " files") + " will be deleted" : "") + ". This cannot be undone.", "Delete document", true).then(function (ok) {
+    if (running) return toast("Attendi la fine degli upload", true);
+    confirmBox("Eliminare “" + d.name + "”?", "Il documento verrà tolto dal sito" + (st.count ? " e " + (st.count === 1 ? "il suo file verrà eliminato" : "i suoi " + st.count + " file verranno eliminati") : "") + ". L’operazione non si può annullare.", "Elimina documento", true).then(function (ok) {
       if (!ok) return;
       busy(btn, function () {
         return api("/api/admin/docs/" + d.id, { method: "DELETE", timeout: 300000 }).then(function () {
           S.docs = S.docs.filter(function (x) { return x.id !== d.id; });
-          toast("Document deleted");
+          toast("Documento eliminato");
           refreshStats();
           var b = brandById(d.brand); go(b ? "#brand=" + b.slug : "#");
         });
@@ -366,7 +367,7 @@
     var d = S.doc, v = formVals();
     var ch = v.name !== d.name || v.type !== (d.type || "") || v.desc !== d.desc || v.sheet !== d.sheet;
     $("d-save").disabled = $("d-reset").disabled = !ch;
-    $("d-hint").textContent = ch ? (d.status === "draft" ? "Unsaved changes" : "Unsaved changes · they go live as soon as you save") : "";
+    $("d-hint").textContent = ch ? (d.status === "draft" ? "Modifiche non salvate" : "Modifiche non salvate · andranno online appena salvi") : "";
     return ch;
   }
   $("details").addEventListener("input", dirty);
@@ -375,13 +376,13 @@
   $("details").addEventListener("submit", function (e) {
     e.preventDefault();
     var v = formVals(), d = S.doc;
-    if (!v.name) { toast("Please enter a title", true); return $("d-name").focus(); }
+    if (!v.name) { toast("Inserisci un titolo", true); return $("d-name").focus(); }
     if (!dirty()) return;
     busy($("d-save"), function () {
       return api("/api/admin/docs/" + d.id, { method: "PATCH", json: v }).then(function (j) {
         putDoc(j.doc);
         if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); fillDetails(); }
-        toast(j.doc.status === "draft" ? "Changes saved" : "Changes saved and published");
+        toast(j.doc.status === "draft" ? "Modifiche salvate" : "Modifiche salvate e pubblicate");
       });
     });
   });
@@ -395,13 +396,13 @@
     return api("/api/list?folder=" + encodeURIComponent(folder)).then(function (j) {
       if (folder !== currentFolder()) return;
       renderFiles(j);
-    }).catch(function () { if (folder === currentFolder()) el.innerHTML = '<div class="none">Could not load the files. <button class="btn small ghost" type="button" data-reload>Try again</button></div>'; });
+    }).catch(function () { if (folder === currentFolder()) el.innerHTML = '<div class="none">Impossibile caricare i file. <button class="btn small ghost" type="button" data-reload>Riprova</button></div>'; });
   }
   function renderFiles(j) {
     S.files = j.files;
     var i = S.folders.findIndex(function (f) { return f.folder === currentFolder(); });
     if (i >= 0) { S.folders[i].count = j.count; S.folders[i].size = j.total; } else if (j.count) S.folders.push({ folder: currentFolder(), count: j.count, size: j.total });
-    $("files-meta").textContent = j.count ? j.count + (j.count === 1 ? " file · " : " files · ") + size(j.total) + (j.zip ? " · journalists can download all as ZIP" : "") : "";
+    $("files-meta").textContent = j.count ? j.count + " file · " + size(j.total) + (j.zip ? " · i giornalisti possono scaricare tutto in ZIP" : "") : "";
     var lastDir = null;
     $("files").innerHTML = j.count ? j.files.map(function (f, idx) {
       var head = "";
@@ -409,39 +410,39 @@
         lastDir = f.dir || "";
         if (lastDir) {
           var inside = j.files.filter(function (x) { return x.dir === lastDir; });
-          head = '<div class="fd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><b>' + esc(lastDir.split("/").join(" / ")) + "</b><span>" + inside.length + (inside.length === 1 ? " file" : " files") + '</span><button type="button" class="del" data-dir="' + esc(lastDir) + '">Delete folder</button></div>';
+          head = '<div class="fd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><b>' + esc(lastDir.split("/").join(" / ")) + "</b><span>" + inside.length + " file" + '</span><button type="button" class="del" data-dir="' + esc(lastDir) + '">Elimina cartella</button></div>';
         }
       }
       var th = f.thumb ? ' style="background-image:url(\'' + esc(f.thumb) + '\')"' : "";
       var ext = (/\.([^.]+)$/.exec(f.name) || [0, "FILE"])[1].toUpperCase().slice(0, 4);
-      return head + '<div class="f' + (f.dir ? " in" : "") + '" data-i="' + idx + '"><div class="th"' + th + ">" + (f.thumb ? "" : esc(ext)) + '</div><div class="nm"><b title="' + esc(f.path || f.name) + '">' + esc(f.name) + "</b><span>" + size(f.size) + (f.width ? " · " + f.width + "×" + f.height : "") + (f.pages ? " · " + f.pages + " pages" : "") + "</span></div>" +
-        '<div class="acts"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">Open</a><button type="button" data-a="rename">Rename</button><button type="button" class="del" data-a="delete">Delete</button></div></div>';
-    }).join("") : '<div class="none">No files yet. Drop files or folders in the box above.</div>';
+      return head + '<div class="f' + (f.dir ? " in" : "") + '" data-i="' + idx + '"><div class="th"' + th + ">" + (f.thumb ? "" : esc(ext)) + '</div><div class="nm"><b title="' + esc(f.path || f.name) + '">' + esc(f.name) + "</b><span>" + size(f.size) + (f.width ? " · " + f.width + "×" + f.height : "") + (f.pages ? " · " + f.pages + " pagine" : "") + "</span></div>" +
+        '<div class="acts"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">Apri</a><button type="button" data-a="rename">Rinomina</button><button type="button" class="del" data-a="delete">Elimina</button></div></div>';
+    }).join("") : '<div class="none">Ancora nessun file. Trascina file o cartelle nel riquadro qui sopra.</div>';
   }
   $("files").addEventListener("click", function (e) {
     if (e.target.closest("[data-reload]")) return loadFiles();
     var dd = e.target.closest("[data-dir]");
     if (dd) {
       var dir = dd.dataset.dir, n = S.files.filter(function (x) { return x.dir === dir || x.dir.indexOf(dir + "/") === 0; }).length;
-      confirmBox("Delete the folder “" + dir + "”?", "Its " + n + (n === 1 ? " file" : " files") + " will be deleted" + (S.doc && S.doc.status === "draft" ? "" : " and disappear from the website") + ". This cannot be undone.", "Delete folder", true).then(function (ok) {
+      confirmBox("Eliminare la cartella “" + dir + "”?", (n === 1 ? "Il suo file verrà eliminato" : "I suoi " + n + " file verranno eliminati") + (S.doc && S.doc.status === "draft" ? "" : " e spariranno dal sito") + ". L’operazione non si può annullare.", "Elimina cartella", true).then(function (ok) {
         if (!ok) return;
-        busy(dd, function () { return api("/api/admin/folder?" + qs({ folder: currentFolder(), sub: dir }), { method: "DELETE", timeout: 300000 }).then(function () { toast("Folder deleted"); refreshStats(); return loadFiles(); }); });
+        busy(dd, function () { return api("/api/admin/folder?" + qs({ folder: currentFolder(), sub: dir }), { method: "DELETE", timeout: 300000 }).then(function () { toast("Cartella eliminata"); refreshStats(); return loadFiles(); }); });
       });
       return;
     }
     var a = e.target.closest("[data-a]"); if (!a) return;
     var row = a.closest(".f"), f = S.files[+row.dataset.i], folder = currentFolder();
     if (a.dataset.a === "delete") {
-      confirmBox("Delete “" + f.name + "”?", "The file will disappear from the website" + (S.doc && S.doc.status === "draft" ? "" : " immediately") + ". This cannot be undone.", "Delete file", true).then(function (ok) {
+      confirmBox("Eliminare “" + f.name + "”?", "Il file sparirà dal sito" + (S.doc && S.doc.status === "draft" ? "" : " subito") + ". L’operazione non si può annullare.", "Elimina file", true).then(function (ok) {
         if (!ok) return;
-        busy(a, function () { return api("/api/admin/file?" + qs({ folder: folder, name: f.path || f.name }), { method: "DELETE" }).then(function () { toast("File deleted"); return loadFiles(); }); });
+        busy(a, function () { return api("/api/admin/file?" + qs({ folder: folder, name: f.path || f.name }), { method: "DELETE" }).then(function () { toast("File eliminato"); return loadFiles(); }); });
       });
     }
     if (a.dataset.a === "rename") startRename(row, f, folder);
   });
   function startRename(row, f, folder) {
     var nm = row.querySelector(".nm"), acts = row.querySelector(".acts"), old = nm.innerHTML;
-    nm.innerHTML = '<form class="ren"><input aria-label="New file name" maxlength="180"><button class="btn small primary" type="submit">Save</button><button class="btn small ghost" type="button">Cancel</button></form>';
+    nm.innerHTML = '<form class="ren"><input aria-label="Nuovo nome del file" maxlength="180"><button class="btn small primary" type="submit">Salva</button><button class="btn small ghost" type="button">Annulla</button></form>';
     acts.hidden = true;
     var form = nm.querySelector("form"), inp = form.querySelector("input");
     inp.value = f.name; inp.focus();
@@ -457,7 +458,7 @@
       if (ext && to.toLowerCase().slice(-ext.length) !== ext.toLowerCase()) to += ext; // keep the extension
       if (to === f.name) return cancel();
       busy(form.querySelector(".primary"), function () {
-        return api("/api/admin/rename?" + qs({ folder: folder, name: f.path || f.name, to: to }), { method: "POST", timeout: 600000 }).then(function () { toast("File renamed"); return loadFiles(); });
+        return api("/api/admin/rename?" + qs({ folder: folder, name: f.path || f.name, to: to }), { method: "POST", timeout: 600000 }).then(function () { toast("File rinominato"); return loadFiles(); });
       });
     };
   }
@@ -473,10 +474,10 @@
   // ---------- Webflow offline: files only ----------
   function renderFallback() {
     $("fallback-folders").innerHTML = S.folders.length ? S.folders.map(function (f) {
-      return '<a class="doc" href="#folder=' + encodeURIComponent(f.folder) + '"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder) + "</b><span>" + f.count + " files · " + size(f.size) + "</span></div><div></div></a>";
-    }).join("") : '<p class="sub">No folders yet.</p>';
+      return '<a class="doc" href="#folder=' + encodeURIComponent(f.folder) + '"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder) + "</b><span>" + f.count + " file · " + size(f.size) + "</span></div><div></div></a>";
+    }).join("") : '<p class="sub">Nessuna cartella.</p>';
   }
-  $("retry").onclick = function () { busy(this, function () { return load().then(function () { if (S.offline) toast("Webflow is still not responding", true); else { toast("Connected to Webflow"); route(); } }); }); };
+  $("retry").onclick = function () { busy(this, function () { return load().then(function () { if (S.offline) toast("Webflow continua a non rispondere", true); else { toast("Connessione a Webflow ripristinata"); route(); } }); }); };
   // Finished rows go; uploads still running for another document stay visible, labelled
   function clearQueue() {
     Array.prototype.forEach.call($("queue").children, function (r) {
@@ -493,6 +494,9 @@
 
   // ---------- other collections (press contacts, …) ----------
   var C = { key: null, data: null, q: "", item: null };
+  // Italian labels for the Webflow fields (fallback: the Webflow name)
+  var FIELD_IT = { name: "Nome e cognome", position: "Ruolo", email: "Email", "phone-number": "Telefono", country: "Brand / mercato" };
+  function fieldLabel(f) { return FIELD_IT[f.slug] || f.name; }
   function openCms(key) {
     S.view = "cms:" + key; renderSide();
     if (C.key !== key) { C = { key: key, data: null, q: "", item: null }; $("cms-search").value = ""; }
@@ -503,14 +507,14 @@
     return api("/api/admin/cms/" + encodeURIComponent(key), { timeout: 60000 }).then(function (j) {
       if (C.key !== key) return;
       C.data = j; renderCms();
-    }).catch(function (e) { $("cms-list").innerHTML = '<div class="none">' + esc(e.message) + ' <button class="btn small ghost" type="button" data-cms-reload>Try again</button></div>'; });
+    }).catch(function (e) { $("cms-list").innerHTML = '<div class="none">' + esc(e.message) + ' <button class="btn small ghost" type="button" data-cms-reload>Riprova</button></div>'; });
   }
   function refLabel(f, id) { var l = (C.data.refs[f.slug] || []).filter(function (r) { return r.id === id; })[0]; return l ? l.name : ""; }
   function renderCms() {
     var j = C.data, q = C.q.toLowerCase();
-    $("cms-new").hidden = false; $("cms-new").textContent = "+ New " + (j.singular || "item").toLowerCase();
+    $("cms-new").hidden = false; $("cms-new").textContent = "+ Nuovo " + (C.key === "contacts" ? "contatto" : "elemento");
     var live = j.items.filter(function (i) { return i.status !== "draft"; }).length;
-    $("cms-sub").textContent = j.items.length + (j.items.length === 1 ? " item" : " items") + " · " + live + " live on the website";
+    $("cms-sub").textContent = j.items.length + (j.items.length === 1 ? " elemento" : " elementi") + " · " + live + " online sul sito";
     var list = j.items.filter(function (i) { return !q || JSON.stringify(i.data).toLowerCase().indexOf(q) >= 0; })
       .sort(function (a, b) { return String(a.data.name || "").localeCompare(String(b.data.name || ""), "en"); });
     $("cms-list").innerHTML = list.length ? list.map(function (i) {
@@ -519,11 +523,11 @@
         if (f.type === "MultiReference") return (v || []).map(function (id) { return refLabel(f, id); }).filter(Boolean).join(", ");
         if (f.type === "Reference") return refLabel(f, v);
         if (f.type === "Option") return ((f.options || []).filter(function (o) { return o.id === v; })[0] || {}).name || "";
-        if (f.type === "Switch") return v ? f.name : "";
+        if (f.type === "Switch") return v ? fieldLabel(f) : "";
         return v || "";
       }).filter(Boolean);
-      return '<a class="doc" href="#cms=' + esc(C.key) + '" data-item="' + i.id + '"><div class="ic">' + ICON.contact + '</div><div class="t"><b>' + esc(d.name || "(no name)") + "</b><span>" + esc(bits.join(" · ")) + '</span></div><div class="r"><span class="pill ' + STATUS[i.status][0] + '">' + (i.status === "live" ? "Live" : i.status === "draft" ? "Draft" : "Changes pending") + "</span></div></a>";
-    }).join("") : '<div class="none">' + (j.items.length ? "Nothing matches your search." : "Nothing here yet.") + "</div>";
+      return '<a class="doc" href="#cms=' + esc(C.key) + '" data-item="' + i.id + '"><div class="ic">' + ICON.contact + '</div><div class="t"><b>' + esc(d.name || "(senza nome)") + "</b><span>" + esc(bits.join(" · ")) + '</span></div><div class="r"><span class="pill ' + STATUS[i.status][0] + '">' + (i.status === "live" ? "Online" : i.status === "draft" ? "Bozza" : "Modifiche da pubblicare") + "</span></div></a>";
+    }).join("") : '<div class="none">' + (j.items.length ? "Nessun risultato per questa ricerca." : "Ancora nessun elemento.") + "</div>";
   }
   $("cms-search").addEventListener("input", function () { C.q = this.value; if (C.data) renderCms(); });
   $("cms-list").addEventListener("click", function (e) {
@@ -536,12 +540,12 @@
   function openItem(item) {
     var j = C.data; C.item = item;
     var d = item ? item.data : {};
-    $("i-title").textContent = item ? (d.name || "Edit") : "New " + (j.singular || "item").toLowerCase();
+    $("i-title").textContent = item ? (d.name || "Modifica") : (C.key === "contacts" ? "Nuovo contatto" : "Nuovo elemento");
     $("i-pill").hidden = !item;
     if (item) { $("i-pill").className = "pill " + STATUS[item.status][0]; $("i-pill").textContent = STATUS[item.status][1]; }
     $("i-fields").innerHTML = j.fields.map(function (f) {
-      var id = "if-" + f.slug, v = d[f.slug], label = esc(f.name) + (f.required ? "" : " <em>optional</em>");
-      if (f.type === "Switch") return '<label class="check full"><input type="checkbox" id="' + id + '"' + (v ? " checked" : "") + "> <span>" + esc(f.name) + "</span></label>";
+      var id = "if-" + f.slug, v = d[f.slug], label = esc(fieldLabel(f)) + (f.required ? "" : " <em>facoltativo</em>");
+      if (f.type === "Switch") return '<label class="check full"><input type="checkbox" id="' + id + '"' + (v ? " checked" : "") + "> <span>" + esc(fieldLabel(f)) + "</span></label>";
       if (f.type === "Option" || f.type === "Reference") {
         var opts = f.type === "Option" ? f.options : (j.refs[f.slug] || []);
         return '<label class="field full"><span>' + label + '</span><select id="' + id + '"><option value="">—</option>' + opts.map(function (o) { return '<option value="' + o.id + '"' + (o.id === v ? " selected" : "") + ">" + esc(o.name) + "</option>"; }).join("") + "</select></label>";
@@ -557,7 +561,7 @@
     $("i-delete").hidden = !item;
     $("i-unpublish").hidden = !item || item.status === "draft";
     $("i-save").hidden = !!item && item.status !== "draft";
-    $("i-publish").textContent = item && item.status !== "draft" ? "Save changes" : "Save and publish";
+    $("i-publish").textContent = item && item.status !== "draft" ? "Salva modifiche" : "Salva e pubblica";
     $("m-item").hidden = false;
     var first = $("i-fields").querySelector("input,select"); if (first) first.focus();
   }
@@ -583,25 +587,25 @@
     var btn = e.submitter || $("i-publish"), mode = btn.dataset.mode, item = C.item, data = itemValues(), base = "/api/admin/cms/" + encodeURIComponent(C.key);
     $("i-err").textContent = "";
     var missing = C.data.fields.filter(function (f) { return f.required && !data[f.slug]; })[0];
-    if (missing) { $("i-err").textContent = "Please fill in “" + missing.name + "”."; return; }
+    if (missing) { $("i-err").textContent = "Compila il campo “" + (FIELD_IT[missing.slug] || missing.name) + "”."; return; }
     if (btn.classList.contains("busy")) return;
     btn.classList.add("busy");
     var p = item ? api(base + "/" + item.id, { method: "PATCH", json: { data: data } }) : api(base, { method: "POST", json: { data: data }, once: true });
     p.then(function (j) {
-      if (mode === "publish" && j.item.status === "draft") return api(base + "/" + j.item.id + "/publish", { method: "POST" }).then(function (k) { itemDone(k.item, "Saved and published"); });
-      itemDone(j.item, j.item.status === "draft" ? "Saved as draft" : "Changes saved and published");
+      if (mode === "publish" && j.item.status === "draft") return api(base + "/" + j.item.id + "/publish", { method: "POST" }).then(function (k) { itemDone(k.item, "Salvato e pubblicato"); });
+      itemDone(j.item, j.item.status === "draft" ? "Salvato come bozza" : "Modifiche salvate e pubblicate");
     }).catch(function (err) { $("i-err").textContent = err.message; }).then(function () { btn.classList.remove("busy"); });
   });
   $("i-unpublish").onclick = function () {
     var btn = this, item = C.item;
-    busy(btn, function () { return api("/api/admin/cms/" + encodeURIComponent(C.key) + "/" + item.id + "/unpublish", { method: "POST" }).then(function (j) { itemDone(j.item, "Unpublished: no longer visible on the website"); }); });
+    busy(btn, function () { return api("/api/admin/cms/" + encodeURIComponent(C.key) + "/" + item.id + "/unpublish", { method: "POST" }).then(function (j) { itemDone(j.item, "Ritirato: non è più visibile sul sito"); }); });
   };
   $("i-delete").onclick = function () {
     var item = C.item, btn = this;
     $("m-item").hidden = true;
-    confirmBox("Delete “" + (item.data.name || "this item") + "”?", "It will be removed from the website. This cannot be undone.", "Delete", true).then(function (ok) {
+    confirmBox("Eliminare “" + (item.data.name || "questo elemento") + "”?", "Verrà tolto dal sito. L’operazione non si può annullare.", "Elimina", true).then(function (ok) {
       if (!ok) { $("m-item").hidden = false; return; }
-      busy(btn, function () { return api("/api/admin/cms/" + encodeURIComponent(C.key) + "/" + item.id, { method: "DELETE" }).then(function () { C.data.items = C.data.items.filter(function (x) { return x.id !== item.id; }); renderCms(); toast("Deleted"); }); });
+      busy(btn, function () { return api("/api/admin/cms/" + encodeURIComponent(C.key) + "/" + item.id, { method: "DELETE" }).then(function () { C.data.items = C.data.items.filter(function (x) { return x.id !== item.id; }); renderCms(); toast("Eliminato"); }); });
     });
   };
 
@@ -609,14 +613,14 @@
     // Reuse the document view without the Webflow parts
     S.doc = null; S.folderOnly = folder; S.view = "brand";
     var fb = brandBySlug(folder.split("/")[0]);
-    $("back").querySelector("span").textContent = fb && !S.offline ? fb.name + " documents" : "Back"; $("back").href = fb && !S.offline ? "#brand=" + fb.slug : "#";
-    $("doc-crumb").textContent = S.offline ? "Folder (Webflow offline)" : "Folder not linked to a document"; $("doc-title").textContent = folder;
-    $("doc-pill").className = "pill draft"; $("doc-pill").textContent = "Files only"; $("doc-sub").textContent = "";
+    $("back").querySelector("span").textContent = fb && !S.offline ? "Documenti " + fb.name : "Indietro"; $("back").href = fb && !S.offline ? "#brand=" + fb.slug : "#";
+    $("doc-crumb").textContent = S.offline ? "Cartella (Webflow non raggiungibile)" : "Cartella non collegata a un documento"; $("doc-title").textContent = folder;
+    $("doc-pill").className = "pill draft"; $("doc-pill").textContent = "Solo file"; $("doc-sub").textContent = "";
     ["doc-view", "doc-unpublish", "doc-publish", "details"].forEach(function (id) { $(id).hidden = true; });
     document.querySelector(".danger").hidden = true;
     var n = $("doc-notice");
     if (S.offline) n.hidden = true;
-    else { n.className = "notice warn"; n.innerHTML = 'These files are not on the website because no document uses this folder. <button class="btn small primary" type="button" data-link="' + esc(folder) + '">Create a document with these files</button>'; n.hidden = false; }
+    else { n.className = "notice warn"; n.innerHTML = 'Questi file non sono sul sito perché nessun documento usa questa cartella. <button class="btn small primary" type="button" data-link="' + esc(folder) + '">Crea un documento con questi file</button>'; n.hidden = false; }
     clearQueue();
     show("v-doc"); loadFiles();
   }
@@ -659,11 +663,11 @@
   function enqueue(items) {
     var empty = items.filter(function (x) { return !x.file.size; }).length;
     items = items.filter(function (x) { return x.file.size > 0; });
-    if (empty) toast(empty + (empty === 1 ? " empty file was" : " empty files were") + " skipped", true);
+    if (empty) toast(empty + (empty === 1 ? " file vuoto è stato saltato" : " file vuoti sono stati saltati"), true);
     if (!items.length) return;
     var owner = S.doc;
     ensureFolder().then(function (folder) {
-      if (!folder) throw new Error("This document has no folder");
+      if (!folder) throw new Error("Questo documento non ha una cartella");
       items.forEach(function (it) { addJob(it, folder, owner); });
       pump();
     }).catch(function (e) { toast(e.message, true); });
@@ -671,7 +675,7 @@
   function addJob(it, folder, owner) {
     var row = document.createElement("div");
     row.className = "q";
-    row.innerHTML = '<div class="n"></div><div class="s">Waiting…</div><div class="bar"><i></i></div>';
+    row.innerHTML = '<div class="n"></div><div class="s">In attesa…</div><div class="bar"><i></i></div>';
     row.querySelector(".n").textContent = it.path;
     row.dataset.doc = owner ? owner.name : folder;
     $("queue").appendChild(row);
@@ -688,13 +692,13 @@
     el.hidden = false;
     var left = Math.max(0, total.bytes - total.sent);
     el.querySelector("span").textContent = running || jobs.length
-      ? "Uploading " + Math.min(total.done + 1, total.n) + " of " + total.n + " · " + size(left) + " left"
-      : (failed ? failed + (failed === 1 ? " file" : " files") + " could not be uploaded" : "All files uploaded");
+      ? "Caricamento " + Math.min(total.done + 1, total.n) + " di " + total.n + " · mancano " + size(left)
+      : (failed ? (failed === 1 ? "1 file non è stato caricato" : failed + " file non sono stati caricati") : "Tutti i file sono stati caricati");
     el.querySelector("button").hidden = !failed || !!(running || jobs.length);
   }
   $("q-retry").onclick = function () {
     Array.prototype.forEach.call($("queue").querySelectorAll(".q.fail"), function (r) {
-      var j = r.__job; r.classList.remove("fail"); r.querySelector(".s").textContent = "Waiting…"; r.querySelector(".bar i").style.width = "0";
+      var j = r.__job; r.classList.remove("fail"); r.querySelector(".s").textContent = "In attesa…"; r.querySelector(".bar i").style.width = "0";
       jobs.push(j); total.n++; total.bytes += j.file.size;
     });
     summary(); pump();
@@ -703,9 +707,9 @@
     while (running < 3 && jobs.length) {
       var j = jobs.shift(); running++;
       process(j).then(function (job) {
-        job.row.classList.add("done"); job.row.querySelector(".s").textContent = "Uploaded";
+        job.row.classList.add("done"); job.row.querySelector(".s").textContent = "Caricato";
       }, function (err) {
-        this.row.classList.add("fail"); this.row.querySelector(".s").textContent = (err.message || "Upload failed");
+        this.row.classList.add("fail"); this.row.querySelector(".s").textContent = (err.message || "Upload non riuscito");
       }.bind(j)).then(function () {
         running--; total.done++; total.sent += this.file.size; summary();
         if (!running && !jobs.length) {
@@ -715,7 +719,7 @@
             setTimeout(function () { Array.prototype.forEach.call($("queue").querySelectorAll(".q.done"), function (r) { r.remove(); }); }, 1200);
           });
           refreshStats();
-          failed ? toast(failed + (failed === 1 ? " file" : " files") + " could not be uploaded: use “Retry failed”", true) : toast("Upload complete");
+          failed ? toast((failed === 1 ? "1 file non è stato caricato" : failed + " file non sono stati caricati") + ": usa “Riprova i non riusciti”", true) : toast("Upload completato");
           total = { n: 0, done: 0, bytes: 0, sent: 0 }; summary();
         }
         pump();
@@ -729,11 +733,11 @@
 
   function process(job) {
     var f = job.file, meta = {};
-    status(job, "Preparing…", 1);
-    return crc32File(f, function (p) { status(job, "Preparing… " + Math.round(p * 100) + "%", p * 5); })
+    status(job, "Preparazione…", 1);
+    return crc32File(f, function (p) { status(job, "Preparazione… " + Math.round(p * 100) + "%", p * 5); })
       .then(function (crc) {
         meta.crc32 = crc;
-        status(job, "Creating preview…", 5);
+        status(job, "Creazione anteprima…", 5);
         // Previews are a bonus: never let a slow or unsupported file block the upload
         var timeout = new Promise(function (res) { setTimeout(function () { res({}); }, 30000); });
         return Promise.race([derive(f, meta).catch(function () { return {}; }), timeout]);
@@ -746,7 +750,7 @@
           return Promise.all(ups);
         });
       })
-      .then(function () { status(job, "Uploaded", 100); return job; });
+      .then(function () { status(job, "Caricato", 100); return job; });
   }
 
   // ---------- CRC32 (stored so the Worker can build ZIPs without CPU work) ----------
@@ -842,14 +846,14 @@
       x.upload.onprogress = function (e) { if (e.lengthComputable && onp) onp(e.loaded); };
       x.onload = function () {
         var j = {}; try { j = JSON.parse(x.responseText); } catch (e) {}
-        if (x.status === 401) { logout(); return rej(new Error("Session expired")); }
-        x.status < 300 ? res(j) : rej(new Error(j.error || "Error " + x.status));
+        if (x.status === 401) { logout(); return rej(new Error("Sessione scaduta")); }
+        x.status < 300 ? res(j) : rej(new Error(j.error || "Errore " + x.status));
       };
-      x.onerror = function () { rej(new Error("Network error")); };
+      x.onerror = function () { rej(new Error("Errore di rete")); };
       x.send(body);
     });
   }
-  function withRetry(fn, n) { return fn().catch(function (e) { if (n > 0 && e.message !== "Session expired") return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return withRetry(fn, n - 1); }); throw e; }); }
+  function withRetry(fn, n) { return fn().catch(function (e) { if (n > 0 && e.message !== "Sessione scaduta") return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return withRetry(fn, n - 1); }); throw e; }); }
   function putBlob(folder, name, blob, derived) {
     return withRetry(function () { return xhr("PUT", "/api/admin/put?" + qs({ folder: folder, name: name, derived: derived }), blob); }, 2);
   }
@@ -858,11 +862,11 @@
     var q = Object.assign({}, base, meta);
     if (f.size <= SINGLE_MAX) {
       return withRetry(function () {
-        return xhr("PUT", "/api/admin/put?" + qs(q), f, function (l) { status(job, "Uploading… " + size(l) + " / " + size(f.size), 5 + (l / f.size) * 94); });
+        return xhr("PUT", "/api/admin/put?" + qs(q), f, function (l) { status(job, "Caricamento… " + size(l) + " / " + size(f.size), 5 + (l / f.size) * 94); });
       }, 2);
     }
     var parts = Math.ceil(f.size / PART), loaded = new Array(parts).fill(0), done = [];
-    function prog() { var l = loaded.reduce(function (a, b) { return a + b; }, 0); status(job, "Uploading… " + size(l) + " / " + size(f.size), 5 + (l / f.size) * 94); }
+    function prog() { var l = loaded.reduce(function (a, b) { return a + b; }, 0); status(job, "Caricamento… " + size(l) + " / " + size(f.size), 5 + (l / f.size) * 94); }
     return api("/api/admin/mpu/create?" + qs(Object.assign({ type: f.type || "application/octet-stream" }, q)), { method: "POST" }).then(function (m) {
       var next = 0;
       function worker() {
@@ -873,7 +877,7 @@
         }, 3).then(function (p) { loaded[i] = blob.size; done[i] = { partNumber: p.partNumber, etag: p.etag }; prog(); return worker(); });
       }
       return Promise.all([worker(), worker(), worker()]).then(function () {
-        status(job, "Finishing…", 99);
+        status(job, "Completamento…", 99);
         return api("/api/admin/mpu/complete?" + qs(Object.assign({ uploadId: m.uploadId }, base)), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ parts: done }) });
       }, function (err) {
         api("/api/admin/mpu/abort?" + qs(Object.assign({ uploadId: m.uploadId }, base)), { method: "POST" }).catch(function () {});

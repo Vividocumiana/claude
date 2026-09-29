@@ -2,7 +2,7 @@
 // "All Documents" collection whose "Media Folder" field points to an R2 folder.
 // Brands are the items of the "Events" collection (the main event excluded).
 
-const F = { type: "tipologia-documento", desc: "descrizione", event: "event", sheet: "scheda-tecnica", folder: "media-folder" };
+const F = { type: "tipologia-documento", desc: "descrizione", event: "event", sheet: "scheda-tecnica", folder: "media-folder", brand: "brand" };
 const RETRIES = 4;
 
 function fail(msg, status = 400) { const e = new Error(msg); e.status = status; throw e; }
@@ -14,7 +14,7 @@ export function slugify(s) {
 
 export class Webflow {
   constructor(env) {
-    if (!env.WEBFLOW_TOKEN) fail("Webflow is not connected (missing WEBFLOW_TOKEN)", 503);
+    if (!env.WEBFLOW_TOKEN) fail("Webflow non è collegato (manca WEBFLOW_TOKEN)", 503);
     this.env = env;
     this.base = (env.WEBFLOW_API || "https://api.webflow.com/v2").replace(/\/$/, "");
     this.docs = env.WEBFLOW_DOCS_COLLECTION;
@@ -33,7 +33,7 @@ export class Webflow {
           body: body ? JSON.stringify(body) : undefined,
         });
       } catch (e) {
-        last = new Error("Webflow is not reachable");
+        last = new Error("Webflow non è raggiungibile");
         last.status = 502;
       }
       if (r) {
@@ -85,7 +85,7 @@ export class Webflow {
   }
 
   async getDoc(id) {
-    if (!/^[0-9a-f]{24}$/.test(id)) fail("Unknown document", 404);
+    if (!/^[0-9a-f]{24}$/.test(id)) fail("Documento non trovato", 404);
     return docOut(await this.call("GET", `/collections/${this.docs}/items/${id}`));
   }
 
@@ -97,7 +97,7 @@ export class Webflow {
     let slug = base;
     for (let n = 2; await isTaken(slug, folder ? null : folderOf(slug)); n++) slug = base + "-" + n;
     for (let attempt = 0; ; attempt++) {
-      const fieldData = { name: input.name, slug, [F.event]: brand.id, [F.type]: input.type || null, [F.desc]: input.desc || "", [F.sheet]: !!input.sheet, [F.folder]: folderOf(slug) };
+      const fieldData = { name: input.name, slug, [F.event]: brand.id, [F.brand]: brand.slug, [F.type]: input.type || null, [F.desc]: input.desc || "", [F.sheet]: !!input.sheet, [F.folder]: folderOf(slug) };
       try {
         return docOut(await this.call("POST", `/collections/${this.docs}/items`, { isArchived: false, isDraft: true, fieldData }));
       } catch (e) {
@@ -118,6 +118,21 @@ export class Webflow {
     return docOut(await this.call("PATCH", `/collections/${this.docs}/items/${id}`, { fieldData }));
   }
 
+  // The brand page lists documents whose "Brand" text field equals the brand slug:
+  // fill it where missing or wrong (bulk update, then republish the live ones).
+  async syncBrandField(docs, brands) {
+    const slugOf = Object.fromEntries(brands.map((b) => [b.id, b.slug]));
+    const todo = docs.filter((d) => d.brand && slugOf[d.brand] && d.brandSlug !== slugOf[d.brand]);
+    for (let i = 0; i < todo.length; i += 100) {
+      const part = todo.slice(i, i + 100);
+      await this.call("PATCH", `/collections/${this.docs}/items`, { items: part.map((d) => ({ id: d.id, fieldData: { [F.brand]: slugOf[d.brand] } })) });
+      const live = part.filter((d) => d.status !== "draft").map((d) => d.id);
+      if (live.length) await this.call("POST", `/collections/${this.docs}/items/publish`, { itemIds: live });
+      part.forEach((d) => { d.brandSlug = slugOf[d.brand]; });
+    }
+    return todo.length;
+  }
+
   async publish(id) { await this.publishItem(this.docs, id); return this.getDoc(id); }
   async unpublish(id) { await this.unpublishItem(this.docs, id); return this.getDoc(id); }
 
@@ -128,7 +143,7 @@ export class Webflow {
   }
   async items(collection) { return (await this.all(collection)).filter((i) => !i.isArchived).map(itemOut); }
   async getItem(collection, id) {
-    if (!/^[0-9a-f]{24}$/.test(id)) fail("Unknown item", 404);
+    if (!/^[0-9a-f]{24}$/.test(id)) fail("Elemento non trovato", 404);
     return itemOut(await this.call("GET", `/collections/${collection}/items/${id}`));
   }
   async createItem(collection, fieldData) {
@@ -139,7 +154,7 @@ export class Webflow {
   }
   async publishItem(collection, id) {
     const j = await this.call("POST", `/collections/${collection}/items/publish`, { itemIds: [id] });
-    if (j.errors && j.errors.length && !(j.publishedItemIds || []).includes(id)) fail("Webflow could not publish: " + [].concat(j.errors).map((e) => e.message || e).join("; "), 502);
+    if (j.errors && j.errors.length && !(j.publishedItemIds || []).includes(id)) fail("Webflow non è riuscito a pubblicare: " + [].concat(j.errors).map((e) => e.message || e).join("; "), 502);
   }
   async unpublishItem(collection, id) {
     try { await this.call("DELETE", `/collections/${collection}/items/${id}/live`); }
@@ -174,7 +189,7 @@ function docOut(i) {
   const live = !!lp && !i.isDraft;
   return {
     id: i.id, name: d.name || "", slug: d.slug || "", brand: d[F.event] || null, type: d[F.type] || null,
-    desc: d[F.desc] || "", sheet: !!d[F.sheet], folder: (d[F.folder] || "").trim() || null,
+    desc: d[F.desc] || "", sheet: !!d[F.sheet], folder: (d[F.folder] || "").trim() || null, brandSlug: d[F.brand] || null,
     status: live ? (lu - lp > 5000 ? "changes" : "live") : "draft",
     updated: i.lastUpdated || null, published: i.lastPublished || null,
   };
@@ -182,9 +197,9 @@ function docOut(i) {
 
 function webflowMessage(status, j) {
   const detail = j && (j.message || j.msg || (j.details && JSON.stringify(j.details)) || j.code);
-  if (status === 401 || status === 403) return "Webflow refused the request (check the API token permissions)";
-  if (status === 429) return "Webflow is busy, please try again in a minute";
-  if (status >= 500) return "Webflow is temporarily unavailable, please try again";
-  return "Webflow: " + (detail || "error " + status);
+  if (status === 401 || status === 403) return "Webflow ha rifiutato la richiesta (controlla i permessi del token API)";
+  if (status === 429) return "Webflow è occupato, riprova tra un minuto";
+  if (status >= 500) return "Webflow è temporaneamente non disponibile, riprova";
+  return "Webflow: " + (detail || "errore " + status);
 }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }

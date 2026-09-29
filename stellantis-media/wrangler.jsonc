@@ -10,7 +10,7 @@
     "SITE_URL": "https://alfaromeopresskit-b75e626c62ba0a8ba3bb9.webflow.io",
     // Other collections editable from the manager (fields shown in this order)
     "CMS_COLLECTIONS": {
-      "contacts": { "id": "6ab5f7c03bc1be2290997df5", "title": "Press contacts", "singular": "Contact", "fields": ["name", "position", "email", "phone-number", "country"] }
+      "contacts": { "id": "6ab5f7c03bc1be2290997df5", "title": "Contatti stampa", "singular": "Contatto", "fields": ["name", "position", "email", "phone-number", "country"] }
     }
   },
   "r2_buckets": [

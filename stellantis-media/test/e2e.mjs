@@ -23,7 +23,7 @@ const shot = (n) => p.screenshot({ path: DIR + n + '.png' });
 
 await p.goto(BASE + '/upload/');
 await p.fill('#pwd', 'wrong'); await p.click('#login-form button');
-await p.waitForFunction(() => /Wrong password/.test(document.getElementById('login-err').textContent), null, { timeout: 30000 }).catch(async e => { console.log('login-err:', await p.textContent('#login-err')); throw e; });
+await p.waitForFunction(() => /Password errata/.test(document.getElementById('login-err').textContent), null, { timeout: 30000 }).catch(async e => { console.log('login-err:', await p.textContent('#login-err')); throw e; });
 step('wrong password message');
 await p.fill('#pwd', PW); await p.click('#login-form button');
 await p.waitForSelector('#v-brand:not([hidden])', { timeout: 30000 });
@@ -37,22 +37,22 @@ step('fiat docs: ' + await p.locator('#docs .doc').count());
 // New document
 await p.click('#new-doc');
 await p.click('#n-create');
-await p.waitForFunction(() => /title/.test(document.getElementById('n-err').textContent));
+await p.waitForFunction(() => /titolo/.test(document.getElementById('n-err').textContent));
 await p.fill('#n-name', 'E2E Grande Panda – Photos');
 await p.click('#n-create');
-await p.waitForFunction(() => /category/.test(document.getElementById('n-err').textContent));
+await p.waitForFunction(() => /categoria/.test(document.getElementById('n-err').textContent));
 step('validation messages');
 await p.click('#n-type [data-v]:first-child');
 await p.fill('#n-desc', 'Photos of the launch');
 await shot('02-new');
 await p.click('#n-create');
 await p.waitForSelector('#v-doc:not([hidden])', { timeout: 30000 });
-await p.waitForFunction(() => /Draft/.test(document.getElementById('doc-pill').textContent));
+await p.waitForFunction(() => /Bozza/.test(document.getElementById('doc-pill').textContent));
 step('document created as draft: ' + await p.textContent('#doc-title'));
 
 // Upload
 await p.setInputFiles('#file-input', ['Grande Panda 01.jpg', 'Grande Panda 02.jpg', 'Grande Panda 03.jpg', 'Press release.pdf', 'Fact sheet.docx'].map(n => F + n));
-await toast(/Upload complete|could not/);
+await toast(/Upload completato|non (è|sono) stat/);
 await p.waitForFunction(() => document.querySelectorAll('#files .f').length === 5, null, { timeout: 20000 });
 step('5 files uploaded; failed rows: ' + await p.locator('.q.fail').count());
 await shot('03-doc');
@@ -63,7 +63,7 @@ const row = p.locator('#files .f').nth(await idx('Grande Panda 02.jpg'));
 await row.locator('[data-a=rename]').click();
 await row.locator('.ren input').fill('Grande Panda front');
 await row.locator('.ren .primary').click();
-await toast(/renamed/);
+await toast(/rinominato/);
 await p.waitForSelector('#files .f b[title="Grande Panda front.jpg"]');
 step('renamed to "Grande Panda front.jpg"');
 // Rename onto an existing name is refused
@@ -71,14 +71,14 @@ const row2 = p.locator('#files .f').nth(await idx('Grande Panda 03.jpg'));
 await row2.locator('[data-a=rename]').click();
 await row2.locator('.ren input').fill('Grande Panda 01');
 await row2.locator('.ren .primary').click();
-await toast(/already exists/);
+await toast(/esiste già/);
 await row2.locator('.ren .ghost').click();
 step('rename onto existing name refused');
 
 // Delete file
 await p.locator('#files .f', { hasText: 'Fact sheet.docx' }).locator('[data-a=delete]').click();
 await p.click('#c-yes');
-await toast(/File deleted/);
+await toast(/File eliminato/);
 await p.waitForFunction(() => document.querySelectorAll('#files .f').length === 4);
 step('file deleted');
 
@@ -87,21 +87,21 @@ await p.fill('#d-name', 'E2E Grande Panda – Launch photos');
 await p.click('#d-type [data-v]:nth-child(3)');
 await p.check('#d-sheet');
 await p.click('#d-save');
-await toast(/Changes saved/);
+await toast(/Modifiche salvate/);
 await p.waitForFunction(() => document.getElementById('doc-title').textContent === 'E2E Grande Panda – Launch photos');
 step('details saved');
 
 // Publish / edit live / unpublish
 await p.click('#doc-publish');
-await toast(/Published/);
-await p.waitForFunction(() => /Live/.test(document.getElementById('doc-pill').textContent));
+await toast(/Pubblicato/);
+await p.waitForFunction(() => /Online/.test(document.getElementById('doc-pill').textContent));
 step('published, view link: ' + await p.getAttribute('#doc-view', 'href'));
 await p.fill('#d-desc', 'Edited while live');
 await p.click('#d-save');
-await toast(/saved and published/);
+await toast(/salvate e pubblicate/);
 step('edit while live republished');
 await p.click('#doc-unpublish'); await p.click('#c-yes');
-await toast(/Unpublished/);
+await toast(/Ritirato/);
 step('unpublished');
 
 if (process.env.LEGACY !== '0') {
@@ -110,7 +110,7 @@ await p.click('#back');
 await p.click('#docs .doc:has-text("B-Roll")');
 await p.waitForSelector('#v-doc:not([hidden])');
 await p.setInputFiles('#file-input', [F + 'Grande Panda 01.jpg']);
-await toast(/Upload complete|could not/);
+await toast(/Upload completato|non (è|sono) stat/);
 await p.waitForFunction(() => document.querySelectorAll('#files .f').length === 1, null, { timeout: 20000 });
 step('legacy doc got a folder and a file');
 
@@ -125,7 +125,7 @@ await p.click('#back');
 await p.click('#docs .doc:has-text("E2E Grande Panda")');
 await p.waitForSelector('#v-doc:not([hidden])');
 await p.click('#doc-delete'); await shot('04-confirm'); await p.click('#c-yes');
-await toast(/Document deleted/);
+await toast(/Documento eliminato/);
 await p.waitForSelector('#v-brand:not([hidden])');
 step('document deleted, docs left: ' + await p.locator('#docs .doc').count());
 

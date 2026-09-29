@@ -56,6 +56,10 @@ http.createServer((req, res) => {
       const it = item(body.fieldData, { isDraft: body.isDraft !== false });
       list.push(it); return send(res, 202, it);
     }
+    if (p.length === 3 && req.method === "PATCH") {
+      (body.items || []).forEach((u) => { const it = list.find((i) => i.id === u.id); if (it) { Object.assign(it.fieldData, u.fieldData || {}); it.lastUpdated = now(); } });
+      return send(res, 200, { items: list.filter((i) => (body.items || []).some((u) => u.id === i.id)) });
+    }
     if (p[3] === "publish" && req.method === "POST") {
       const ids = body.itemIds || [];
       ids.forEach((x) => { const it = list.find((i) => i.id === x); if (it) { it.isDraft = false; it.lastPublished = it.lastUpdated = now(); } });

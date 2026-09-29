@@ -7,7 +7,7 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
   for photos, videos, PDFs and documents, "Download original" and
   "Download all" (ZIP built on the fly). Loaded by the Webflow document
   template when the CMS field **Media Folder** is filled.
-- **Press Kit Manager** (`/upload`): password-protected. Everything is managed
+- **Press Kit Manager** (`/upload`, in Italian): password-protected. Everything is managed
   here, nobody needs to open Webflow:
   - pick a brand (the brands are the items of the Webflow **Events** collection);
   - **New document** creates the Webflow CMS item (title, category, description,
@@ -96,3 +96,10 @@ BASE=http://localhost:8787 PW=test FILES=/path/to/fixtures node test/e2e.mjs
 BASE=http://localhost:8787 PW=test FIXTURES=/path/to/fixtures node test/e2e-folders.mjs
 BASE=http://localhost:8787 PW=test node test/e2e-cms.mjs
 ```
+
+## Brand pages and the "Brand" field
+
+Documents carry a plain-text **Brand** field (brand slug) filled by the manager
+(new documents, and any missing value every time the manager opens). The
+documents list of the Events template is filtered by `Brand = current Event's
+Slug`, so each brand page can list up to 100 documents of its own brand.
