@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Media Upload – Stellantis Paris 2026</title>
+<link rel="stylesheet" href="/upload/upload.css">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <form class="login-card" id="login-form">
+    <img class="logo" src="https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab61d6550050578bb4b1052_stellantis-1.svg" alt="Stellantis">
+    <h1>Media upload</h1>
+    <p>Mondial de l'Auto Paris 2026 press kit. Enter the upload password to manage photos, videos and documents.</p>
+    <input id="pwd" type="password" placeholder="Upload password" autocomplete="current-password" required aria-label="Upload password">
+    <button class="btn primary" type="submit">Sign in</button>
+    <div class="err" id="login-err" role="alert"></div>
+  </form>
+</div>
+
+<div id="app" class="app" hidden>
+  <header class="top">
+    <img class="logo" src="https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab61d6550050578bb4b1052_stellantis-1.svg" alt="Stellantis">
+    <div class="top-title">Media upload <span>Mondial de l'Auto Paris 2026</span></div>
+    <button class="btn ghost small" id="logout" type="button">Sign out</button>
+  </header>
+  <div class="layout">
+    <aside class="side" id="side" aria-label="Brands and folders"></aside>
+    <main class="main">
+      <div class="empty-state" id="pick">
+        <h2>Choose a folder</h2>
+        <p>Select a brand on the left, then open one of its folders or create a new one (for example <b>photos</b>, <b>videos</b>, <b>documents</b>, <b>embargo</b>).</p>
+      </div>
+      <section id="folder" hidden>
+        <div class="folder-head">
+          <div>
+            <div class="crumb" id="crumb"></div>
+            <h2 id="folder-title"></h2>
+          </div>
+          <a class="btn ghost small" id="preview-link" target="_blank" rel="noopener">Preview as journalists see it ↗</a>
+        </div>
+        <div class="path-box">
+          <div>
+            <b>Folder path for Webflow</b>
+            <span>Paste it in the “Media Folder” field of the document in the Webflow CMS.</span>
+          </div>
+          <code id="path"></code>
+          <button class="btn small" id="copy" type="button">Copy</button>
+        </div>
+        <label class="drop" id="drop">
+          <input type="file" id="file-input" multiple hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <strong>Drop files here or click to browse</strong>
+          <span>Photos (JPG, PNG, WebP), videos (MP4, MOV), PDFs and any other document. No size limit. Files with the same name are replaced.</span>
+        </label>
+        <div class="queue" id="queue"></div>
+        <div class="files-head"><h3>Files in this folder</h3><span id="files-meta"></span></div>
+        <div class="files" id="files"></div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/upload/upload.js"></script>
+</body>
+</html>

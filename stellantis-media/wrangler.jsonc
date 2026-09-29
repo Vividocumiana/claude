@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stl26-media",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "stl26-media" }
+  ]
+  // Secrets (set with `npx wrangler secret put <NAME>`):
+  //   UPLOAD_PASSWORD – password of the /upload page
+  //   TOKEN_SECRET    – random string used to sign upload sessions
+}
