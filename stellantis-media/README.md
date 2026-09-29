@@ -13,6 +13,14 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
   browser; the CRC-32 of every file is stored so ZIPs cost no Worker CPU.
 - **Preview** (`/preview/?folder=fiat/photos`): the viewer outside Webflow.
 
+## Live
+
+- Worker: https://stl26-media.toolpress.workers.dev (bucket `stl26-media`)
+- Upload: https://stl26-media.toolpress.workers.dev/upload/
+- Webflow: `STL_MEDIA_HOST` set in the head code of **All Documents Template**;
+  Box embed, Box CDN assets and the `box-auth-proxy` call removed. Documents
+  without a Media Folder hide the viewer area.
+
 ## API
 
 | Route | |
