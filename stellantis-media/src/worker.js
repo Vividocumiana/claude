@@ -8,6 +8,7 @@
 //   _derived/<brand>/<folder>/<file>.preview.jpg large preview / video poster
 
 import { zipPlan, streamZip } from "./zip.js";
+import { Webflow } from "./webflow.js";
 
 const DERIVED = "_derived/";
 const TOKEN_TTL = 12 * 3600 * 1000;
@@ -20,17 +21,18 @@ export default {
       if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
       if (p === "/upload" || p === "/upload/") return env.ASSETS.fetch(new Request(new URL("/upload/index.html", url), req));
       if (p === "/preview" || p === "/preview/") return env.ASSETS.fetch(new Request(new URL("/preview/index.html", url), req));
-      if (p.startsWith("/f/")) return serveFile(req, env, decodeKey(p.slice(3)), url.searchParams.has("dl"));
-      if (p.startsWith("/zip/")) return serveZip(req, env, ctx, cleanFolder(decodeURIComponent(p.slice(5))));
+      if (p.startsWith("/f/")) return await serveFile(req, env, decodeKey(p.slice(3)), url.searchParams.has("dl"));
+      if (p.startsWith("/zip/")) return await serveZip(req, env, ctx, cleanFolder(decodeURIComponent(p.slice(5))));
       if (p === "/api/list") return cors(json(await listFolder(env, cleanFolder(url.searchParams.get("folder") || ""), url.origin)));
-      if (p === "/api/login" && req.method === "POST") return login(req, env);
+      if (p === "/api/login" && req.method === "POST") return await login(req, env);
       if (p.startsWith("/api/admin/")) {
         if (!(await authorized(req, env))) return json({ error: "Unauthorized" }, 401);
-        return admin(req, env, url, p.slice(11));
+        return await admin(req, env, url, p.slice(11));
       }
       return env.ASSETS.fetch(req);
     } catch (e) {
-      return json({ error: e.message || "Server error" }, e.status || 500);
+      if (!e.status) console.error(e);
+      return cors(json({ error: e.status ? e.message : "Server error: " + (e.message || "unknown"), }, e.status || 500));
     }
   },
 };
@@ -202,18 +204,141 @@ function targetKey(url) {
   return folder + "/" + cleanName(url.searchParams.get("name") || "");
 }
 
+async function folderStats(env) {
+  const objs = await listAll(env, "");
+  const folders = {};
+  for (const o of objs) {
+    if (o.key.startsWith(DERIVED)) continue;
+    const f = o.key.slice(0, o.key.lastIndexOf("/"));
+    const e = (folders[f] = folders[f] || { folder: f, count: 0, size: 0 });
+    e.count++; e.size += o.size;
+  }
+  return Object.values(folders).sort((a, b) => a.folder.localeCompare(b.folder));
+}
+async function folderUsed(env, folder) {
+  const r = await env.MEDIA.list({ prefix: folder + "/", limit: 1 });
+  return r.objects.length > 0;
+}
+async function deleteFolder(env, folder) {
+  for (const prefix of [folder + "/", DERIVED + folder + "/"]) {
+    const keys = (await listAll(env, prefix)).map((o) => o.key);
+    for (let i = 0; i < keys.length; i += 1000) await env.MEDIA.delete(keys.slice(i, i + 1000));
+  }
+}
+async function readJson(req) {
+  const j = await req.json().catch(() => null);
+  if (!j || typeof j !== "object") fail("Invalid request");
+  return j;
+}
+function docInput(j, types, partial) {
+  const out = {};
+  if (!partial || "name" in j) {
+    const name = String(j.name || "").replace(/\s+/g, " ").trim();
+    if (!name) fail("Please enter a title");
+    if (name.length > 200) fail("The title is too long (200 characters max)");
+    out.name = name;
+  }
+  if (!partial || "type" in j) {
+    if (!j.type || !types.some((t) => t.id === j.type)) fail("Please choose a category");
+    out.type = j.type;
+  }
+  if (!partial || "desc" in j) out.desc = String(j.desc || "").replace(/\s+/g, " ").trim().slice(0, 500);
+  if (!partial || "sheet" in j) out.sheet = !!j.sheet;
+  return out;
+}
+
+// Documents (Webflow CMS items) + their media folders
+async function documents(req, env, url, action) {
+  const m = req.method;
+  const wf = new Webflow(env);
+  if (action === "state" && m === "GET") {
+    const [brands, docs, schema, folders] = await Promise.all([wf.brands(), wf.listDocs(), wf.schema(), folderStats(env)]);
+    return json({ brands, docs, types: schema.types, folders, site: env.SITE_URL || "" });
+  }
+  if (action === "docs" && m === "POST") {
+    const j = await readJson(req);
+    const [brands, docs, schema] = await Promise.all([wf.brands(), wf.listDocs(), wf.schema()]);
+    const brand = brands.find((b) => b.id === j.brand);
+    if (!brand) fail("Please choose a brand");
+    const input = docInput(j, schema.types, false);
+    const slugs = new Set(docs.map((d) => d.slug)), used = new Set(docs.map((d) => d.folder).filter(Boolean));
+    // Optional: link a folder that already has files (uploaded before the document existed)
+    let existing = null;
+    if (j.folder) {
+      existing = cleanFolder(j.folder);
+      if (!existing.startsWith(brand.slug + "/")) fail("This folder belongs to another brand");
+      if (used.has(existing)) fail("This folder is already used by another document", 409);
+    }
+    const doc = await wf.createDoc(input, brand, async (slug, folder) => slugs.has(slug) || (folder && (used.has(folder) || (await folderUsed(env, folder)))), existing);
+    return json({ doc });
+  }
+  const dm = /^docs\/([0-9a-f]{24})(?:\/(publish|unpublish|folder))?$/.exec(action);
+  if (!dm) fail("Not found", 404);
+  const id = dm[1], op = dm[2];
+  if (!op && m === "PATCH") {
+    const schema = await wf.schema();
+    const input = docInput(await readJson(req), schema.types, true);
+    let doc = await wf.updateDoc(id, input);
+    if (doc.status !== "draft") doc = await wf.publish(id); // keep live pages in sync
+    return json({ doc });
+  }
+  if (op === "publish" && m === "POST") return json({ doc: await wf.publish(id) });
+  if (op === "unpublish" && m === "POST") return json({ doc: await wf.unpublish(id) });
+  if (op === "folder" && m === "POST") {
+    // Older documents (from the Box era) get a media folder the first time files are added
+    let doc = await wf.getDoc(id);
+    if (doc.folder) return json({ doc });
+    const [brands, docs] = await Promise.all([wf.brands(), wf.listDocs()]);
+    const brand = brands.find((b) => b.id === doc.brand);
+    const bslug = brand ? brand.slug : "other";
+    const used = new Set(docs.map((d) => d.folder).filter(Boolean));
+    const base = bslug + "/" + (cleanFolder(doc.slug.startsWith(bslug + "-") ? doc.slug.slice(bslug.length + 1) : doc.slug) || "document");
+    let folder = base;
+    for (let n = 2; used.has(folder) || (await folderUsed(env, folder)); n++) folder = base + "-" + n;
+    doc = await wf.updateDoc(id, { folder });
+    if (doc.status !== "draft") doc = await wf.publish(id);
+    return json({ doc });
+  }
+  if (!op && m === "DELETE") {
+    let doc;
+    try { doc = await wf.getDoc(id); } catch (e) { if (e.webflow === 404) return json({ ok: true }); throw e; } // already deleted (retried request)
+    await wf.deleteDoc(id);
+    // Files go only if no other document uses the same folder
+    if (doc.folder) {
+      const others = (await wf.listDocs()).some((d) => d.id !== id && d.folder === doc.folder);
+      if (!others) await deleteFolder(env, cleanFolder(doc.folder));
+    }
+    return json({ ok: true });
+  }
+  fail("Not found", 404);
+}
+
 async function admin(req, env, url, action) {
   const m = req.method;
-  if (action === "folders" && m === "GET") {
-    const objs = await listAll(env, "");
-    const folders = {};
-    for (const o of objs) {
-      if (o.key.startsWith(DERIVED)) continue;
-      const f = o.key.slice(0, o.key.lastIndexOf("/"));
-      const e = (folders[f] = folders[f] || { folder: f, count: 0, size: 0 });
-      e.count++; e.size += o.size;
+  if (action === "state" || action === "docs" || action.startsWith("docs/")) return documents(req, env, url, action);
+  if (action === "folders" && m === "GET") return json({ folders: await folderStats(env) });
+  if (action === "rename" && m === "POST") {
+    const src = targetKey(url);
+    const folder = src.slice(0, src.lastIndexOf("/"));
+    const dst = folder + "/" + cleanName(url.searchParams.get("to") || "");
+    if (dst === src) return json({ ok: true, key: dst });
+    const [srcHead, dstHead] = await Promise.all([env.MEDIA.head(src), env.MEDIA.head(dst)]);
+    // Retried request whose first attempt already went through
+    if (!srcHead && dstHead) return json({ ok: true, key: dst });
+    if (!srcHead) fail("File not found, please reload the page", 404);
+    if (dstHead) fail("A file with this name already exists in this folder", 409);
+    const obj = await env.MEDIA.get(src);
+    if (!obj) fail("File not found, please reload the page", 404);
+    if (obj.size > 4.9 * 1024 ** 3) { await obj.body.cancel(); fail("Files over 4.9 GB cannot be renamed: upload it again with the new name", 413); }
+    await env.MEDIA.put(dst, obj.body, { httpMetadata: obj.httpMetadata, customMetadata: obj.customMetadata });
+    for (const d of ["thumb", "preview"]) {
+      const o = await env.MEDIA.get(DERIVED + src + "." + d + ".jpg");
+      if (o) await env.MEDIA.put(DERIVED + dst + "." + d + ".jpg", o.body, { httpMetadata: o.httpMetadata });
     }
-    return json({ folders: Object.values(folders).sort((a, b) => a.folder.localeCompare(b.folder)) });
+    const check = await env.MEDIA.head(dst);
+    if (!check || check.size !== obj.size) fail("Rename failed, the original file was kept", 500);
+    await env.MEDIA.delete([src, DERIVED + src + ".thumb.jpg", DERIVED + src + ".preview.jpg"]);
+    return json({ ok: true, key: dst });
   }
   if (action === "put" && m === "PUT") {
     // Small files and derived images in a single request (< 95 MB)

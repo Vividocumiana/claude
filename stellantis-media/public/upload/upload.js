@@ -1,125 +1,434 @@
-/* Stellantis Paris 2026 – media upload page */
+/* Stellantis Paris 2026 – Press Kit Manager
+ * Documents are Webflow CMS items ("All Documents"); their files live in R2
+ * in the folder stored in the item's "Media Folder" field.
+ */
 (function () {
   "use strict";
-  var BRANDS = [
-    ["stellantis", "Stellantis (corporate)"], ["alfa-romeo", "Alfa Romeo"], ["citroen", "Citroën"], ["ds-automobiles", "DS Automobiles"],
-    ["fiat", "FIAT"], ["lancia", "Lancia"], ["leapmotor", "Leapmotor"], ["opel", "Opel"], ["peugeot", "PEUGEOT"]
-  ];
   var SINGLE_MAX = 90 * 1024 * 1024;     // above this, multipart upload
   var PART = 50 * 1024 * 1024;           // multipart part size
   var PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  var TYPE_LABEL = { foto: "Photos", video: "Videos", documento: "Documents", embargo: "Embargo" };
+  var ICON = {
+    foto: '<svg viewBox="0 0 24 24"><path d="M4 7h3l2-3h6l2 3h3v13H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    video: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m16 10 5-3v10l-5-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+    documento: '<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z M14 3v4h4 M9 12h6 M9 16h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+    embargo: '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    other: '<svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v11H3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
+  };
+  var STATUS = { live: ["live", "Live on the website"], draft: ["draft", "Draft · not visible"], changes: ["changes", "Live · changes not published"] };
   var $ = function (id) { return document.getElementById(id); };
-  var token = sessionStorage.getItem("stl26_up") || "";
-  var state = { folders: [], open: null, folder: null };
+  var token = "";
+  try { token = sessionStorage.getItem("stl26_up") || ""; } catch (e) {}
+  var S = { brands: [], docs: [], types: [], folders: [], site: "", brand: null, doc: null, filter: "", files: [], offline: false };
 
   // ---------- utils ----------
-  function slug(s) { return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
-  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function size(b) { if (b < 1024) return b + " B"; var u = ["KB", "MB", "GB", "TB"], i = -1; do { b /= 1024; i++; } while (b >= 1024 && i < 3); return (b >= 100 ? Math.round(b) : b.toFixed(1)) + " " + u[i]; }
-  function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove("show"); }, 2600); }
-  function brandName(s) { for (var i = 0; i < BRANDS.length; i++) if (BRANDS[i][0] === s) return BRANDS[i][1]; return s; }
+  function toast(msg, isErr) {
+    var t = $("toast"); t.textContent = msg; t.classList.toggle("err", !!isErr); t.classList.add("show");
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove("show"); }, isErr ? 6000 : 2800);
+  }
+  function qs(o) { return Object.keys(o).filter(function (k) { return o[k] != null && o[k] !== ""; }).map(function (k) { return k + "=" + encodeURIComponent(o[k]); }).join("&"); }
+  // Requests are retried on network errors (all of them are safe to repeat except creating a document)
   function api(path, opts) {
     opts = opts || {};
     opts.headers = Object.assign({ authorization: "Bearer " + token }, opts.headers || {});
-    return fetch(path, opts).then(function (r) {
-      if (r.status === 401) { logout(); throw new Error("Session expired, please sign in again"); }
-      return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || "Error " + r.status); return j; });
+    if (opts.json !== undefined) { opts.body = JSON.stringify(opts.json); opts.headers["content-type"] = "application/json"; delete opts.json; }
+    var tries = opts.once ? 1 : 3, limit = opts.timeout || 30000;
+    delete opts.once; delete opts.timeout;
+    function attempt(n) {
+      // A request that hangs (flaky network) is aborted and retried instead of spinning forever
+      var ctl = window.AbortController ? new AbortController() : null, t;
+      if (ctl) { opts.signal = ctl.signal; t = setTimeout(function () { ctl.abort(); }, limit); }
+      return fetch(path, opts).then(function (r) { clearTimeout(t); return r; }, function () {
+        clearTimeout(t);
+        if (n + 1 < tries) return new Promise(function (r) { setTimeout(r, 1000 * (n + 1)); }).then(function () { return attempt(n + 1); });
+        throw new Error("No connection. Check your internet and try again.");
+      });
+    }
+    return attempt(0).then(function (r) {
+      if (r.status === 401) { logout(true); throw new Error("Your session has expired, please sign in again"); }
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Something went wrong (" + r.status + ")"); return j; });
     });
   }
-  function qs(o) { return Object.keys(o).filter(function (k) { return o[k] != null && o[k] !== ""; }).map(function (k) { return k + "=" + encodeURIComponent(o[k]); }).join("&"); }
+  // Run an action with a spinner on its button; errors become a red toast
+  function busy(btn, fn) {
+    if (btn.classList.contains("busy")) return Promise.resolve();
+    btn.classList.add("busy");
+    return Promise.resolve().then(fn).catch(function (e) { toast(e.message, true); }).then(function () { btn.classList.remove("busy"); });
+  }
+  function typeName(id) { for (var i = 0; i < S.types.length; i++) if (S.types[i].id === id) return S.types[i].name; return ""; }
+  function typeLabel(id) { var n = typeName(id); return TYPE_LABEL[n] || (n ? n.charAt(0).toUpperCase() + n.slice(1) : "No category"); }
+  function brandById(id) { for (var i = 0; i < S.brands.length; i++) if (S.brands[i].id === id) return S.brands[i]; return null; }
+  function brandBySlug(s) { for (var i = 0; i < S.brands.length; i++) if (S.brands[i].slug === s) return S.brands[i]; return null; }
+  function docById(id) { for (var i = 0; i < S.docs.length; i++) if (S.docs[i].id === id) return S.docs[i]; return null; }
+  function stats(folder) { for (var i = 0; i < S.folders.length; i++) if (S.folders[i].folder === folder) return S.folders[i]; return { count: 0, size: 0 }; }
+  function docUrl(d) { return S.site ? S.site.replace(/\/$/, "") + "/all-documents/" + d.slug : ""; }
+  function when(iso) { if (!iso) return ""; var d = new Date(iso); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
+  function show(view) { ["loading", "v-error", "v-brand", "v-doc", "v-folder"].forEach(function (v) { $(v).hidden = v !== view; }); window.scrollTo(0, 0); }
+
+  function confirmBox(title, text, yes, danger) {
+    return new Promise(function (res) {
+      var m = $("m-confirm"); $("c-title").textContent = title; $("c-text").textContent = text;
+      var y = $("c-yes"); y.textContent = yes; y.className = "btn " + (danger ? "danger-fill" : "primary");
+      m.hidden = false; y.focus();
+      function done(v) { m.hidden = true; y.onclick = $("c-no").onclick = m.onkeydown = null; res(v); }
+      y.onclick = function () { done(true); }; $("c-no").onclick = function () { done(false); };
+      m.onkeydown = function (e) { if (e.key === "Escape") done(false); };
+    });
+  }
 
   // ---------- auth ----------
-  function showLogin() { $("app").hidden = true; $("login").hidden = false; $("pwd").focus(); }
-  function logout() { token = ""; sessionStorage.removeItem("stl26_up"); showLogin(); }
-  $("logout").onclick = logout;
+  function showLogin() { $("app").hidden = true; $("login").hidden = false; setTimeout(function () { $("pwd").focus(); }, 0); }
+  function logout(expired) {
+    token = ""; try { sessionStorage.removeItem("stl26_up"); } catch (e) {}
+    if (expired) $("login-err").textContent = "Your session has expired, please sign in again.";
+    showLogin();
+  }
+  $("logout").onclick = function () { if (!running || confirm("Uploads in progress will stop. Sign out anyway?")) logout(); };
   $("login-form").addEventListener("submit", function (e) {
     e.preventDefault();
+    var btn = this.querySelector("button");
     $("login-err").textContent = "";
+    btn.classList.add("busy");
     fetch("/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: $("pwd").value }) })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || "Sign-in failed"); return j; }); })
-      .then(function (j) { token = j.token; sessionStorage.setItem("stl26_up", token); $("pwd").value = ""; start(); })
-      .catch(function (err) { $("login-err").textContent = err.message; });
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error === "Wrong password" ? "Wrong password, please try again." : j.error || "Sign-in failed"); return j; }); }, function () { throw new Error("No connection. Check your internet and try again."); })
+      .then(function (j) { token = j.token; try { sessionStorage.setItem("stl26_up", token); } catch (x) {} $("pwd").value = ""; start(); })
+      .catch(function (err) { $("login-err").textContent = err.message; $("pwd").select(); })
+      .then(function () { btn.classList.remove("busy"); });
   });
 
   function start() {
     $("login").hidden = true; $("app").hidden = false;
-    loadFolders();
+    show("loading");
+    load().then(route);
+  }
+
+  // ---------- data ----------
+  function load() {
+    return api("/api/admin/state", { timeout: 60000 }).then(function (j) {
+      S.brands = j.brands; S.docs = j.docs; S.types = j.types; S.folders = j.folders; S.site = j.site; S.offline = false;
+      $("site-link").href = S.site || "#"; $("site-link").hidden = !S.site;
+      renderSide();
+    }, function (e) {
+      S.offline = true;
+      $("error-msg").textContent = e.message;
+      return api("/api/admin/folders").then(function (j) { S.folders = j.folders; }, function () { S.folders = []; }).then(function () { renderSide(); });
+    });
+  }
+  function refreshStats() { return api("/api/admin/folders").then(function (j) { S.folders = j.folders; if (!S.offline) renderSide(); }).catch(function () {}); }
+  function putDoc(d) { var i = S.docs.findIndex(function (x) { return x.id === d.id; }); if (i >= 0) S.docs[i] = d; else S.docs.push(d); }
+
+  // ---------- routing (#brand=fiat, #doc=<id>, #folder=fiat/photos) ----------
+  function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
+  window.addEventListener("hashchange", function () { if (!$("app").hidden) route(); });
+  function route() {
+    var h = location.hash.slice(1), k = h.split("=")[0], v = decodeURIComponent(h.slice(k.length + 1));
+    if (k === "folder" && v) return openFolderOnly(v);
+    if (S.offline) {
+      renderFallback(); return show("v-error");
+    }
+    if (k === "doc" && docById(v)) return openDoc(docById(v));
+    var b = (k === "brand" && brandBySlug(v)) || S.brand || S.brands[0];
+    if (b) openBrand(b); else show("v-brand");
   }
 
   // ---------- sidebar ----------
-  function loadFolders() {
-    return api("/api/admin/folders").then(function (j) { state.folders = j.folders; renderSide(); }).catch(function (e) { toast(e.message); });
-  }
   function renderSide() {
-    var side = $("side");
-    side.innerHTML = BRANDS.map(function (b) {
-      var fs = state.folders.filter(function (f) { return f.folder.split("/")[0] === b[0]; });
-      if (state.folder && state.folder.split("/")[0] === b[0] && !fs.some(function (f) { return f.folder === state.folder; }))
-        fs.push({ folder: state.folder, count: 0, size: 0 });
-      var open = state.open === b[0];
-      return '<div class="brand' + (open ? " is-open" : "") + '"><button type="button" data-brand="' + b[0] + '" aria-expanded="' + open + '">' + esc(b[1]) + "<span>" + fs.length + (fs.length === 1 ? " folder" : " folders") + "</span></button>" +
-        (open ? '<div class="folders">' + fs.map(function (f) {
-          return '<button type="button" data-folder="' + esc(f.folder) + '" class="' + (f.folder === state.folder ? "is-active" : "") + '">' + esc(f.folder.split("/").slice(1).join(" / ")) + "<span>" + f.count + "</span></button>";
-        }).join("") + '<button type="button" class="new" data-new="' + b[0] + '">+ New folder</button></div>' : "") + "</div>";
+    if (S.offline) { $("side").innerHTML = '<h4>Brands</h4><p class="sub" style="padding:0 12px">Unavailable while Webflow is not responding.</p>'; return; }
+    $("side").innerHTML = "<h4>Brands</h4>" + S.brands.map(function (b) {
+      var n = S.docs.filter(function (d) { return d.brand === b.id; }).length;
+      var active = S.brand && S.brand.id === b.id;
+      return '<button type="button" data-brand="' + esc(b.slug) + '" class="' + (active ? "is-active" : "") + '"' + (active ? ' aria-current="page"' : "") + ">" + esc(b.name) + "<span>" + n + (b.draft ? " · hidden" : "") + "</span></button>";
     }).join("");
   }
   $("side").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-brand]"), f = e.target.closest("[data-folder]"), n = e.target.closest("[data-new]");
-    if (b) { state.open = state.open === b.dataset.brand ? null : b.dataset.brand; renderSide(); }
-    else if (f) openFolder(f.dataset.folder);
-    else if (n) {
-      var wrap = document.createElement("form");
-      wrap.className = "new-form";
-      wrap.innerHTML = '<input placeholder="e.g. photos" aria-label="New folder name" required><button class="btn small primary" type="submit">Create</button>';
-      n.replaceWith(wrap);
-      var inp = wrap.querySelector("input"); inp.focus();
-      wrap.addEventListener("submit", function (ev) {
-        ev.preventDefault();
-        var name = slug(inp.value);
-        if (!name) return;
-        openFolder(n.dataset.new + "/" + name);
-      });
-    }
+    var b = e.target.closest("[data-brand]");
+    if (b) { S.filter = ""; go("#brand=" + b.dataset.brand); }
   });
 
-  // ---------- folder ----------
-  function openFolder(folder) {
-    state.folder = folder; state.open = folder.split("/")[0];
+  // ---------- brand view ----------
+  function openBrand(b) {
+    S.brand = b; S.doc = null;
     renderSide();
-    $("pick").hidden = true; $("folder").hidden = false;
-    $("crumb").textContent = brandName(state.open);
-    $("folder-title").textContent = folder.split("/").slice(1).join(" / ");
-    $("path").textContent = folder;
-    $("preview-link").href = "/preview/?folder=" + encodeURIComponent(folder);
-    $("queue").innerHTML = "";
+    $("brand-title").textContent = b.name;
+    var docs = S.docs.filter(function (d) { return d.brand === b.id; });
+    var live = docs.filter(function (d) { return d.status !== "draft"; }).length;
+    $("brand-sub").textContent = docs.length ? docs.length + (docs.length === 1 ? " document" : " documents") + " · " + live + " live" + (b.draft ? " · this brand page is hidden on the website" : "") : (b.draft ? "This brand page is hidden on the website" : "");
+    var chips = [["", "All"]].concat(S.types.map(function (t) { return [t.id, TYPE_LABEL[t.name] || t.name]; }));
+    $("chips").innerHTML = chips.map(function (c) {
+      var n = c[0] ? docs.filter(function (d) { return d.type === c[0]; }).length : docs.length;
+      return '<button type="button" role="tab" data-f="' + c[0] + '" class="' + (S.filter === c[0] ? "is-active" : "") + '" aria-selected="' + (S.filter === c[0]) + '">' + esc(c[1]) + " " + n + "</button>";
+    }).join("");
+    var order = S.types.map(function (t) { return t.id; });
+    var list = docs.filter(function (d) { return !S.filter || d.type === S.filter; }).sort(function (a, b2) {
+      return (order.indexOf(a.type) + 1 || 99) - (order.indexOf(b2.type) + 1 || 99) || a.name.localeCompare(b2.name, "en", { numeric: true });
+    });
+    $("docs").innerHTML = list.length ? list.map(function (d) {
+      var st = stats(d.folder), s = STATUS[d.status];
+      var files = d.folder ? (st.count ? st.count + (st.count === 1 ? " file · " : " files · ") + size(st.size) : "No files yet") : "No files yet";
+      return '<a class="doc" href="#doc=' + d.id + '"><div class="ic">' + (ICON[typeName(d.type)] || ICON.other) + '</div><div class="t"><b>' + esc(d.name) + "</b><span>" + esc(typeLabel(d.type)) + " · " + files + (d.desc ? " · " + esc(d.desc) : "") + '</span></div><div class="r"><span class="pill ' + s[0] + '">' + (d.status === "live" ? "Live" : d.status === "draft" ? "Draft" : "Changes pending") + "</span></div></a>";
+    }).join("") : '<div class="none">' + (docs.length ? "No documents in this category." : "No documents for " + esc(b.name) + " yet.<br>Click <b>+ New document</b> to create the first one.") + "</div>";
+    // Folders with files that no document uses (e.g. uploaded before documents existed)
+    var usedF = S.docs.map(function (d) { return d.folder; });
+    var loose = S.folders.filter(function (f) { return f.folder.split("/")[0] === b.slug && usedF.indexOf(f.folder) < 0 && f.count; });
+    $("loose").hidden = !loose.length || !!S.filter;
+    $("loose-list").innerHTML = loose.map(function (f) {
+      return '<div class="doc loose-row"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder.split("/").slice(1).join(" / ")) + "</b><span>" + f.count + (f.count === 1 ? " file · " : " files · ") + size(f.size) + ' · not on the website</span></div><div class="r"><a class="btn small ghost" href="#folder=' + encodeURIComponent(f.folder) + '">View files</a><button class="btn small primary" type="button" data-link="' + esc(f.folder) + '">Create document</button></div></div>';
+    }).join("");
+    show("v-brand");
+  }
+  $("chips").addEventListener("click", function (e) { var c = e.target.closest("[data-f]"); if (c) { S.filter = c.dataset.f; openBrand(S.brand); } });
+
+  // ---------- category picker ----------
+  function renderSeg(el, value) {
+    el.innerHTML = S.types.map(function (t) {
+      return '<button type="button" role="radio" data-v="' + t.id + '" aria-checked="' + (t.id === value) + '" class="' + (t.id === value ? "is-on" : "") + '">' + (ICON[t.name] || ICON.other) + esc(TYPE_LABEL[t.name] || t.name) + "</button>";
+    }).join("");
+    el.dataset.value = value || "";
+  }
+  function segClick(e) {
+    var b = e.target.closest("[data-v]"); if (!b) return;
+    var el = e.currentTarget; el.dataset.value = b.dataset.v;
+    Array.prototype.forEach.call(el.children, function (c) { var on = c === b; c.classList.toggle("is-on", on); c.setAttribute("aria-checked", on); });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  $("d-type").addEventListener("click", segClick);
+  $("n-type").addEventListener("click", segClick);
+
+  // ---------- new document ----------
+  $("loose-list").addEventListener("click", function (e) { var l = e.target.closest("[data-link]"); if (l) openNew(l.dataset.link); });
+  $("new-doc").onclick = function () { openNew(null); };
+  function openNew(folder) {
+    S.newFolder = folder;
+    $("n-folder").hidden = !folder; $("n-folder").textContent = folder ? "The files already in the folder “" + folder + "” will be part of this document." : "";
+    $("n-brand").disabled = !!folder;
+    $("n-brand").innerHTML = S.brands.map(function (b) { return '<option value="' + b.id + '"' + (S.brand && S.brand.id === b.id ? " selected" : "") + ">" + esc(b.name) + "</option>"; }).join("");
+    $("n-name").value = ""; $("n-desc").value = ""; $("n-sheet").checked = false; $("n-err").textContent = "";
+    renderSeg($("n-type"), S.filter || "");
+    var fbr = folder && brandBySlug(folder.split("/")[0]);
+    if (fbr) $("n-brand").value = fbr.id;
+    if (folder) $("n-name").value = folder.split("/").slice(1).join(" ").replace(/-/g, " ").replace(/^./, function (c) { return c.toUpperCase(); });
+    $("m-new").hidden = false; $("n-name").focus();
+  }
+  $("m-new").addEventListener("click", function (e) { if (e.target === this || e.target.closest("[data-close]")) this.hidden = true; });
+  $("m-new").addEventListener("keydown", function (e) { if (e.key === "Escape") this.hidden = true; });
+  $("new-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var body = { brand: $("n-brand").value, name: $("n-name").value.trim(), type: $("n-type").dataset.value, desc: $("n-desc").value.trim(), sheet: $("n-sheet").checked, folder: S.newFolder || undefined };
+    $("n-err").textContent = "";
+    if (!body.name) { $("n-err").textContent = "Please enter a title."; return $("n-name").focus(); }
+    if (!body.type) { $("n-err").textContent = "Please choose a category."; return; }
+    var btn = $("n-create");
+    if (btn.classList.contains("busy")) return;
+    btn.classList.add("busy");
+    api("/api/admin/docs", { method: "POST", json: body, once: true }).then(function (j) {
+      putDoc(j.doc); $("m-new").hidden = true;
+      S.brand = brandById(j.doc.brand) || S.brand;
+      toast("Document created as a draft");
+      go("#doc=" + j.doc.id);
+    }).catch(function (err) {
+      if (!/No connection/.test(err.message)) { $("n-err").textContent = err.message; return; }
+      // The connection dropped: the document may have been created anyway, never create it twice
+      return load().then(function () {
+        var made = S.docs.filter(function (d) { return d.brand === body.brand && d.name === body.name && Date.now() - Date.parse(d.updated) < 5 * 60000; })[0];
+        if (made) { $("m-new").hidden = true; toast("Document created as a draft"); go("#doc=" + made.id); }
+        else $("n-err").textContent = err.message;
+      });
+    }).then(function () { btn.classList.remove("busy"); });
+  });
+
+  // ---------- document view ----------
+  function openDoc(d) {
+    var changed = !S.doc || S.doc.id !== d.id;
+    S.doc = d; S.folderOnly = null; S.brand = brandById(d.brand) || S.brand;
+    renderSide();
+    var b = brandById(d.brand);
+    $("back").querySelector("span").textContent = (b ? b.name : "All") + " documents";
+    $("back").href = b ? "#brand=" + b.slug : "#";
+    $("details").hidden = false; document.querySelector(".danger").hidden = false;
+    renderDocHead();
+    if (changed) { fillDetails(); clearQueue(); $("files").innerHTML = ""; $("files-meta").textContent = ""; }
+    show("v-doc");
     loadFiles();
   }
-  $("copy").onclick = function () {
-    var t = $("path").textContent;
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast("Folder path copied"); }, function () {
-      var r = document.createRange(); r.selectNodeContents($("path")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Press Ctrl/Cmd+C to copy");
+  function renderDocHead() {
+    var d = S.doc, b = brandById(d.brand), s = STATUS[d.status];
+    $("doc-crumb").textContent = (b ? b.name : "") + " · " + typeLabel(d.type);
+    $("doc-title").textContent = d.name;
+    $("doc-pill").className = "pill " + s[0]; $("doc-pill").textContent = s[1];
+    $("doc-sub").textContent = d.status !== "draft" && d.published ? "Published " + when(d.published) : "";
+    $("doc-view").hidden = d.status === "draft" || !S.site; $("doc-view").href = docUrl(d);
+    $("doc-unpublish").hidden = d.status === "draft";
+    $("doc-publish").hidden = d.status === "live";
+    $("doc-publish").textContent = d.status === "changes" ? "Publish changes" : "Publish";
+    var n = $("doc-notice");
+    if (d.status === "draft") { n.className = "notice"; n.innerHTML = "<b>Draft.</b> Journalists can’t see this document yet. Add the files, check the details, then click <b>Publish</b>."; n.hidden = false; }
+    else if (b && b.draft) { n.className = "notice warn"; n.textContent = "This document is published, but the " + b.name + " brand page is hidden on the website, so journalists can only reach it with the direct link."; n.hidden = false; }
+    else n.hidden = true;
+  }
+  $("doc-notice").addEventListener("click", function (e) { var l = e.target.closest("[data-link]"); if (l) openNew(l.dataset.link); });
+  $("doc-publish").onclick = function () {
+    var btn = this, d = S.doc;
+    busy(btn, function () {
+      var st = stats(d.folder);
+      return (d.folder && st.count ? Promise.resolve(true) : confirmBox("Publish without files?", "This document has no files yet. Journalists will see an empty page.", "Publish anyway")).then(function (ok) {
+        if (!ok) return;
+        return api("/api/admin/docs/" + d.id + "/publish", { method: "POST" }).then(function (j) { putDoc(j.doc); if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); } toast("Published: it is now live on the website"); });
+      });
     });
   };
-  function loadFiles() {
-    var folder = state.folder;
-    return fetch("/api/list?folder=" + encodeURIComponent(folder)).then(function (r) { return r.json(); }).then(function (j) {
-      if (folder !== state.folder) return;
-      $("files-meta").textContent = j.count ? j.count + (j.count === 1 ? " file · " : " files · ") + size(j.total) : "";
-      $("files").innerHTML = j.count ? j.files.map(function (f) {
-        var th = f.thumb ? ' style="background-image:url(\'' + esc(f.thumb) + '\')"' : "";
-        var ext = (/\.([^.]+)$/.exec(f.name) || [0, "FILE"])[1].toUpperCase();
-        var warn = f.thumb || f.kind === "doc" ? "" : " · no preview";
-        return '<div class="f"><div class="th"' + th + ">" + (f.thumb ? "" : esc(ext)) + '</div><div class="nm"><b title="' + esc(f.name) + '">' + esc(f.name) + "</b><span>" + size(f.size) + warn + (f.zippable ? "" : " · not in ZIP") + "</span></div>" +
-          '<a href="' + esc(f.url) + '" target="_blank" rel="noopener">Open</a><button class="del" type="button" data-name="' + esc(f.name) + '">Delete</button></div>';
-      }).join("") : '<div class="none">No files yet. Drop files above to upload them.</div>';
+  $("doc-unpublish").onclick = function () {
+    var btn = this, d = S.doc;
+    confirmBox("Unpublish this document?", "It will be removed from the website. Its files are kept and you can publish it again at any time.", "Unpublish").then(function (ok) {
+      if (!ok) return;
+      busy(btn, function () { return api("/api/admin/docs/" + d.id + "/unpublish", { method: "POST" }).then(function (j) { putDoc(j.doc); if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); } toast("Unpublished: no longer visible on the website"); }); });
     });
+  };
+  $("doc-delete").onclick = function () {
+    var btn = this, d = S.doc, st = stats(d.folder);
+    if (running) return toast("Please wait for the uploads to finish", true);
+    confirmBox("Delete “" + d.name + "”?", "The document will be removed from the website" + (st.count ? " and its " + st.count + (st.count === 1 ? " file" : " files") + " will be deleted" : "") + ". This cannot be undone.", "Delete document", true).then(function (ok) {
+      if (!ok) return;
+      busy(btn, function () {
+        return api("/api/admin/docs/" + d.id, { method: "DELETE", timeout: 300000 }).then(function () {
+          S.docs = S.docs.filter(function (x) { return x.id !== d.id; });
+          toast("Document deleted");
+          refreshStats();
+          var b = brandById(d.brand); go(b ? "#brand=" + b.slug : "#");
+        });
+      });
+    });
+  };
+
+  // details form
+  function fillDetails() {
+    var d = S.doc;
+    $("d-name").value = d.name; $("d-desc").value = d.desc; $("d-sheet").checked = d.sheet;
+    renderSeg($("d-type"), d.type);
+    dirty();
+  }
+  function formVals() { return { name: $("d-name").value.trim(), type: $("d-type").dataset.value, desc: $("d-desc").value.trim(), sheet: $("d-sheet").checked }; }
+  function dirty() {
+    var d = S.doc, v = formVals();
+    var ch = v.name !== d.name || v.type !== (d.type || "") || v.desc !== d.desc || v.sheet !== d.sheet;
+    $("d-save").disabled = $("d-reset").disabled = !ch;
+    $("d-hint").textContent = ch ? (d.status === "draft" ? "Unsaved changes" : "Unsaved changes · they go live as soon as you save") : "";
+    return ch;
+  }
+  $("details").addEventListener("input", dirty);
+  $("details").addEventListener("change", dirty);
+  $("d-reset").onclick = fillDetails;
+  $("details").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = formVals(), d = S.doc;
+    if (!v.name) { toast("Please enter a title", true); return $("d-name").focus(); }
+    if (!dirty()) return;
+    busy($("d-save"), function () {
+      return api("/api/admin/docs/" + d.id, { method: "PATCH", json: v }).then(function (j) {
+        putDoc(j.doc);
+        if (S.doc && S.doc.id === j.doc.id) { S.doc = j.doc; renderDocHead(); fillDetails(); }
+        toast(j.doc.status === "draft" ? "Changes saved" : "Changes saved and published");
+      });
+    });
+  });
+  window.addEventListener("beforeunload", function (e) { if (running || (!$("v-doc").hidden && S.doc && dirty())) { e.preventDefault(); e.returnValue = ""; } });
+
+  // ---------- files ----------
+  function currentFolder() { return S.doc ? S.doc.folder : S.folderOnly; }
+  function loadFiles() {
+    var folder = currentFolder(), el = $("files");
+    if (!folder) { renderFiles({ count: 0, files: [] }); return Promise.resolve(); }
+    return api("/api/list?folder=" + encodeURIComponent(folder)).then(function (j) {
+      if (folder !== currentFolder()) return;
+      renderFiles(j);
+    }).catch(function () { if (folder === currentFolder()) el.innerHTML = '<div class="none">Could not load the files. <button class="btn small ghost" type="button" data-reload>Try again</button></div>'; });
+  }
+  function renderFiles(j) {
+    S.files = j.files;
+    var i = S.folders.findIndex(function (f) { return f.folder === currentFolder(); });
+    if (i >= 0) { S.folders[i].count = j.count; S.folders[i].size = j.total; } else if (j.count) S.folders.push({ folder: currentFolder(), count: j.count, size: j.total });
+    $("files-meta").textContent = j.count ? j.count + (j.count === 1 ? " file · " : " files · ") + size(j.total) + (j.zip ? " · journalists can download all as ZIP" : "") : "";
+    $("files").innerHTML = j.count ? j.files.map(function (f, idx) {
+      var th = f.thumb ? ' style="background-image:url(\'' + esc(f.thumb) + '\')"' : "";
+      var ext = (/\.([^.]+)$/.exec(f.name) || [0, "FILE"])[1].toUpperCase().slice(0, 4);
+      return '<div class="f" data-i="' + idx + '"><div class="th"' + th + ">" + (f.thumb ? "" : esc(ext)) + '</div><div class="nm"><b title="' + esc(f.name) + '">' + esc(f.name) + "</b><span>" + size(f.size) + (f.width ? " · " + f.width + "×" + f.height : "") + (f.pages ? " · " + f.pages + " pages" : "") + "</span></div>" +
+        '<div class="acts"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">Open</a><button type="button" data-a="rename">Rename</button><button type="button" class="del" data-a="delete">Delete</button></div></div>';
+    }).join("") : '<div class="none">No files yet. Drop them in the box above.</div>';
   }
   $("files").addEventListener("click", function (e) {
-    var d = e.target.closest(".del");
-    if (!d || !confirm("Delete “" + d.dataset.name + "”? It will disappear from the press kit.")) return;
-    api("/api/admin/file?" + qs({ folder: state.folder, name: d.dataset.name }), { method: "DELETE" })
-      .then(function () { toast("File deleted"); loadFiles(); loadFolders(); }).catch(function (err) { toast(err.message); });
+    if (e.target.closest("[data-reload]")) return loadFiles();
+    var a = e.target.closest("[data-a]"); if (!a) return;
+    var row = a.closest(".f"), f = S.files[+row.dataset.i], folder = currentFolder();
+    if (a.dataset.a === "delete") {
+      confirmBox("Delete “" + f.name + "”?", "The file will disappear from the website" + (S.doc && S.doc.status === "draft" ? "" : " immediately") + ". This cannot be undone.", "Delete file", true).then(function (ok) {
+        if (!ok) return;
+        busy(a, function () { return api("/api/admin/file?" + qs({ folder: folder, name: f.name }), { method: "DELETE" }).then(function () { toast("File deleted"); return loadFiles(); }); });
+      });
+    }
+    if (a.dataset.a === "rename") startRename(row, f, folder);
   });
+  function startRename(row, f, folder) {
+    var nm = row.querySelector(".nm"), acts = row.querySelector(".acts"), old = nm.innerHTML;
+    nm.innerHTML = '<form class="ren"><input aria-label="New file name" maxlength="180"><button class="btn small primary" type="submit">Save</button><button class="btn small ghost" type="button">Cancel</button></form>';
+    acts.hidden = true;
+    var form = nm.querySelector("form"), inp = form.querySelector("input");
+    inp.value = f.name; inp.focus();
+    var dot = f.name.lastIndexOf("."); inp.setSelectionRange(0, dot > 0 ? dot : f.name.length);
+    function cancel() { nm.innerHTML = old; acts.hidden = false; }
+    form.querySelector(".ghost").onclick = cancel;
+    inp.onkeydown = function (e) { if (e.key === "Escape") cancel(); };
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var to = inp.value.replace(/[\\/]/g, "-").replace(/\s+/g, " ").trim();
+      var ext = dot > 0 ? f.name.slice(dot) : "";
+      if (!to) return inp.focus();
+      if (ext && to.toLowerCase().slice(-ext.length) !== ext.toLowerCase()) to += ext; // keep the extension
+      if (to === f.name) return cancel();
+      busy(form.querySelector(".primary"), function () {
+        return api("/api/admin/rename?" + qs({ folder: folder, name: f.name, to: to }), { method: "POST", timeout: 600000 }).then(function () { toast("File renamed"); return loadFiles(); });
+      });
+    };
+  }
+
+  // Older documents get their media folder when the first files are added
+  function ensureFolder() {
+    var d = S.doc;
+    if (!d) return Promise.resolve(S.folderOnly);
+    if (d.folder) return Promise.resolve(d.folder);
+    return api("/api/admin/docs/" + d.id + "/folder", { method: "POST" }).then(function (j) { putDoc(j.doc); if (S.doc && S.doc.id === j.doc.id) S.doc = j.doc; return j.doc.folder; });
+  }
+
+  // ---------- Webflow offline: files only ----------
+  function renderFallback() {
+    $("fallback-folders").innerHTML = S.folders.length ? S.folders.map(function (f) {
+      return '<a class="doc" href="#folder=' + encodeURIComponent(f.folder) + '"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder) + "</b><span>" + f.count + " files · " + size(f.size) + "</span></div><div></div></a>";
+    }).join("") : '<p class="sub">No folders yet.</p>';
+  }
+  $("retry").onclick = function () { busy(this, function () { return load().then(function () { if (S.offline) toast("Webflow is still not responding", true); else { toast("Connected to Webflow"); route(); } }); }); };
+  // Finished rows go; uploads still running for another document stay visible, labelled
+  function clearQueue() {
+    Array.prototype.forEach.call($("queue").children, function (r) {
+      if (r.classList.contains("done") || r.classList.contains("fail")) return r.remove();
+      var n = r.querySelector(".n");
+      if (!n.dataset.to) { n.dataset.to = 1; n.textContent += "  →  " + r.dataset.doc; }
+    });
+  }
+  function openFolderOnly(folder) {
+    // Reuse the document view without the Webflow parts
+    S.doc = null; S.folderOnly = folder;
+    var fb = brandBySlug(folder.split("/")[0]);
+    $("back").querySelector("span").textContent = fb && !S.offline ? fb.name + " documents" : "Back"; $("back").href = fb && !S.offline ? "#brand=" + fb.slug : "#";
+    $("doc-crumb").textContent = S.offline ? "Folder (Webflow offline)" : "Folder not linked to a document"; $("doc-title").textContent = folder;
+    $("doc-pill").className = "pill draft"; $("doc-pill").textContent = "Files only"; $("doc-sub").textContent = "";
+    ["doc-view", "doc-unpublish", "doc-publish", "details"].forEach(function (id) { $(id).hidden = true; });
+    document.querySelector(".danger").hidden = true;
+    var n = $("doc-notice");
+    if (S.offline) n.hidden = true;
+    else { n.className = "notice warn"; n.innerHTML = 'These files are not on the website because no document uses this folder. <button class="btn small primary" type="button" data-link="' + esc(folder) + '">Create a document with these files</button>'; n.hidden = false; }
+    clearQueue();
+    show("v-doc"); loadFiles();
+  }
 
   // ---------- drop zone ----------
   var drop = $("drop");
@@ -127,20 +436,27 @@
   ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("is-over"); }); });
   drop.addEventListener("drop", function (e) { enqueue(e.dataTransfer.files); });
   $("file-input").addEventListener("change", function (e) { enqueue(e.target.files); e.target.value = ""; });
-  window.addEventListener("beforeunload", function (e) { if (running) { e.preventDefault(); e.returnValue = ""; } });
+  // Avoid the browser opening a file dropped outside the box
+  ["dragover", "drop"].forEach(function (ev) { window.addEventListener(ev, function (e) { if (!e.target.closest || !e.target.closest("#drop")) e.preventDefault(); }); });
 
   var jobs = [], running = 0;
   function enqueue(fileList) {
-    Array.prototype.forEach.call(fileList, function (file) {
-      if (/^\./.test(file.name)) return;
-      var row = document.createElement("div");
-      row.className = "q";
-      row.innerHTML = '<div class="n"></div><div class="s">Waiting…</div><div class="bar"><i></i></div>';
-      row.querySelector(".n").textContent = file.name;
-      $("queue").prepend(row);
-      jobs.push({ file: file, folder: state.folder, row: row });
-    });
-    pump();
+    var files = Array.prototype.filter.call(fileList, function (f) { return !/^\./.test(f.name) && f.size > 0; });
+    if (!files.length) return;
+    var owner = S.doc;
+    ensureFolder().then(function (folder) {
+      if (!folder) throw new Error("This document has no folder");
+      files.forEach(function (file) {
+        var row = document.createElement("div");
+        row.className = "q";
+        row.innerHTML = '<div class="n"></div><div class="s">Waiting…</div><div class="bar"><i></i></div>';
+        row.querySelector(".n").textContent = file.name;
+        row.dataset.doc = owner ? owner.name : folder;
+        $("queue").prepend(row);
+        jobs.push({ file: file, folder: folder, row: row, doc: owner });
+      });
+      pump();
+    }).catch(function (e) { toast(e.message, true); });
   }
   function pump() {
     while (running < 2 && jobs.length) {
@@ -148,10 +464,18 @@
       process(j).then(function (job) {
         job.row.classList.add("done"); job.row.querySelector(".s").textContent = "Uploaded";
       }, function (err) {
-        this.row.classList.add("fail"); this.row.querySelector(".s").textContent = err.message || "Upload failed";
+        this.row.classList.add("fail"); this.row.querySelector(".s").textContent = (err.message || "Upload failed") + " – drop the file again to retry";
       }.bind(j)).then(function () {
         running--;
-        if (!running && !jobs.length) { loadFiles(); loadFolders(); toast("Upload complete"); }
+        if (!running && !jobs.length) {
+          var failed = $("queue").querySelectorAll(".q.fail").length;
+          loadFiles().then(function () {
+            // Uploaded files now appear in the list below: keep only the failed rows
+            setTimeout(function () { Array.prototype.forEach.call($("queue").querySelectorAll(".q.done"), function (r) { r.remove(); }); }, 1200);
+          });
+          refreshStats();
+          failed ? toast(failed + (failed === 1 ? " file" : " files") + " could not be uploaded", true) : toast("Upload complete");
+        }
         pump();
       });
     }
@@ -175,8 +499,8 @@
       .then(function (d) {
         return uploadFile(job, meta).then(function () {
           var ups = [];
-          if (d.thumb) ups.push(putBlob(job.folder, f.name, d.thumb, "thumb"));
-          if (d.preview) ups.push(putBlob(job.folder, f.name, d.preview, "preview"));
+          if (d.thumb) ups.push(putBlob(job.folder, f.name, d.thumb, "thumb").catch(function () {}));
+          if (d.preview) ups.push(putBlob(job.folder, f.name, d.preview, "preview").catch(function () {}));
           return Promise.all(ups);
         });
       })

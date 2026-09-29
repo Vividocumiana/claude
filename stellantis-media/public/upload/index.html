@@ -4,16 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Media Upload – Stellantis Paris 2026</title>
+<title>Press Kit Manager – Stellantis Paris 2026</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%23243782%22/%3E%3Cpath d=%22M16 22V10m0 0-5 5m5-5 5 5%22 stroke=%22white%22 stroke-width=%222.4%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/upload/upload.css">
 </head>
 <body>
 <div id="login" class="login" hidden>
   <form class="login-card" id="login-form">
     <img class="logo" src="https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab61d6550050578bb4b1052_stellantis-1.svg" alt="Stellantis">
-    <h1>Media upload</h1>
-    <p>Mondial de l'Auto Paris 2026 press kit. Enter the upload password to manage photos, videos and documents.</p>
-    <input id="pwd" type="password" placeholder="Upload password" autocomplete="current-password" required aria-label="Upload password">
+    <h1>Press Kit Manager</h1>
+    <p>Mondial de l'Auto Paris 2026. Enter the password to manage documents, photos, videos and files of the press kit.</p>
+    <input id="pwd" type="password" placeholder="Password" autocomplete="current-password" required aria-label="Password">
     <button class="btn primary" type="submit">Sign in</button>
     <div class="err" id="login-err" role="alert"></div>
   </form>
@@ -22,45 +23,132 @@
 <div id="app" class="app" hidden>
   <header class="top">
     <img class="logo" src="https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab61d6550050578bb4b1052_stellantis-1.svg" alt="Stellantis">
-    <div class="top-title">Media upload <span>Mondial de l'Auto Paris 2026</span></div>
+    <div class="top-title">Press Kit Manager <span>Mondial de l'Auto Paris 2026</span></div>
+    <a class="btn ghost small hide-m" id="site-link" target="_blank" rel="noopener">Open website ↗</a>
     <button class="btn ghost small" id="logout" type="button">Sign out</button>
   </header>
   <div class="layout">
-    <aside class="side" id="side" aria-label="Brands and folders"></aside>
-    <main class="main">
-      <div class="empty-state" id="pick">
-        <h2>Choose a folder</h2>
-        <p>Select a brand on the left, then open one of its folders or create a new one (for example <b>photos</b>, <b>videos</b>, <b>documents</b>, <b>embargo</b>).</p>
-      </div>
-      <section id="folder" hidden>
-        <div class="folder-head">
-          <div>
-            <div class="crumb" id="crumb"></div>
-            <h2 id="folder-title"></h2>
-          </div>
-          <a class="btn ghost small" id="preview-link" target="_blank" rel="noopener">Preview as journalists see it ↗</a>
-        </div>
-        <div class="path-box">
-          <div>
-            <b>Folder path for Webflow</b>
-            <span>Paste it in the “Media Folder” field of the document in the Webflow CMS.</span>
-          </div>
-          <code id="path"></code>
-          <button class="btn small" id="copy" type="button">Copy</button>
-        </div>
-        <label class="drop" id="drop">
-          <input type="file" id="file-input" multiple hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <strong>Drop files here or click to browse</strong>
-          <span>Photos (JPG, PNG, WebP), videos (MP4, MOV), PDFs and any other document. No size limit. Files with the same name are replaced.</span>
-        </label>
-        <div class="queue" id="queue"></div>
-        <div class="files-head"><h3>Files in this folder</h3><span id="files-meta"></span></div>
-        <div class="files" id="files"></div>
+    <nav class="side" id="side" aria-label="Brands"></nav>
+    <main class="main" id="main">
+      <div class="loading" id="loading"><span class="spin"></span> Loading…</div>
+
+      <!-- Webflow unreachable -->
+      <section id="v-error" class="empty-state" hidden>
+        <h2>Webflow is not responding</h2>
+        <p id="error-msg"></p>
+        <p><button class="btn primary" id="retry" type="button">Try again</button></p>
+        <p class="mute">You can still add or remove files of existing documents:</p>
+        <div class="folder-list" id="fallback-folders"></div>
       </section>
+
+      <!-- Brand: list of documents -->
+      <section id="v-brand" hidden>
+        <div class="head">
+          <div>
+            <div class="crumb">Brand</div>
+            <h2 id="brand-title"></h2>
+            <div class="sub" id="brand-sub"></div>
+          </div>
+          <button class="btn primary" id="new-doc" type="button">+ New document</button>
+        </div>
+        <div class="chips" id="chips" role="tablist" aria-label="Filter by category"></div>
+        <div class="docs" id="docs"></div>
+        <div id="loose" hidden>
+          <h3 class="loose-h">Folders not linked to a document</h3>
+          <p class="sub">These files were uploaded but are not on the website yet. Create a document to publish them.</p>
+          <div class="docs" id="loose-list"></div>
+        </div>
+      </section>
+
+      <!-- One document -->
+      <section id="v-doc" hidden>
+        <a class="back" id="back" href="#">← <span></span></a>
+        <div class="head">
+          <div class="head-t">
+            <div class="crumb" id="doc-crumb"></div>
+            <h2 id="doc-title"></h2>
+            <div class="status-line"><span class="pill" id="doc-pill"></span><span class="sub" id="doc-sub"></span></div>
+          </div>
+          <div class="actions">
+            <a class="btn ghost" id="doc-view" target="_blank" rel="noopener">View on website ↗</a>
+            <button class="btn ghost" id="doc-unpublish" type="button">Unpublish</button>
+            <button class="btn primary" id="doc-publish" type="button">Publish</button>
+          </div>
+        </div>
+        <div class="notice" id="doc-notice" hidden></div>
+
+        <div class="card">
+          <div class="card-h"><h3>Files</h3><span class="sub" id="files-meta"></span></div>
+          <label class="drop" id="drop">
+            <input type="file" id="file-input" multiple hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <strong>Drop files here or click to choose</strong>
+            <span>Photos, videos, PDFs and any other document, any size. A file with the same name replaces the old one.</span>
+          </label>
+          <div class="queue" id="queue"></div>
+          <div class="files" id="files"></div>
+        </div>
+
+        <form class="card" id="details" novalidate>
+          <div class="card-h"><h3>Details</h3><span class="sub">Shown on the website</span></div>
+          <div class="form-grid">
+            <label class="field full"><span>Title</span><input id="d-name" maxlength="200" required></label>
+            <div class="field full"><span>Category</span><div class="seg" id="d-type" role="radiogroup" aria-label="Category"></div></div>
+            <label class="field full"><span>Short description <em>optional</em></span><input id="d-desc" maxlength="500"></label>
+            <label class="check full"><input type="checkbox" id="d-sheet"> <span>Technical sheet</span></label>
+          </div>
+          <div class="form-foot">
+            <span class="sub" id="d-hint"></span>
+            <button class="btn ghost" id="d-reset" type="button" disabled>Cancel</button>
+            <button class="btn primary" id="d-save" type="submit" disabled>Save changes</button>
+          </div>
+        </form>
+
+        <div class="danger">
+          <div><b>Delete this document</b><span>Removes it from the website and deletes all its files. This cannot be undone.</span></div>
+          <button class="btn danger-btn" id="doc-delete" type="button">Delete document</button>
+        </div>
+      </section>
+
+      <!-- Folder only (Webflow offline) -->
+      <section id="v-folder" hidden></section>
     </main>
   </div>
 </div>
+
+<!-- New document -->
+<div class="modal" id="m-new" hidden>
+  <form class="modal-box" id="new-form" novalidate role="dialog" aria-modal="true" aria-labelledby="m-new-t">
+    <h2 id="m-new-t">New document</h2>
+    <p class="sub">It is created as a draft: add the files, then publish it when you are ready.</p>
+    <div class="form-grid">
+      <label class="field full"><span>Brand</span><select id="n-brand" required></select></label>
+      <label class="field full"><span>Title</span><input id="n-name" maxlength="200" placeholder="e.g. Grande Panda – Photos" required></label>
+      <div class="field full"><span>Category</span><div class="seg" id="n-type" role="radiogroup" aria-label="Category"></div></div>
+      <label class="field full"><span>Short description <em>optional</em></span><input id="n-desc" maxlength="500" placeholder="e.g. High-resolution photos of the stand"></label>
+      <label class="check full"><input type="checkbox" id="n-sheet"> <span>Technical sheet</span></label>
+      <div class="notice full" id="n-folder" hidden></div>
+    </div>
+    <div class="err" id="n-err" role="alert"></div>
+    <div class="form-foot">
+      <button class="btn ghost" type="button" data-close>Cancel</button>
+      <button class="btn primary" type="submit" id="n-create">Create document</button>
+    </div>
+  </form>
+</div>
+
+<!-- Confirm -->
+<div class="modal" id="m-confirm" hidden>
+  <div class="modal-box small" role="alertdialog" aria-modal="true" aria-labelledby="c-title">
+    <h2 id="c-title"></h2>
+    <p id="c-text"></p>
+    <div class="form-foot">
+      <button class="btn ghost" type="button" id="c-no">Cancel</button>
+      <button class="btn primary" type="button" id="c-yes"></button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="/upload/upload.js"></script>
 </body>

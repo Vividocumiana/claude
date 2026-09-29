@@ -7,10 +7,17 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
   for photos, videos, PDFs and documents, "Download original" and
   "Download all" (ZIP built on the fly). Loaded by the Webflow document
   template when the CMS field **Media Folder** is filled.
-- **Upload page** (`/upload`): password-protected. Pick a brand, create a
-  folder, drag & drop files (no size limit: big files go up in 50 MB parts).
+- **Press Kit Manager** (`/upload`): password-protected. Everything is managed
+  here, nobody needs to open Webflow:
+  - pick a brand (the brands are the items of the Webflow **Events** collection);
+  - **New document** creates the Webflow CMS item (title, category, description,
+    technical sheet) as a draft, with its own media folder `brand/slug`;
+  - drop files (no size limit: big files go up in 50 MB parts), rename or delete them;
+  - edit the details, **Publish** / **Unpublish**, **Delete** (item + files).
   Thumbnails, previews, video posters and PDF covers are generated in the
   browser; the CRC-32 of every file is stored so ZIPs cost no Worker CPU.
+  Files uploaded to a folder no document uses are listed under
+  "Folders not linked to a document" with a one-click **Create document**.
 - **Preview** (`/preview/?folder=fiat/photos`): the viewer outside Webflow.
 
 ## Live
@@ -29,7 +36,11 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
 | `GET /f/<key>` · `?dl` | file (range requests), `?dl` forces download |
 | `GET /zip/<brand>/<folder>` | streaming ZIP of the folder |
 | `POST /api/login` | `{password}` → session token (12 h) |
-| `/api/admin/*` | upload, multipart, delete, folders (Bearer token) |
+| `GET /api/admin/state` | brands, categories, documents (Webflow) + folder stats |
+| `POST /api/admin/docs` | create a document (draft) |
+| `PATCH/DELETE /api/admin/docs/:id` | edit (republished if live) / delete with its files |
+| `POST /api/admin/docs/:id/publish` · `unpublish` · `folder` | publishing, media folder for older items |
+| `/api/admin/*` | upload, multipart, rename, delete file, folders (Bearer token) |
 
 ## Deploy
 
@@ -39,6 +50,7 @@ npx wrangler login                       # or CLOUDFLARE_API_TOKEN + CLOUDFLARE_
 npx wrangler r2 bucket create stl26-media
 npx wrangler secret put UPLOAD_PASSWORD  # password for /upload
 npx wrangler secret put TOKEN_SECRET     # any long random string
+npx wrangler secret put WEBFLOW_TOKEN    # Webflow site API token: CMS read/write
 npx wrangler deploy
 ```
 
@@ -46,10 +58,24 @@ Then set `STL_MEDIA_HOST` in the head code of the Webflow page
 **All Documents Template** to the deployed URL (e.g.
 `https://stl26-media.<account>.workers.dev` or a custom domain) and publish.
 
+Collection IDs and the site URL are `vars` in `wrangler.jsonc`.
+
+## Reliability
+
+- Webflow calls are retried on rate limits (429) and outages (5xx, network).
+- In the page every request has a timeout and is retried on network errors;
+  every retried operation is safe to repeat (rename and delete are idempotent),
+  creating a document is never sent twice.
+- If Webflow is down the manager says so and still lets you manage files.
+- The Webflow field slugs used are in `src/webflow.js` (`F`).
+
 ## Local development
 
 ```bash
-printf 'UPLOAD_PASSWORD="test"\nTOKEN_SECRET="dev"\n' > .dev.vars
-npx wrangler dev          # local R2, http://localhost:8787/upload/
+printf 'UPLOAD_PASSWORD="test"\nTOKEN_SECRET="dev"\nWEBFLOW_TOKEN="test-token"\nWEBFLOW_API="http://localhost:9911/v2"\n' > .dev.vars
+node test/mock-webflow.mjs 9911 flaky &   # fake Webflow CMS API, 25% of calls answer 429
+npx wrangler dev          # local R2, http://localhost:8787/upload/ (password: test)
 node test/zip.test.mjs && node test/zip64.test.mjs /tmp/t64.zip
+# browser end-to-end (needs `npm i --no-save playwright`), see the header of the file
+BASE=http://localhost:8787 PW=test FILES=/path/to/fixtures node test/e2e.mjs
 ```
