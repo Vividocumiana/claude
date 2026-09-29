@@ -20,6 +20,16 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
   browser; the CRC-32 of every file is stored so ZIPs cost no Worker CPU.
   Files uploaded to a folder no document uses are listed under
   "Folders not linked to a document" with a one-click **Create document**.
+  - **Press contacts** (and any collection listed in `CMS_COLLECTIONS` in
+    `wrangler.jsonc`): add, edit, publish, unpublish, delete items. The form is
+    generated from the Webflow fields (text, email, phone, link, switch, option,
+    reference, multi-reference).
+  - **How it works**: a guide for the people who upload, shown at the first sign-in.
+  - **Technical sheet**: documents flagged as technical sheets get a badge and a
+    "Technical sheets" filter on the brand page. The Worker keeps the list of
+    flagged slugs in R2 (`_meta/sheets.json`, refreshed on every save and every
+    time the manager opens) and serves it at `GET /api/sheets`; the brand page and
+    document page scripts in Webflow read it (and simply skip it if unreachable).
 - **Preview** (`/preview/?folder=fiat/photos`): the viewer outside Webflow.
 
 ## Live
@@ -35,6 +45,7 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
 | Route | |
 | --- | --- |
 | `GET /api/list?folder=brand/folder` | public file list (JSON) |
+| `GET /api/sheets` | slugs of the documents flagged "Technical sheet" |
 | `GET /f/<key>` · `?dl` | file (range requests), `?dl` forces download |
 | `GET /zip/<brand>/<folder>` · `?sub=` | streaming ZIP of the document (paths kept) or of one sub-folder |
 | `POST /api/login` | `{password}` → session token (12 h) |
@@ -42,6 +53,7 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
 | `POST /api/admin/docs` | create a document (draft) |
 | `PATCH/DELETE /api/admin/docs/:id` | edit (republished if live) / delete with its files |
 | `POST /api/admin/docs/:id/publish` · `unpublish` · `folder` | publishing, media folder for older items |
+| `/api/admin/cms/<key>[/<id>[/publish\|unpublish]]` | other collections (press contacts) |
 | `DELETE /api/admin/folder` | delete a sub-folder, or a folder no document uses |
 | `/api/admin/*` | upload, multipart, rename, delete file, folders (Bearer token) |
 
@@ -82,4 +94,5 @@ node test/zip.test.mjs && node test/zip64.test.mjs /tmp/t64.zip
 # browser end-to-end (needs `npm i --no-save playwright`), see the header of the file
 BASE=http://localhost:8787 PW=test FILES=/path/to/fixtures node test/e2e.mjs
 BASE=http://localhost:8787 PW=test FIXTURES=/path/to/fixtures node test/e2e-folders.mjs
+BASE=http://localhost:8787 PW=test node test/e2e-cms.mjs
 ```

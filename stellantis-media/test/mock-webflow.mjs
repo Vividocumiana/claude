@@ -3,7 +3,7 @@
 import http from "node:http";
 
 const PORT = +process.argv[2] || 9911, FLAKY = process.argv[3] === "flaky";
-const DOCS = "6ab5f7c03bc1be2290997df6", EVENTS = "6ab5f7c03bc1be2290997df3";
+const DOCS = "6ab5f7c03bc1be2290997df6", EVENTS = "6ab5f7c03bc1be2290997df3", CONTACTS = "6ab5f7c03bc1be2290997df5", MARKETS = "6ab5f7c03bc1be2290997df4";
 const TYPES = [["7a9ad7e3f50e72f0112cf09a17bd8fc8", "foto"], ["fee0afe4ef58459229968b9458a1b9bf", "video"], ["dd698b63f1dd43127313941b65026013", "documento"], ["9601092c426098de9fec86e629060ce5", "embargo"]];
 let seq = 0x100000;
 const id = () => "6abb" + (seq++).toString(16).padStart(20, "0");
@@ -15,6 +15,14 @@ const db = {
   [EVENTS]: [item({ name: "Mondial de l'Auto Paris 2026", slug: "mondial-auto-paris-2026", "main-event": true, "sort-order": 0 }, { isDraft: false, lastPublished: now() })]
     .concat(brands.map((b, i) => item({ name: b[0], slug: b[1], "main-event": false, "sort-order": i + 1 }, { isDraft: !!b[2], lastPublished: b[2] ? null : now() }))),
   [DOCS]: [],
+};
+db[MARKETS] = ["France", "Italy", "Germany"].map((n) => item({ name: n, slug: n.toLowerCase() }, { isDraft: false, lastPublished: now() }));
+db[CONTACTS] = [item({ name: "[TEST] Fiat Press", slug: "test-fiat-press", position: "Fiat PR", email: "fiat@example.com", "phone-number": null, country: [db[MARKETS][1].id] }, { isDraft: false, lastPublished: now() })];
+const SCHEMAS = {
+  [CONTACTS]: { displayName: "Contacts", singularName: "Contact", fields: [
+    { slug: "position", displayName: "Position", type: "PlainText" }, { slug: "phone-number", displayName: "Phone number", type: "Phone" },
+    { slug: "email", displayName: "Email", type: "Email" }, { slug: "country", displayName: "Country", type: "MultiReference", validations: { collectionId: MARKETS } },
+    { slug: "name", displayName: "Full name", type: "PlainText", isRequired: true, validations: { maxLength: 256 } }, { slug: "slug", displayName: "Slug", type: "PlainText", isRequired: true }] },
 };
 const fiat = db[EVENTS][3];
 db[DOCS].push(item({ name: "[TEST] Fiat – Photos", slug: "test-fiat-photos", event: fiat.id, "tipologia-documento": TYPES[0][0], descrizione: "Photos", "media-folder": "fiat/photos", "scheda-tecnica": false }, { isDraft: false, lastPublished: now() }));
@@ -35,6 +43,7 @@ http.createServer((req, res) => {
     if (p[0] !== "collections" || !db[p[1]]) return send(res, 404, { message: "not found" });
     const list = db[p[1]];
     if (p.length === 2 && req.method === "GET") {
+      if (SCHEMAS[p[1]]) return send(res, 200, { id: p[1], ...SCHEMAS[p[1]] });
       return send(res, 200, { id: p[1], fields: [{ slug: "tipologia-documento", type: "Option", validations: { options: TYPES.map(([id, name]) => ({ id, name })) } }] });
     }
     if (p[2] !== "items") return send(res, 404, {});
@@ -56,7 +65,7 @@ http.createServer((req, res) => {
     if (!it) return send(res, 404, { message: "Item not found" });
     if (p[4] === "live" && req.method === "DELETE") { if (!it.lastPublished || it.isDraft) return send(res, 404, { message: "not live" }); it.isDraft = true; it.lastPublished = null; return send(res, 204); }
     if (req.method === "GET") return send(res, 200, it);
-    if (req.method === "PATCH") { Object.assign(it.fieldData, body.fieldData || {}); it.lastUpdated = now(); return send(res, 200, it); }
+    if (req.method === "PATCH") { Object.assign(it.fieldData, body.fieldData || {}); if ("isArchived" in body) it.isArchived = body.isArchived; it.lastUpdated = now(); return send(res, 200, it); }
     if (req.method === "DELETE") { list.splice(list.indexOf(it), 1); return send(res, 204); }
     send(res, 404, {});
   });

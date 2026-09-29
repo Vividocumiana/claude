@@ -7,7 +7,11 @@
   "vars": {
     "WEBFLOW_DOCS_COLLECTION": "6ab5f7c03bc1be2290997df6",   // All Documents
     "WEBFLOW_EVENTS_COLLECTION": "6ab5f7c03bc1be2290997df3", // Events (one per brand)
-    "SITE_URL": "https://alfaromeopresskit-b75e626c62ba0a8ba3bb9.webflow.io"
+    "SITE_URL": "https://alfaromeopresskit-b75e626c62ba0a8ba3bb9.webflow.io",
+    // Other collections editable from the manager (fields shown in this order)
+    "CMS_COLLECTIONS": {
+      "contacts": { "id": "6ab5f7c03bc1be2290997df5", "title": "Press contacts", "singular": "Contact", "fields": ["name", "position", "email", "phone-number", "country"] }
+    }
   },
   "r2_buckets": [
     { "binding": "MEDIA", "bucket_name": "stl26-media" }

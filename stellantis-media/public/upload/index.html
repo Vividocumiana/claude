@@ -9,7 +9,8 @@
 <link rel="stylesheet" href="/upload/upload.css">
 </head>
 <body>
-<div id="login" class="login" hidden>
+<div id="login" class="login split" hidden>
+  <div class="login-cover"><img src="/upload/cover.webp" alt="Stellantis unveils its new vision of mobility with nine concept cars – Mondial de l'Auto Paris"></div>
   <form class="login-card" id="login-form">
     <img class="logo" src="https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab61d6550050578bb4b1052_stellantis-1.svg" alt="Stellantis">
     <h1>Press Kit Manager</h1>
@@ -51,6 +52,7 @@
           </div>
           <button class="btn primary" id="new-doc" type="button">+ New document</button>
         </div>
+        <div class="notice warn" id="limit-warn" hidden></div>
         <div class="chips" id="chips" role="tablist" aria-label="Filter by category"></div>
         <div class="docs" id="docs"></div>
         <div id="loose" hidden>
@@ -98,7 +100,7 @@
             <label class="field full"><span>Title</span><input id="d-name" maxlength="200" required></label>
             <div class="field full"><span>Category</span><div class="seg" id="d-type" role="radiogroup" aria-label="Category"></div></div>
             <label class="field full"><span>Short description <em>optional</em></span><input id="d-desc" maxlength="500"></label>
-            <label class="check full"><input type="checkbox" id="d-sheet"> <span>Technical sheet</span></label>
+            <label class="check full"><input type="checkbox" id="d-sheet"> <span>Technical sheet <em class="mute">– shown with a badge and under “Technical sheets” on the brand page</em></span></label>
           </div>
           <div class="form-foot">
             <span class="sub" id="d-hint"></span>
@@ -111,6 +113,58 @@
           <div><b>Delete this document</b><span>Removes it from the website and deletes all its files. This cannot be undone.</span></div>
           <button class="btn danger-btn" id="doc-delete" type="button">Delete document</button>
         </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="v-help" hidden>
+        <div class="help-hero"><img src="/upload/cover-1200.webp" srcset="/upload/cover-1200.webp 1200w, /upload/cover.webp 2000w" sizes="(max-width: 1100px) 100vw, 1100px" alt="Stellantis at the Mondial de l'Auto Paris 2026"></div>
+        <div class="head"><div><div class="crumb">Guide</div><h2>How it works</h2><div class="sub">Everything you need to publish press materials on the press kit website.</div></div></div>
+        <div class="help">
+          <ol class="steps">
+            <li><b>Pick a brand</b><span>The brands on the left are the brand pages of the website. Each brand page lists its documents.</span></li>
+            <li><b>Create a document</b><span>Click <em>+ New document</em>, give it a title, choose the category (Photos, Videos, Documents, Embargo) and, if you want, a short description. You can already drop the files or a whole folder in the same window.</span></li>
+            <li><b>Add the files</b><span>Drop files or folders in the box, or use <em>Choose files</em> / <em>Choose folder</em>. There is no size limit. Folders keep their sub-folders: journalists will see one section per folder.</span></li>
+            <li><b>Publish</b><span>A new document is a <em>Draft</em>: nobody can see it. When files and details are ready, click <em>Publish</em>. It appears on the brand page within a few seconds.</span></li>
+          </ol>
+          <div class="help-grid">
+            <div class="card"><h3>Good to know</h3><ul>
+              <li>Files added to a <b>live</b> document are online immediately. Changes to title, category or description go live when you click <em>Save changes</em>.</li>
+              <li>A file with the <b>same name</b> replaces the old one. Use <em>Rename</em> to change a name (the extension is kept).</li>
+              <li><em>Unpublish</em> hides a document without deleting anything. <em>Delete document</em> removes it and its files for good.</li>
+              <li>Thumbnails and previews are created in your browser while uploading: keep the page open until the upload is complete.</li>
+              <li>If an upload fails (for example the connection drops), click <em>Retry failed</em>.</li>
+            </ul></div>
+            <div class="card"><h3>Categories</h3><ul>
+              <li><b>Photos</b>, <b>Videos</b>, <b>Documents</b>: shown under the matching filter on the brand page.</li>
+              <li><b>Embargo</b>: the document gets the “Under Embargo” badge. Publish it only when the embargo allows it.</li>
+              <li><b>Technical sheet</b>: tick it for spec sheets. The document gets a “Technical sheet” badge and appears under the “Technical sheets” filter.</li>
+            </ul></div>
+            <div class="card"><h3>What journalists see</h3><ul>
+              <li>A gallery with previews of photos, videos and PDFs, a <em>Download</em> button on every file, <em>Download folder</em> for each folder and <em>Download all</em> as a ZIP.</li>
+              <li>Originals are always delivered at full quality.</li>
+              <li>Use <em>View on website</em> on a live document to check it.</li>
+            </ul></div>
+            <div class="card"><h3>Press contacts</h3><ul>
+              <li>Under <em>Press contacts</em> you can add, edit and remove the press office contacts shown on the website.</li>
+              <li>New contacts are drafts until you publish them.</li>
+            </ul></div>
+          </div>
+          <div class="card"><h3>Something went wrong?</h3><ul>
+            <li><b>“Webflow is not responding”</b>: the website’s content system is temporarily unavailable. You can still add or remove files; try again in a few minutes for everything else.</li>
+            <li><b>“Session expired”</b>: sign in again, nothing is lost.</li>
+            <li><b>Folders not linked to a document</b> (at the bottom of a brand page): files uploaded without a document. Create a document from them, or delete them.</li>
+          </ul></div>
+        </div>
+      </section>
+
+      <!-- Other collections (press contacts, …) -->
+      <section id="v-cms" hidden>
+        <div class="head">
+          <div><div class="crumb">Website content</div><h2 id="cms-title"></h2><div class="sub" id="cms-sub"></div></div>
+          <button class="btn primary" id="cms-new" type="button"></button>
+        </div>
+        <input class="search" id="cms-search" type="search" placeholder="Search…" aria-label="Search">
+        <div class="docs" id="cms-list"></div>
       </section>
 
       <!-- Folder only (Webflow offline) -->
@@ -129,7 +183,7 @@
       <label class="field full"><span>Title</span><input id="n-name" maxlength="200" placeholder="e.g. Grande Panda – Photos" required></label>
       <div class="field full"><span>Category</span><div class="seg" id="n-type" role="radiogroup" aria-label="Category"></div></div>
       <label class="field full"><span>Short description <em>optional</em></span><input id="n-desc" maxlength="500" placeholder="e.g. High-resolution photos of the stand"></label>
-      <label class="check full"><input type="checkbox" id="n-sheet"> <span>Technical sheet</span></label>
+      <label class="check full"><input type="checkbox" id="n-sheet"> <span>Technical sheet <em class="mute">– shown with a badge and under “Technical sheets”</em></span></label>
       <div class="notice full" id="n-folder" hidden></div>
       <div class="field full" id="n-files-f"><span>Files <em>optional, you can also add them later</em></span>
         <div class="drop small-drop" id="n-drop">
@@ -145,6 +199,23 @@
     <div class="form-foot">
       <button class="btn ghost" type="button" data-close>Cancel</button>
       <button class="btn primary" type="submit" id="n-create">Create document</button>
+    </div>
+  </form>
+</div>
+
+<!-- Edit an item of another collection -->
+<div class="modal" id="m-item" hidden>
+  <form class="modal-box" id="item-form" novalidate role="dialog" aria-modal="true" aria-labelledby="i-title">
+    <div class="modal-h"><h2 id="i-title"></h2><span class="pill" id="i-pill"></span></div>
+    <div class="form-grid" id="i-fields"></div>
+    <div class="err" id="i-err" role="alert"></div>
+    <div class="form-foot">
+      <button class="btn danger-btn" type="button" id="i-delete">Delete</button>
+      <span class="grow"></span>
+      <button class="btn ghost" type="button" data-close>Cancel</button>
+      <button class="btn ghost" type="button" id="i-unpublish">Unpublish</button>
+      <button class="btn ghost" type="submit" id="i-save" data-mode="save">Save draft</button>
+      <button class="btn primary" type="submit" id="i-publish" data-mode="publish">Save and publish</button>
     </div>
   </form>
 </div>

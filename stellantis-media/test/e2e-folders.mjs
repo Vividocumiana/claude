@@ -10,6 +10,7 @@ const BASE = process.env.BASE || 'http://localhost:8799', PW = process.env.PW ||
 const remote = BASE.startsWith('https');
 const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, proxy: remote ? { server: process.env.HTTPS_PROXY } : undefined });
 const ctx = await b.newContext({ viewport: { width: 1360, height: 900 }, ignoreHTTPSErrors: remote });
+await ctx.addInitScript(() => { try { localStorage.setItem('stl26_help_seen', '1'); } catch (e) {} });
 const p = await ctx.newPage();
 const errs = []; p.on('pageerror', e => errs.push(e.message));
 const step = s => console.log('✓', s);

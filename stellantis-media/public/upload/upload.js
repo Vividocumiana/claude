@@ -13,13 +13,14 @@
     video: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m16 10 5-3v10l-5-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
     documento: '<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z M14 3v4h4 M9 12h6 M9 16h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
     embargo: '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    contact: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
     other: '<svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v11H3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
   };
   var STATUS = { live: ["live", "Live on the website"], draft: ["draft", "Draft · not visible"], changes: ["changes", "Live · changes not published"] };
   var $ = function (id) { return document.getElementById(id); };
   var token = "";
   try { token = sessionStorage.getItem("stl26_up") || ""; } catch (e) {}
-  var S = { brands: [], docs: [], types: [], folders: [], site: "", brand: null, doc: null, filter: "", files: [], offline: false };
+  var S = { brands: [], docs: [], types: [], folders: [], site: "", brand: null, doc: null, filter: "", files: [], offline: false, cms: [], listLimit: 100, view: "" };
 
   // ---------- utils ----------
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -65,7 +66,7 @@
   function stats(folder) { for (var i = 0; i < S.folders.length; i++) if (S.folders[i].folder === folder) return S.folders[i]; return { count: 0, size: 0 }; }
   function docUrl(d) { return S.site ? S.site.replace(/\/$/, "") + "/all-documents/" + d.slug : ""; }
   function when(iso) { if (!iso) return ""; var d = new Date(iso); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
-  function show(view) { ["loading", "v-error", "v-brand", "v-doc", "v-folder"].forEach(function (v) { $(v).hidden = v !== view; }); window.scrollTo(0, 0); }
+  function show(view) { ["loading", "v-error", "v-brand", "v-doc", "v-folder", "v-help", "v-cms"].forEach(function (v) { $(v).hidden = v !== view; }); window.scrollTo(0, 0); }
 
   function confirmBox(title, text, yes, danger) {
     return new Promise(function (res) {
@@ -107,7 +108,7 @@
   // ---------- data ----------
   function load() {
     return api("/api/admin/state", { timeout: 60000 }).then(function (j) {
-      S.brands = j.brands; S.docs = j.docs; S.types = j.types; S.folders = j.folders; S.site = j.site; S.offline = false;
+      S.brands = j.brands; S.docs = j.docs; S.types = j.types; S.folders = j.folders; S.site = j.site; S.cms = j.cms || []; S.listLimit = j.listLimit || 100; S.offline = false;
       $("site-link").href = S.site || "#"; $("site-link").hidden = !S.site;
       renderSide();
     }, function (e) {
@@ -128,7 +129,10 @@
     if (S.offline) {
       renderFallback(); return show("v-error");
     }
+    if (k === "help") return openHelp();
+    if (k === "cms" && v) return openCms(v);
     if (k === "doc" && docById(v)) return openDoc(docById(v));
+    if (!h) { var seen = false; try { seen = localStorage.getItem("stl26_help_seen"); } catch (e) {} if (!seen) return go("#help"); }
     var b = (k === "brand" && brandBySlug(v)) || S.brand || S.brands[0];
     if (b) openBrand(b); else show("v-brand");
   }
@@ -136,20 +140,30 @@
   // ---------- sidebar ----------
   function renderSide() {
     if (S.offline) { $("side").innerHTML = '<h4>Brands</h4><p class="sub" style="padding:0 12px">Unavailable while Webflow is not responding.</p>'; return; }
+    var view = S.view || "";
     $("side").innerHTML = "<h4>Brands</h4>" + S.brands.map(function (b) {
       var n = S.docs.filter(function (d) { return d.brand === b.id; }).length;
-      var active = S.brand && S.brand.id === b.id;
+      var active = view === "brand" && S.brand && S.brand.id === b.id;
       return '<button type="button" data-brand="' + esc(b.slug) + '" class="' + (active ? "is-active" : "") + '"' + (active ? ' aria-current="page"' : "") + ">" + esc(b.name) + "<span>" + n + (b.draft ? " · hidden" : "") + "</span></button>";
-    }).join("");
+    }).join("") +
+      (S.cms.length ? "<h4>Website content</h4>" + S.cms.map(function (c) {
+        var active = view === "cms:" + c.key;
+        return '<button type="button" data-go="#cms=' + esc(c.key) + '" class="' + (active ? "is-active" : "") + '">' + esc(c.title) + "</button>";
+      }).join("") : "") +
+      '<h4>Help</h4><button type="button" data-go="#help" class="' + (view === "help" ? "is-active" : "") + '">How it works</button>';
   }
   $("side").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-brand]");
+    var b = e.target.closest("[data-brand]"), g = e.target.closest("[data-go]");
     if (b) { S.filter = ""; go("#brand=" + b.dataset.brand); }
+    if (g) go(g.dataset.go);
   });
 
   // ---------- brand view ----------
   function openBrand(b) {
-    S.brand = b; S.doc = null;
+    S.brand = b; S.doc = null; S.view = "brand";
+    var lw = $("limit-warn"), near = S.docs.length >= S.listLimit - 10;
+    lw.hidden = !near;
+    if (near) lw.textContent = "The website currently has " + S.docs.length + " documents. Brand pages can show up to " + S.listLimit + " documents in total: ask the web team to filter the brand page list by brand before adding more.";
     renderSide();
     $("brand-title").textContent = b.name;
     var docs = S.docs.filter(function (d) { return d.brand === b.id; });
@@ -167,7 +181,7 @@
     $("docs").innerHTML = list.length ? list.map(function (d) {
       var st = stats(d.folder), s = STATUS[d.status];
       var files = d.folder ? (st.count ? st.count + (st.count === 1 ? " file · " : " files · ") + size(st.size) : "No files yet") : "No files yet";
-      return '<a class="doc" href="#doc=' + d.id + '"><div class="ic">' + (ICON[typeName(d.type)] || ICON.other) + '</div><div class="t"><b>' + esc(d.name) + "</b><span>" + esc(typeLabel(d.type)) + " · " + files + (d.desc ? " · " + esc(d.desc) : "") + '</span></div><div class="r"><span class="pill ' + s[0] + '">' + (d.status === "live" ? "Live" : d.status === "draft" ? "Draft" : "Changes pending") + "</span></div></a>";
+      return '<a class="doc" href="#doc=' + d.id + '"><div class="ic">' + (ICON[typeName(d.type)] || ICON.other) + '</div><div class="t"><b>' + esc(d.name) + "</b><span>" + esc(typeLabel(d.type)) + " · " + files + (d.desc ? " · " + esc(d.desc) : "") + '</span></div><div class="r">' + (d.sheet ? '<span class="pill sheet">Technical sheet</span>' : "") + '<span class="pill ' + s[0] + '">' + (d.status === "live" ? "Live" : d.status === "draft" ? "Draft" : "Changes pending") + "</span></div></a>";
     }).join("") : '<div class="none">' + (docs.length ? "No documents in this category." : "No documents for " + esc(b.name) + " yet.<br>Click <b>+ New document</b> to create the first one.") + "</div>";
     // Folders with files that no document uses (e.g. uploaded before documents existed)
     var usedF = S.docs.map(function (d) { return d.folder; });
@@ -280,7 +294,7 @@
   // ---------- document view ----------
   function openDoc(d) {
     var changed = !S.doc || S.doc.id !== d.id;
-    S.doc = d; S.folderOnly = null; S.brand = brandById(d.brand) || S.brand;
+    S.doc = d; S.folderOnly = null; S.brand = brandById(d.brand) || S.brand; S.view = "brand";
     renderSide();
     var b = brandById(d.brand);
     $("back").querySelector("span").textContent = (b ? b.name : "All") + " documents";
@@ -471,9 +485,129 @@
       if (!n.dataset.to) { n.dataset.to = 1; n.textContent += "  →  " + r.dataset.doc; }
     });
   }
+  // ---------- How it works ----------
+  function openHelp() {
+    S.view = "help"; renderSide(); show("v-help");
+    try { localStorage.setItem("stl26_help_seen", "1"); } catch (e) {}
+  }
+
+  // ---------- other collections (press contacts, …) ----------
+  var C = { key: null, data: null, q: "", item: null };
+  function openCms(key) {
+    S.view = "cms:" + key; renderSide();
+    if (C.key !== key) { C = { key: key, data: null, q: "", item: null }; $("cms-search").value = ""; }
+    $("cms-title").textContent = (S.cms.filter(function (c) { return c.key === key; })[0] || { title: key }).title;
+    $("cms-sub").textContent = ""; $("cms-list").innerHTML = '<div class="loading"><span class="spin"></span> Loading…</div>';
+    $("cms-new").hidden = true;
+    show("v-cms");
+    return api("/api/admin/cms/" + encodeURIComponent(key), { timeout: 60000 }).then(function (j) {
+      if (C.key !== key) return;
+      C.data = j; renderCms();
+    }).catch(function (e) { $("cms-list").innerHTML = '<div class="none">' + esc(e.message) + ' <button class="btn small ghost" type="button" data-cms-reload>Try again</button></div>'; });
+  }
+  function refLabel(f, id) { var l = (C.data.refs[f.slug] || []).filter(function (r) { return r.id === id; })[0]; return l ? l.name : ""; }
+  function renderCms() {
+    var j = C.data, q = C.q.toLowerCase();
+    $("cms-new").hidden = false; $("cms-new").textContent = "+ New " + (j.singular || "item").toLowerCase();
+    var live = j.items.filter(function (i) { return i.status !== "draft"; }).length;
+    $("cms-sub").textContent = j.items.length + (j.items.length === 1 ? " item" : " items") + " · " + live + " live on the website";
+    var list = j.items.filter(function (i) { return !q || JSON.stringify(i.data).toLowerCase().indexOf(q) >= 0; })
+      .sort(function (a, b) { return String(a.data.name || "").localeCompare(String(b.data.name || ""), "en"); });
+    $("cms-list").innerHTML = list.length ? list.map(function (i) {
+      var d = i.data, bits = j.fields.filter(function (f) { return f.slug !== "name"; }).map(function (f) {
+        var v = d[f.slug];
+        if (f.type === "MultiReference") return (v || []).map(function (id) { return refLabel(f, id); }).filter(Boolean).join(", ");
+        if (f.type === "Reference") return refLabel(f, v);
+        if (f.type === "Option") return ((f.options || []).filter(function (o) { return o.id === v; })[0] || {}).name || "";
+        if (f.type === "Switch") return v ? f.name : "";
+        return v || "";
+      }).filter(Boolean);
+      return '<a class="doc" href="#cms=' + esc(C.key) + '" data-item="' + i.id + '"><div class="ic">' + ICON.contact + '</div><div class="t"><b>' + esc(d.name || "(no name)") + "</b><span>" + esc(bits.join(" · ")) + '</span></div><div class="r"><span class="pill ' + STATUS[i.status][0] + '">' + (i.status === "live" ? "Live" : i.status === "draft" ? "Draft" : "Changes pending") + "</span></div></a>";
+    }).join("") : '<div class="none">' + (j.items.length ? "Nothing matches your search." : "Nothing here yet.") + "</div>";
+  }
+  $("cms-search").addEventListener("input", function () { C.q = this.value; if (C.data) renderCms(); });
+  $("cms-list").addEventListener("click", function (e) {
+    if (e.target.closest("[data-cms-reload]")) return openCms(C.key);
+    var a = e.target.closest("[data-item]"); if (!a) return;
+    e.preventDefault();
+    openItem(C.data.items.filter(function (i) { return i.id === a.dataset.item; })[0]);
+  });
+  $("cms-new").onclick = function () { openItem(null); };
+  function openItem(item) {
+    var j = C.data; C.item = item;
+    var d = item ? item.data : {};
+    $("i-title").textContent = item ? (d.name || "Edit") : "New " + (j.singular || "item").toLowerCase();
+    $("i-pill").hidden = !item;
+    if (item) { $("i-pill").className = "pill " + STATUS[item.status][0]; $("i-pill").textContent = STATUS[item.status][1]; }
+    $("i-fields").innerHTML = j.fields.map(function (f) {
+      var id = "if-" + f.slug, v = d[f.slug], label = esc(f.name) + (f.required ? "" : " <em>optional</em>");
+      if (f.type === "Switch") return '<label class="check full"><input type="checkbox" id="' + id + '"' + (v ? " checked" : "") + "> <span>" + esc(f.name) + "</span></label>";
+      if (f.type === "Option" || f.type === "Reference") {
+        var opts = f.type === "Option" ? f.options : (j.refs[f.slug] || []);
+        return '<label class="field full"><span>' + label + '</span><select id="' + id + '"><option value="">—</option>' + opts.map(function (o) { return '<option value="' + o.id + '"' + (o.id === v ? " selected" : "") + ">" + esc(o.name) + "</option>"; }).join("") + "</select></label>";
+      }
+      if (f.type === "MultiReference") {
+        var sel = v || [];
+        return '<div class="field full"><span>' + label + '</span><div class="multi" id="' + id + '">' + (j.refs[f.slug] || []).map(function (o) { return '<label class="chipbox"><input type="checkbox" value="' + o.id + '"' + (sel.indexOf(o.id) >= 0 ? " checked" : "") + "><span>" + esc(o.name) + "</span></label>"; }).join("") + "</div></div>";
+      }
+      var type = { Email: "email", Phone: "tel", Link: "url", Number: "number" }[f.type] || "text";
+      return '<label class="field full"><span>' + label + '</span><input id="' + id + '" type="' + type + '"' + (f.max ? ' maxlength="' + f.max + '"' : "") + ' value="' + esc(v == null ? "" : v) + '"></label>';
+    }).join("");
+    $("i-err").textContent = "";
+    $("i-delete").hidden = !item;
+    $("i-unpublish").hidden = !item || item.status === "draft";
+    $("i-save").hidden = !!item && item.status !== "draft";
+    $("i-publish").textContent = item && item.status !== "draft" ? "Save changes" : "Save and publish";
+    $("m-item").hidden = false;
+    var first = $("i-fields").querySelector("input,select"); if (first) first.focus();
+  }
+  function itemValues() {
+    var out = {};
+    C.data.fields.forEach(function (f) {
+      var el = $("if-" + f.slug);
+      if (f.type === "Switch") out[f.slug] = el.checked;
+      else if (f.type === "MultiReference") out[f.slug] = Array.prototype.map.call(el.querySelectorAll("input:checked"), function (x) { return x.value; });
+      else out[f.slug] = el.value.trim();
+    });
+    return out;
+  }
+  $("m-item").addEventListener("click", function (e) { if (e.target === this || e.target.closest("[data-close]")) this.hidden = true; });
+  $("m-item").addEventListener("keydown", function (e) { if (e.key === "Escape") this.hidden = true; });
+  function itemDone(item, msg) {
+    var list = C.data.items, i = list.findIndex(function (x) { return x.id === item.id; });
+    if (i >= 0) list[i] = item; else list.push(item);
+    $("m-item").hidden = true; renderCms(); toast(msg);
+  }
+  $("item-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = e.submitter || $("i-publish"), mode = btn.dataset.mode, item = C.item, data = itemValues(), base = "/api/admin/cms/" + encodeURIComponent(C.key);
+    $("i-err").textContent = "";
+    var missing = C.data.fields.filter(function (f) { return f.required && !data[f.slug]; })[0];
+    if (missing) { $("i-err").textContent = "Please fill in “" + missing.name + "”."; return; }
+    if (btn.classList.contains("busy")) return;
+    btn.classList.add("busy");
+    var p = item ? api(base + "/" + item.id, { method: "PATCH", json: { data: data } }) : api(base, { method: "POST", json: { data: data }, once: true });
+    p.then(function (j) {
+      if (mode === "publish" && j.item.status === "draft") return api(base + "/" + j.item.id + "/publish", { method: "POST" }).then(function (k) { itemDone(k.item, "Saved and published"); });
+      itemDone(j.item, j.item.status === "draft" ? "Saved as draft" : "Changes saved and published");
+    }).catch(function (err) { $("i-err").textContent = err.message; }).then(function () { btn.classList.remove("busy"); });
+  });
+  $("i-unpublish").onclick = function () {
+    var btn = this, item = C.item;
+    busy(btn, function () { return api("/api/admin/cms/" + encodeURIComponent(C.key) + "/" + item.id + "/unpublish", { method: "POST" }).then(function (j) { itemDone(j.item, "Unpublished: no longer visible on the website"); }); });
+  };
+  $("i-delete").onclick = function () {
+    var item = C.item, btn = this;
+    $("m-item").hidden = true;
+    confirmBox("Delete “" + (item.data.name || "this item") + "”?", "It will be removed from the website. This cannot be undone.", "Delete", true).then(function (ok) {
+      if (!ok) { $("m-item").hidden = false; return; }
+      busy(btn, function () { return api("/api/admin/cms/" + encodeURIComponent(C.key) + "/" + item.id, { method: "DELETE" }).then(function () { C.data.items = C.data.items.filter(function (x) { return x.id !== item.id; }); renderCms(); toast("Deleted"); }); });
+    });
+  };
+
   function openFolderOnly(folder) {
     // Reuse the document view without the Webflow parts
-    S.doc = null; S.folderOnly = folder;
+    S.doc = null; S.folderOnly = folder; S.view = "brand";
     var fb = brandBySlug(folder.split("/")[0]);
     $("back").querySelector("span").textContent = fb && !S.offline ? fb.name + " documents" : "Back"; $("back").href = fb && !S.offline ? "#brand=" + fb.slug : "#";
     $("doc-crumb").textContent = S.offline ? "Folder (Webflow offline)" : "Folder not linked to a document"; $("doc-title").textContent = folder;

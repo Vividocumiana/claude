@@ -11,6 +11,7 @@ const F = (process.env.FILES || DIR + 'files') + '/';
 const remote = BASE.startsWith('https');
 const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, proxy: remote ? { server: process.env.HTTPS_PROXY } : undefined });
 const ctx = await b.newContext({ viewport: { width: 1360, height: 900 }, ignoreHTTPSErrors: remote });
+await ctx.addInitScript(() => { try { localStorage.setItem('stl26_help_seen', '1'); } catch (e) {} });
 const p = await ctx.newPage();
 const errors = [];
 p.on('pageerror', e => errors.push('pageerror ' + e.message));

@@ -118,16 +118,41 @@ export class Webflow {
     return docOut(await this.call("PATCH", `/collections/${this.docs}/items/${id}`, { fieldData }));
   }
 
-  async publish(id) {
-    const j = await this.call("POST", `/collections/${this.docs}/items/publish`, { itemIds: [id] });
-    if (j.errors && j.errors.length && !(j.publishedItemIds || []).includes(id)) fail("Webflow could not publish: " + [].concat(j.errors).map((e) => e.message || e).join("; "), 502);
-    return this.getDoc(id);
-  }
+  async publish(id) { await this.publishItem(this.docs, id); return this.getDoc(id); }
+  async unpublish(id) { await this.unpublishItem(this.docs, id); return this.getDoc(id); }
 
-  async unpublish(id) {
-    try { await this.call("DELETE", `/collections/${this.docs}/items/${id}/live`); }
+  // ---------- any collection (contacts, …) ----------
+  async fields(collection) {
+    const c = await this.call("GET", `/collections/${collection}`);
+    return { name: c.displayName, singular: c.singularName, fields: c.fields || [] };
+  }
+  async items(collection) { return (await this.all(collection)).filter((i) => !i.isArchived).map(itemOut); }
+  async getItem(collection, id) {
+    if (!/^[0-9a-f]{24}$/.test(id)) fail("Unknown item", 404);
+    return itemOut(await this.call("GET", `/collections/${collection}/items/${id}`));
+  }
+  async createItem(collection, fieldData) {
+    return itemOut(await this.call("POST", `/collections/${collection}/items`, { isArchived: false, isDraft: true, fieldData }));
+  }
+  async updateItem(collection, id, fieldData) {
+    return itemOut(await this.call("PATCH", `/collections/${collection}/items/${id}`, { fieldData }));
+  }
+  async publishItem(collection, id) {
+    const j = await this.call("POST", `/collections/${collection}/items/publish`, { itemIds: [id] });
+    if (j.errors && j.errors.length && !(j.publishedItemIds || []).includes(id)) fail("Webflow could not publish: " + [].concat(j.errors).map((e) => e.message || e).join("; "), 502);
+  }
+  async unpublishItem(collection, id) {
+    try { await this.call("DELETE", `/collections/${collection}/items/${id}/live`); }
     catch (e) { if (e.webflow !== 404 && e.webflow !== 409 && e.webflow !== 400) throw e; }
-    return this.getDoc(id);
+  }
+  async deleteItem(collection, id) {
+    await this.unpublishItem(collection, id);
+    try { await this.call("DELETE", `/collections/${collection}/items/${id}`); }
+    catch (e) { if (e.webflow !== 404) throw e; }
+  }
+  async archiveItem(collection, id) {
+    await this.unpublishItem(collection, id);
+    await this.call("PATCH", `/collections/${collection}/items/${id}`, { isArchived: true });
   }
 
   async deleteDoc(id) {
@@ -136,6 +161,12 @@ export class Webflow {
     catch (e) { if (e.webflow !== 404) throw e; }
   }
 }
+
+function statusOf(i) {
+  const lp = i.lastPublished ? Date.parse(i.lastPublished) : 0, lu = i.lastUpdated ? Date.parse(i.lastUpdated) : 0;
+  return lp && !i.isDraft ? (lu - lp > 5000 ? "changes" : "live") : "draft";
+}
+function itemOut(i) { return { id: i.id, data: i.fieldData || {}, status: statusOf(i), updated: i.lastUpdated || null }; }
 
 function docOut(i) {
   const d = i.fieldData || {};

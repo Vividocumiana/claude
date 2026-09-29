@@ -8,7 +8,7 @@
 //   _derived/<brand>/<folder>/<file>.preview.jpg large preview / video poster
 
 import { zipPlan, streamZip } from "./zip.js";
-import { Webflow } from "./webflow.js";
+import { Webflow, slugify } from "./webflow.js";
 
 const DERIVED = "_derived/";
 const TOKEN_TTL = 12 * 3600 * 1000;
@@ -25,6 +25,7 @@ export default {
       if (p.startsWith("/zip/")) return await serveZip(req, env, ctx, cleanFolder(decodeURIComponent(p.slice(5))), url.searchParams.get("sub") || "");
       if (p === "/api/list") return cors(json(await listFolder(env, cleanFolder(url.searchParams.get("folder") || ""), url.origin)));
       if (p === "/api/login" && req.method === "POST") return await login(req, env);
+      if (p === "/api/sheets") return await sheets(env);
       if (p.startsWith("/api/admin/")) {
         if (!(await authorized(req, env))) return json({ error: "Unauthorized" }, 401);
         return await admin(req, env, url, p.slice(11));
@@ -175,6 +176,19 @@ async function serveZip(req, env, ctx, folder, sub) {
   }));
 }
 
+// Slugs of the documents flagged "Technical sheet", read by the brand pages of the website.
+// Stored in R2 so the public website never waits on the Webflow API.
+const SHEETS_KEY = "_meta/sheets.json";
+async function sheets(env) {
+  const o = await env.MEDIA.get(SHEETS_KEY);
+  const body = o ? await o.text() : '{"slugs":[]}';
+  return cors(new Response(body, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=60" } }));
+}
+async function saveSheets(env, docs) {
+  const slugs = docs.filter((d) => d.sheet).map((d) => d.slug).sort();
+  await env.MEDIA.put(SHEETS_KEY, JSON.stringify({ slugs, updated: new Date().toISOString() }), { httpMetadata: { contentType: "application/json" } });
+}
+
 // ---------- auth ----------
 async function hmac(env, msg) {
   const secret = env.TOKEN_SECRET || "stl26:" + (env.UPLOAD_PASSWORD || "");
@@ -225,7 +239,7 @@ async function folderStats(env) {
   const objs = await listAll(env, "");
   const folders = {};
   for (const o of objs) {
-    if (o.key.startsWith(DERIVED)) continue;
+    if (o.key.startsWith(DERIVED) || o.key.startsWith("_meta/")) continue;
     const f = docFolderOf(o.key);
     const e = (folders[f] = folders[f] || { folder: f, count: 0, size: 0 });
     e.count++; e.size += o.size;
@@ -270,7 +284,9 @@ async function documents(req, env, url, action) {
   const wf = new Webflow(env);
   if (action === "state" && m === "GET") {
     const [brands, docs, schema, folders] = await Promise.all([wf.brands(), wf.listDocs(), wf.schema(), folderStats(env)]);
-    return json({ brands, docs, types: schema.types, folders, site: env.SITE_URL || "" });
+    await saveSheets(env, docs).catch(() => {});
+    const extra = Object.entries(cmsConfig(env)).map(([key, c]) => ({ key, title: c.title || key }));
+    return json({ brands, docs, types: schema.types, folders, site: env.SITE_URL || "", cms: extra, listLimit: 100 });
   }
   if (action === "docs" && m === "POST") {
     const j = await readJson(req);
@@ -287,6 +303,7 @@ async function documents(req, env, url, action) {
       if (used.has(existing)) fail("This folder is already used by another document", 409);
     }
     const doc = await wf.createDoc(input, brand, async (slug, folder) => slugs.has(slug) || (folder && (used.has(folder) || (await folderUsed(env, folder)))), existing);
+    if (doc.sheet) await saveSheets(env, docs.concat(doc)).catch(() => {});
     return json({ doc });
   }
   const dm = /^docs\/([0-9a-f]{24})(?:\/(publish|unpublish|folder))?$/.exec(action);
@@ -297,6 +314,7 @@ async function documents(req, env, url, action) {
     const input = docInput(await readJson(req), schema.types, true);
     let doc = await wf.updateDoc(id, input);
     if (doc.status !== "draft") doc = await wf.publish(id); // keep live pages in sync
+    if ("sheet" in input) await wf.listDocs().then((all) => saveSheets(env, all)).catch(() => {});
     return json({ doc });
   }
   if (op === "publish" && m === "POST") return json({ doc: await wf.publish(id) });
@@ -325,13 +343,88 @@ async function documents(req, env, url, action) {
       const others = (await wf.listDocs()).some((d) => d.id !== id && d.folder === doc.folder);
       if (!others) await deleteFolder(env, cleanFolder(doc.folder));
     }
+    if (doc.sheet) await wf.listDocs().then((all) => saveSheets(env, all)).catch(() => {});
     return json({ ok: true });
   }
   fail("Not found", 404);
 }
 
+// ---------- other CMS collections (contacts, …), configured in CMS_COLLECTIONS ----------
+function cmsConfig(env) {
+  let c = env.CMS_COLLECTIONS || {};
+  if (typeof c === "string") { try { c = JSON.parse(c); } catch (e) { c = {}; } }
+  return c;
+}
+const EDITABLE = ["PlainText", "Email", "Phone", "Link", "Switch", "Option", "Number", "Reference", "MultiReference"];
+async function cmsSchema(wf, conf) {
+  const meta = await wf.fields(conf.id);
+  const bySlug = Object.fromEntries(meta.fields.map((f) => [f.slug, f]));
+  const fields = (conf.fields || meta.fields.map((f) => f.slug)).map((slug) => bySlug[slug]).filter((f) => f && EDITABLE.includes(f.type)).map((f) => ({
+    slug: f.slug, name: f.displayName, type: f.type, required: !!f.isRequired, help: f.helpText || "",
+    options: f.type === "Option" ? ((f.validations && f.validations.options) || []).map((o) => ({ id: o.id, name: o.name })) : undefined,
+    ref: f.type === "Reference" || f.type === "MultiReference" ? f.validations && f.validations.collectionId : undefined,
+    max: f.validations && f.validations.maxLength,
+  }));
+  return { name: meta.name, singular: meta.singular, fields };
+}
+function cmsValue(f, v, refIds) {
+  const empty = v == null || v === "" || (Array.isArray(v) && !v.length);
+  if (empty) { if (f.required) fail("Please fill in “" + f.name + "”"); return f.type === "Switch" ? false : f.type === "MultiReference" ? [] : null; }
+  switch (f.type) {
+    case "Switch": return !!v;
+    case "Number": { const n = Number(v); if (!isFinite(n)) fail("“" + f.name + "” must be a number"); return n; }
+    case "Email": { const e = String(v).trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) fail("“" + f.name + "” is not a valid email address"); return e; }
+    case "Link": { let u = String(v).trim(); if (!/^https?:\/\//i.test(u)) u = "https://" + u; try { new URL(u); } catch (e) { fail("“" + f.name + "” is not a valid link"); } return u; }
+    case "Option": if (!f.options.some((o) => o.id === v)) fail("Invalid choice for “" + f.name + "”"); return v;
+    case "Reference": if (!refIds.has(v)) fail("Invalid choice for “" + f.name + "”"); return v;
+    case "MultiReference": { const a = [].concat(v).filter((x) => refIds.has(x)); return a; }
+    default: { const t = String(v).replace(/\s+/g, " ").trim(); if (f.max && t.length > f.max) fail("“" + f.name + "” is too long"); return t; }
+  }
+}
+async function cms(req, env, url, rest) {
+  const m = req.method, conf = cmsConfig(env);
+  const [key, id, op] = rest.split("/");
+  const c = conf[key];
+  if (!c || !c.id) fail("Not found", 404);
+  const wf = new Webflow(env);
+  const schema = await cmsSchema(wf, c);
+  const refCols = [...new Set(schema.fields.filter((f) => f.ref).map((f) => f.ref))];
+  const refLists = Object.fromEntries(await Promise.all(refCols.map(async (rc) => [rc, (await wf.items(rc)).map((i) => ({ id: i.id, name: i.data.name || i.data.slug }))])));
+  const input = async () => {
+    const body = await readJson(req), data = body.data || {}, out = {};
+    for (const f of schema.fields) {
+      if (id && !(f.slug in data)) continue; // partial update
+      out[f.slug] = cmsValue(f, data[f.slug], new Set((refLists[f.ref] || []).map((x) => x.id)));
+    }
+    return out;
+  };
+  if (!id && m === "GET") {
+    const items = await wf.items(c.id);
+    return json({ key, title: c.title || schema.name, singular: c.singular || schema.singular, fields: schema.fields, refs: Object.fromEntries(schema.fields.filter((f) => f.ref).map((f) => [f.slug, refLists[f.ref]])), items });
+  }
+  if (!id && m === "POST") {
+    const data = await input();
+    const taken = new Set((await wf.items(c.id)).map((i) => i.data.slug));
+    const base = slugify(data.name || "item") || "item";
+    let s = base;
+    for (let n = 2; taken.has(s); n++) s = base + "-" + n;
+    return json({ item: await wf.createItem(c.id, { ...data, slug: s }) });
+  }
+  if (!/^[0-9a-f]{24}$/.test(id || "")) fail("Not found", 404);
+  if (!op && m === "PATCH") {
+    let item = await wf.updateItem(c.id, id, await input());
+    if (item.status !== "draft") { await wf.publishItem(c.id, id); item = await wf.getItem(c.id, id); }
+    return json({ item });
+  }
+  if (op === "publish" && m === "POST") { await wf.publishItem(c.id, id); return json({ item: await wf.getItem(c.id, id) }); }
+  if (op === "unpublish" && m === "POST") { await wf.unpublishItem(c.id, id); return json({ item: await wf.getItem(c.id, id) }); }
+  if (!op && m === "DELETE") { await wf.deleteItem(c.id, id); return json({ ok: true }); }
+  fail("Not found", 404);
+}
+
 async function admin(req, env, url, action) {
   const m = req.method;
+  if (action.startsWith("cms/")) return cms(req, env, url, action.slice(4));
   if (action === "state" || action === "docs" || action.startsWith("docs/")) return documents(req, env, url, action);
   if (action === "folders" && m === "GET") return json({ folders: await folderStats(env) });
   if (action === "rename" && m === "POST") {
