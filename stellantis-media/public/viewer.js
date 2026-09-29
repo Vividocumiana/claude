@@ -22,6 +22,7 @@
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>',
     zip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     open: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    folder: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
     doc: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm7 0v5h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'
   };
   var LABEL = { all: "All", image: "Photos", video: "Videos", pdf: "Documents", doc: "Documents" };
@@ -58,7 +59,12 @@
 
   function render(el, data) {
     var ORDER = { image: 0, video: 1, pdf: 2, doc: 3 };
-    var files = (data.files || []).slice().sort(function (a, b) { return ORDER[a.kind] - ORDER[b.kind] || a.name.localeCompare(b.name, "en", { numeric: true }); });
+    // Files at the top level first, then one section per sub-folder
+    var top = function (f) { return (f.dir || "").split("/")[0]; };
+    var dirs = (data.dirs || []).map(function (d) { return d.name; });
+    var files = (data.files || []).slice().sort(function (a, b) {
+      return (dirs.indexOf(top(a)) - dirs.indexOf(top(b))) || ORDER[a.kind] - ORDER[b.kind] || (a.path || a.name).localeCompare(b.path || b.name, "en", { numeric: true });
+    });
     if (!files.length) { el.innerHTML = '<div class="stlm-empty">Materials will be available here soon.</div>'; return; }
     var counts = { image: 0, video: 0, doc: 0 };
     files.forEach(function (f) { counts[group(f.kind)]++; });
@@ -67,22 +73,30 @@
       return '<button type="button" role="tab" class="stlm-tab' + (i ? "" : " is-active") + '" data-g="' + g + '" aria-selected="' + (i ? "false" : "true") + '">' + LABEL[g] + '<span>' + (g === "all" ? files.length : counts[g]) + "</span></button>";
     }).join("") + "</div>" : "";
     var zip = data.zip ? '<a class="stlm-btn stlm-btn-primary" href="' + esc(data.zip.url) + '" download>' + I.zip + '<span>Download all</span><em>' + size(data.zip.size) + "</em></a>" : "";
+    var sections = [""].concat(dirs).map(function (d) {
+      var idx = []; files.forEach(function (f, i) { if (top(f) === d) idx.push(i); });
+      if (!idx.length) return "";
+      var info = (data.dirs || []).filter(function (x) { return x.name === d; })[0];
+      var head = d ? '<div class="stlm-sec-h">' + I.folder + '<div class="stlm-sec-t"><strong>' + esc(d) + "</strong><span>" + info.count + (info.count > 1 ? " files · " : " file · ") + size(info.size) + "</span></div>" +
+        (info.zip ? '<a class="stlm-btn stlm-btn-ghost" href="' + esc(info.zip.url) + '" download>' + I.zip + "<span>Download folder</span><em>" + size(info.zip.size) + "</em></a>" : "") + "</div>" : "";
+      return '<section class="stlm-sec"' + (d ? "" : ' data-root="1"') + ">" + head + '<div class="stlm-grid">' + idx.map(function (i) { return card(files[i], i); }).join("") + "</div></section>";
+    }).join("");
     el.innerHTML =
-      '<div class="stlm-bar"><div class="stlm-meta"><strong>' + files.length + (files.length > 1 ? " files" : " file") + "</strong><span>" + size(data.total) + "</span></div>" + tabs + zip + "</div>" +
-      '<div class="stlm-grid">' + files.map(card).join("") + "</div>";
+      '<div class="stlm-bar"><div class="stlm-meta"><strong>' + files.length + (files.length > 1 ? " files" : " file") + "</strong><span>" + size(data.total) + "</span></div>" + tabs + zip + "</div>" + sections;
 
-    var visible = files.slice();
+    var visible = Array.prototype.map.call(el.querySelectorAll(".stlm-card"), function (c) { return files[+c.getAttribute("data-i")]; });
     el.addEventListener("click", function (e) {
       var tab = e.target.closest(".stlm-tab");
       if (tab) {
         var g = tab.getAttribute("data-g");
         el.querySelectorAll(".stlm-tab").forEach(function (t) { var on = t === tab; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", on); });
         visible = [];
-        el.querySelectorAll(".stlm-card").forEach(function (c, i) {
-          var show = g === "all" || group(files[i].kind) === g;
+        el.querySelectorAll(".stlm-card").forEach(function (c) {
+          var f = files[+c.getAttribute("data-i")], show = g === "all" || group(f.kind) === g;
           c.hidden = !show;
-          if (show) visible.push(files[i]);
+          if (show) visible.push(f);
         });
+        el.querySelectorAll(".stlm-sec").forEach(function (sec) { sec.hidden = !sec.querySelector(".stlm-card:not([hidden])"); });
         return;
       }
       if (e.target.closest(".stlm-card-dl")) return; // native download link
@@ -103,9 +117,10 @@
       var media = f.thumb ? '<img src="' + esc(f.thumb) + '" alt="" loading="lazy" decoding="async">' : '<div class="stlm-ph">' + I.doc + "<b>" + esc(ext(f.name)) + "</b></div>";
       var badge = f.kind === "video" ? '<span class="stlm-badge">' + I.play + (f.duration ? dur(f.duration) : "Video") + "</span>"
         : f.kind === "pdf" ? '<span class="stlm-badge">PDF</span>' : "";
+      var deeper = f.dir && f.dir.indexOf("/") > 0 ? f.dir.split("/").slice(1).join(" / ") + " · " : "";
       return '<div class="stlm-card stlm-k-' + f.kind + '" data-i="' + i + '" role="button" tabindex="0" aria-label="Open ' + esc(f.name) + '">' +
         '<div class="stlm-thumb">' + media + badge + "</div>" +
-        '<div class="stlm-info"><div class="stlm-name" title="' + esc(f.name) + '">' + esc(title(f.name)) + '</div><div class="stlm-sub">' + esc(sub(f)) + "</div></div>" +
+        '<div class="stlm-info"><div class="stlm-name" title="' + esc(f.name) + '">' + esc(title(f.name)) + '</div><div class="stlm-sub">' + esc(deeper + sub(f)) + "</div></div>" +
         '<a class="stlm-card-dl" href="' + esc(f.download) + '" download aria-label="Download ' + esc(f.name) + '" title="Download original">' + I.download + "</a></div>";
     }
   }

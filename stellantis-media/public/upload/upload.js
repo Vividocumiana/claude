@@ -174,7 +174,7 @@
     var loose = S.folders.filter(function (f) { return f.folder.split("/")[0] === b.slug && usedF.indexOf(f.folder) < 0 && f.count; });
     $("loose").hidden = !loose.length || !!S.filter;
     $("loose-list").innerHTML = loose.map(function (f) {
-      return '<div class="doc loose-row"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder.split("/").slice(1).join(" / ")) + "</b><span>" + f.count + (f.count === 1 ? " file · " : " files · ") + size(f.size) + ' · not on the website</span></div><div class="r"><a class="btn small ghost" href="#folder=' + encodeURIComponent(f.folder) + '">View files</a><button class="btn small primary" type="button" data-link="' + esc(f.folder) + '">Create document</button></div></div>';
+      return '<div class="doc loose-row"><div class="ic">' + ICON.other + '</div><div class="t"><b>' + esc(f.folder.split("/").slice(1).join(" / ")) + "</b><span>" + f.count + (f.count === 1 ? " file · " : " files · ") + size(f.size) + ' · not on the website</span></div><div class="r"><a class="btn small ghost" href="#folder=' + encodeURIComponent(f.folder) + '">View files</a><button class="btn small ghost danger-txt" type="button" data-delfolder="' + esc(f.folder) + '">Delete</button><button class="btn small primary" type="button" data-link="' + esc(f.folder) + '">Create document</button></div></div>';
     }).join("");
     show("v-brand");
   }
@@ -197,10 +197,47 @@
   $("n-type").addEventListener("click", segClick);
 
   // ---------- new document ----------
-  $("loose-list").addEventListener("click", function (e) { var l = e.target.closest("[data-link]"); if (l) openNew(l.dataset.link); });
+  $("loose-list").addEventListener("click", function (e) {
+    var l = e.target.closest("[data-link]"); if (l) return openNew(l.dataset.link);
+    var d = e.target.closest("[data-delfolder]"); if (!d) return;
+    var f = d.dataset.delfolder, st = stats(f);
+    confirmBox("Delete the folder “" + f + "”?", "Its " + st.count + (st.count === 1 ? " file" : " files") + " (" + size(st.size) + ") will be deleted. This cannot be undone.", "Delete folder", true).then(function (ok) {
+      if (!ok) return;
+      busy(d, function () { return api("/api/admin/folder?" + qs({ folder: f }), { method: "DELETE", timeout: 300000 }).then(function () { toast("Folder deleted"); S.folders = S.folders.filter(function (x) { return x.folder !== f; }); openBrand(S.brand); }); });
+    });
+  });
   $("new-doc").onclick = function () { openNew(null); };
+  // Files chosen in the "New document" window, uploaded right after it is created
+  var staged = [];
+  function stage(items) {
+    // A single dropped folder becomes the document: its content goes to the top level
+    var tops = {};
+    items.forEach(function (x) { tops[x.path.indexOf("/") > 0 ? x.path.split("/")[0] : ""] = 1; });
+    var keys = Object.keys(tops);
+    if (keys.length === 1 && keys[0]) {
+      var name = keys[0];
+      items = items.map(function (x) { return { file: x.file, path: x.path.slice(name.length + 1) }; });
+      if (!$("n-name").value.trim()) $("n-name").value = name.replace(/[_]+/g, " ");
+    }
+    staged = staged.concat(items);
+    var bytes = staged.reduce(function (a, x) { return a + x.file.size; }, 0);
+    $("n-staged").hidden = !staged.length;
+    $("n-staged").querySelector("span").textContent = staged.length + (staged.length === 1 ? " file" : " files") + " · " + size(bytes) + " ready to upload";
+  }
+  var nDrop = $("n-drop");
+  ["dragenter", "dragover"].forEach(function (ev) { nDrop.addEventListener(ev, function (e) { e.preventDefault(); nDrop.classList.add("is-over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { nDrop.addEventListener(ev, function (e) { e.preventDefault(); nDrop.classList.remove("is-over"); }); });
+  nDrop.addEventListener("drop", function (e) { collectDrop(e.dataTransfer).then(stage); });
+  $("n-file-input").addEventListener("change", function (e) { stage(fromInput(e.target.files)); e.target.value = ""; });
+  $("n-dir-input").addEventListener("change", function (e) { stage(fromInput(e.target.files)); e.target.value = ""; });
+  $("n-pick-files").onclick = function () { $("n-file-input").click(); };
+  $("n-pick-dir").onclick = function () { $("n-dir-input").click(); };
+  $("n-clear").onclick = function () { staged = []; stage([]); };
+
   function openNew(folder) {
     S.newFolder = folder;
+    staged = []; $("n-staged").hidden = true;
+    $("n-files-f").hidden = !!folder;
     $("n-folder").hidden = !folder; $("n-folder").textContent = folder ? "The files already in the folder “" + folder + "” will be part of this document." : "";
     $("n-brand").disabled = !!folder;
     $("n-brand").innerHTML = S.brands.map(function (b) { return '<option value="' + b.id + '"' + (S.brand && S.brand.id === b.id ? " selected" : "") + ">" + esc(b.name) + "</option>"; }).join("");
@@ -225,8 +262,10 @@
     api("/api/admin/docs", { method: "POST", json: body, once: true }).then(function (j) {
       putDoc(j.doc); $("m-new").hidden = true;
       S.brand = brandById(j.doc.brand) || S.brand;
-      toast("Document created as a draft");
-      go("#doc=" + j.doc.id);
+      toast("Document created as a draft" + (staged.length ? ", uploading the files…" : ""));
+      try { history.pushState(null, "", "#doc=" + j.doc.id); } catch (x) { location.hash = "#doc=" + j.doc.id; }
+      openDoc(j.doc);
+      if (staged.length) { var st = staged; staged = []; enqueue(st); }
     }).catch(function (err) {
       if (!/No connection/.test(err.message)) { $("n-err").textContent = err.message; return; }
       // The connection dropped: the document may have been created anyway, never create it twice
@@ -349,21 +388,39 @@
     var i = S.folders.findIndex(function (f) { return f.folder === currentFolder(); });
     if (i >= 0) { S.folders[i].count = j.count; S.folders[i].size = j.total; } else if (j.count) S.folders.push({ folder: currentFolder(), count: j.count, size: j.total });
     $("files-meta").textContent = j.count ? j.count + (j.count === 1 ? " file · " : " files · ") + size(j.total) + (j.zip ? " · journalists can download all as ZIP" : "") : "";
+    var lastDir = null;
     $("files").innerHTML = j.count ? j.files.map(function (f, idx) {
+      var head = "";
+      if ((f.dir || "") !== lastDir) {
+        lastDir = f.dir || "";
+        if (lastDir) {
+          var inside = j.files.filter(function (x) { return x.dir === lastDir; });
+          head = '<div class="fd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><b>' + esc(lastDir.split("/").join(" / ")) + "</b><span>" + inside.length + (inside.length === 1 ? " file" : " files") + '</span><button type="button" class="del" data-dir="' + esc(lastDir) + '">Delete folder</button></div>';
+        }
+      }
       var th = f.thumb ? ' style="background-image:url(\'' + esc(f.thumb) + '\')"' : "";
       var ext = (/\.([^.]+)$/.exec(f.name) || [0, "FILE"])[1].toUpperCase().slice(0, 4);
-      return '<div class="f" data-i="' + idx + '"><div class="th"' + th + ">" + (f.thumb ? "" : esc(ext)) + '</div><div class="nm"><b title="' + esc(f.name) + '">' + esc(f.name) + "</b><span>" + size(f.size) + (f.width ? " · " + f.width + "×" + f.height : "") + (f.pages ? " · " + f.pages + " pages" : "") + "</span></div>" +
+      return head + '<div class="f' + (f.dir ? " in" : "") + '" data-i="' + idx + '"><div class="th"' + th + ">" + (f.thumb ? "" : esc(ext)) + '</div><div class="nm"><b title="' + esc(f.path || f.name) + '">' + esc(f.name) + "</b><span>" + size(f.size) + (f.width ? " · " + f.width + "×" + f.height : "") + (f.pages ? " · " + f.pages + " pages" : "") + "</span></div>" +
         '<div class="acts"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">Open</a><button type="button" data-a="rename">Rename</button><button type="button" class="del" data-a="delete">Delete</button></div></div>';
-    }).join("") : '<div class="none">No files yet. Drop them in the box above.</div>';
+    }).join("") : '<div class="none">No files yet. Drop files or folders in the box above.</div>';
   }
   $("files").addEventListener("click", function (e) {
     if (e.target.closest("[data-reload]")) return loadFiles();
+    var dd = e.target.closest("[data-dir]");
+    if (dd) {
+      var dir = dd.dataset.dir, n = S.files.filter(function (x) { return x.dir === dir || x.dir.indexOf(dir + "/") === 0; }).length;
+      confirmBox("Delete the folder “" + dir + "”?", "Its " + n + (n === 1 ? " file" : " files") + " will be deleted" + (S.doc && S.doc.status === "draft" ? "" : " and disappear from the website") + ". This cannot be undone.", "Delete folder", true).then(function (ok) {
+        if (!ok) return;
+        busy(dd, function () { return api("/api/admin/folder?" + qs({ folder: currentFolder(), sub: dir }), { method: "DELETE", timeout: 300000 }).then(function () { toast("Folder deleted"); refreshStats(); return loadFiles(); }); });
+      });
+      return;
+    }
     var a = e.target.closest("[data-a]"); if (!a) return;
     var row = a.closest(".f"), f = S.files[+row.dataset.i], folder = currentFolder();
     if (a.dataset.a === "delete") {
       confirmBox("Delete “" + f.name + "”?", "The file will disappear from the website" + (S.doc && S.doc.status === "draft" ? "" : " immediately") + ". This cannot be undone.", "Delete file", true).then(function (ok) {
         if (!ok) return;
-        busy(a, function () { return api("/api/admin/file?" + qs({ folder: folder, name: f.name }), { method: "DELETE" }).then(function () { toast("File deleted"); return loadFiles(); }); });
+        busy(a, function () { return api("/api/admin/file?" + qs({ folder: folder, name: f.path || f.name }), { method: "DELETE" }).then(function () { toast("File deleted"); return loadFiles(); }); });
       });
     }
     if (a.dataset.a === "rename") startRename(row, f, folder);
@@ -386,7 +443,7 @@
       if (ext && to.toLowerCase().slice(-ext.length) !== ext.toLowerCase()) to += ext; // keep the extension
       if (to === f.name) return cancel();
       busy(form.querySelector(".primary"), function () {
-        return api("/api/admin/rename?" + qs({ folder: folder, name: f.name, to: to }), { method: "POST", timeout: 600000 }).then(function () { toast("File renamed"); return loadFiles(); });
+        return api("/api/admin/rename?" + qs({ folder: folder, name: f.path || f.name, to: to }), { method: "POST", timeout: 600000 }).then(function () { toast("File renamed"); return loadFiles(); });
       });
     };
   }
@@ -434,39 +491,89 @@
   var drop = $("drop");
   ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("is-over"); }); });
   ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("is-over"); }); });
-  drop.addEventListener("drop", function (e) { enqueue(e.dataTransfer.files); });
-  $("file-input").addEventListener("change", function (e) { enqueue(e.target.files); e.target.value = ""; });
-  // Avoid the browser opening a file dropped outside the box
-  ["dragover", "drop"].forEach(function (ev) { window.addEventListener(ev, function (e) { if (!e.target.closest || !e.target.closest("#drop")) e.preventDefault(); }); });
+  drop.addEventListener("drop", function (e) { collectDrop(e.dataTransfer).then(enqueue); });
+  $("file-input").addEventListener("change", function (e) { enqueue(fromInput(e.target.files)); e.target.value = ""; });
+  $("dir-input").addEventListener("change", function (e) { enqueue(fromInput(e.target.files)); e.target.value = ""; });
+  $("pick-files").onclick = function (e) { e.preventDefault(); $("file-input").click(); };
+  $("pick-dir").onclick = function (e) { e.preventDefault(); $("dir-input").click(); };
+  // Avoid the browser opening a file dropped outside a drop box
+  ["dragover", "drop"].forEach(function (ev) { window.addEventListener(ev, function (e) { if (!e.target.closest || !e.target.closest(".drop")) e.preventDefault(); }); });
+
+  // Files and whole folders (sub-folders kept) -> [{ file, path }]
+  var JUNK = /^(\.|thumbs\.db$|desktop\.ini$|__macosx$)/i;
+  function okPath(p) { return p.split("/").every(function (seg) { return seg && !JUNK.test(seg); }); }
+  function fromInput(list) {
+    return Array.prototype.map.call(list, function (f) { return { file: f, path: (f.webkitRelativePath || f.name).replace(/^\/+/, "") }; })
+      .filter(function (x) { return okPath(x.path); });
+  }
+  function collectDrop(dt) {
+    var items = dt.items && dt.items.length && dt.items[0].webkitGetAsEntry ? Array.prototype.map.call(dt.items, function (it) { return it.webkitGetAsEntry(); }).filter(Boolean) : null;
+    if (!items) return Promise.resolve(fromInput(dt.files));
+    var out = [];
+    function walk(entry) {
+      if (JUNK.test(entry.name)) return Promise.resolve();
+      if (entry.isFile) return new Promise(function (res) { entry.file(function (f) { out.push({ file: f, path: entry.fullPath.replace(/^\/+/, "") }); res(); }, function () { res(); }); });
+      var reader = entry.createReader(), all = [];
+      return new Promise(function (res) {
+        (function more() { reader.readEntries(function (batch) { if (!batch.length) return res(all); all = all.concat(Array.prototype.slice.call(batch)); more(); }, function () { res(all); }); })();
+      }).then(function (children) { return children.reduce(function (p, c) { return p.then(function () { return walk(c); }); }, Promise.resolve()); });
+    }
+    return items.reduce(function (p, e) { return p.then(function () { return walk(e); }); }, Promise.resolve()).then(function () { return out; });
+  }
 
   var jobs = [], running = 0;
-  function enqueue(fileList) {
-    var files = Array.prototype.filter.call(fileList, function (f) { return !/^\./.test(f.name) && f.size > 0; });
-    if (!files.length) return;
+  function enqueue(items) {
+    var empty = items.filter(function (x) { return !x.file.size; }).length;
+    items = items.filter(function (x) { return x.file.size > 0; });
+    if (empty) toast(empty + (empty === 1 ? " empty file was" : " empty files were") + " skipped", true);
+    if (!items.length) return;
     var owner = S.doc;
     ensureFolder().then(function (folder) {
       if (!folder) throw new Error("This document has no folder");
-      files.forEach(function (file) {
-        var row = document.createElement("div");
-        row.className = "q";
-        row.innerHTML = '<div class="n"></div><div class="s">Waiting…</div><div class="bar"><i></i></div>';
-        row.querySelector(".n").textContent = file.name;
-        row.dataset.doc = owner ? owner.name : folder;
-        $("queue").prepend(row);
-        jobs.push({ file: file, folder: folder, row: row, doc: owner });
-      });
+      items.forEach(function (it) { addJob(it, folder, owner); });
       pump();
     }).catch(function (e) { toast(e.message, true); });
   }
+  function addJob(it, folder, owner) {
+    var row = document.createElement("div");
+    row.className = "q";
+    row.innerHTML = '<div class="n"></div><div class="s">Waiting…</div><div class="bar"><i></i></div>';
+    row.querySelector(".n").textContent = it.path;
+    row.dataset.doc = owner ? owner.name : folder;
+    $("queue").appendChild(row);
+    var job = { file: it.file, path: it.path, folder: folder, row: row, doc: owner };
+    row.__job = job;
+    jobs.push(job); total.n++; total.bytes += it.file.size;
+    summary();
+  }
+  // "Uploading 12 of 240 · 1.2 GB left" + retry of failed files
+  var total = { n: 0, done: 0, bytes: 0, sent: 0 };
+  function summary() {
+    var el = $("q-sum"), failed = $("queue").querySelectorAll(".q.fail").length;
+    if (!total.n && !failed) { el.hidden = true; return; }
+    el.hidden = false;
+    var left = Math.max(0, total.bytes - total.sent);
+    el.querySelector("span").textContent = running || jobs.length
+      ? "Uploading " + Math.min(total.done + 1, total.n) + " of " + total.n + " · " + size(left) + " left"
+      : (failed ? failed + (failed === 1 ? " file" : " files") + " could not be uploaded" : "All files uploaded");
+    el.querySelector("button").hidden = !failed || !!(running || jobs.length);
+  }
+  $("q-retry").onclick = function () {
+    Array.prototype.forEach.call($("queue").querySelectorAll(".q.fail"), function (r) {
+      var j = r.__job; r.classList.remove("fail"); r.querySelector(".s").textContent = "Waiting…"; r.querySelector(".bar i").style.width = "0";
+      jobs.push(j); total.n++; total.bytes += j.file.size;
+    });
+    summary(); pump();
+  };
   function pump() {
-    while (running < 2 && jobs.length) {
+    while (running < 3 && jobs.length) {
       var j = jobs.shift(); running++;
       process(j).then(function (job) {
         job.row.classList.add("done"); job.row.querySelector(".s").textContent = "Uploaded";
       }, function (err) {
-        this.row.classList.add("fail"); this.row.querySelector(".s").textContent = (err.message || "Upload failed") + " – drop the file again to retry";
+        this.row.classList.add("fail"); this.row.querySelector(".s").textContent = (err.message || "Upload failed");
       }.bind(j)).then(function () {
-        running--;
+        running--; total.done++; total.sent += this.file.size; summary();
         if (!running && !jobs.length) {
           var failed = $("queue").querySelectorAll(".q.fail").length;
           loadFiles().then(function () {
@@ -474,10 +581,11 @@
             setTimeout(function () { Array.prototype.forEach.call($("queue").querySelectorAll(".q.done"), function (r) { r.remove(); }); }, 1200);
           });
           refreshStats();
-          failed ? toast(failed + (failed === 1 ? " file" : " files") + " could not be uploaded", true) : toast("Upload complete");
+          failed ? toast(failed + (failed === 1 ? " file" : " files") + " could not be uploaded: use “Retry failed”", true) : toast("Upload complete");
+          total = { n: 0, done: 0, bytes: 0, sent: 0 }; summary();
         }
         pump();
-      });
+      }.bind(j));
     }
   }
   function status(job, text, pct) {
@@ -499,8 +607,8 @@
       .then(function (d) {
         return uploadFile(job, meta).then(function () {
           var ups = [];
-          if (d.thumb) ups.push(putBlob(job.folder, f.name, d.thumb, "thumb").catch(function () {}));
-          if (d.preview) ups.push(putBlob(job.folder, f.name, d.preview, "preview").catch(function () {}));
+          if (d.thumb) ups.push(putBlob(job.folder, job.path, d.thumb, "thumb").catch(function () {}));
+          if (d.preview) ups.push(putBlob(job.folder, job.path, d.preview, "preview").catch(function () {}));
           return Promise.all(ups);
         });
       })
@@ -612,7 +720,7 @@
     return withRetry(function () { return xhr("PUT", "/api/admin/put?" + qs({ folder: folder, name: name, derived: derived }), blob); }, 2);
   }
   function uploadFile(job, meta) {
-    var f = job.file, base = { folder: job.folder, name: f.name };
+    var f = job.file, base = { folder: job.folder, name: job.path };
     var q = Object.assign({}, base, meta);
     if (f.size <= SINGLE_MAX) {
       return withRetry(function () {

@@ -79,12 +79,15 @@
 
         <div class="card">
           <div class="card-h"><h3>Files</h3><span class="sub" id="files-meta"></span></div>
-          <label class="drop" id="drop">
+          <div class="drop" id="drop">
             <input type="file" id="file-input" multiple hidden>
+            <input type="file" id="dir-input" webkitdirectory multiple hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <strong>Drop files here or click to choose</strong>
-            <span>Photos, videos, PDFs and any other document, any size. A file with the same name replaces the old one.</span>
-          </label>
+            <strong>Drop files or folders here</strong>
+            <span>Photos, videos, PDFs and any other document, any size. Folders keep their sub-folders. A file with the same name replaces the old one.</span>
+            <div class="drop-btns"><button class="btn small" type="button" id="pick-files">Choose files</button><button class="btn small" type="button" id="pick-dir">Choose folder</button></div>
+          </div>
+          <div class="q-sum" id="q-sum" hidden><span></span><button class="btn small" type="button" id="q-retry" hidden>Retry failed</button></div>
           <div class="queue" id="queue"></div>
           <div class="files" id="files"></div>
         </div>
@@ -128,6 +131,15 @@
       <label class="field full"><span>Short description <em>optional</em></span><input id="n-desc" maxlength="500" placeholder="e.g. High-resolution photos of the stand"></label>
       <label class="check full"><input type="checkbox" id="n-sheet"> <span>Technical sheet</span></label>
       <div class="notice full" id="n-folder" hidden></div>
+      <div class="field full" id="n-files-f"><span>Files <em>optional, you can also add them later</em></span>
+        <div class="drop small-drop" id="n-drop">
+          <input type="file" id="n-file-input" multiple hidden>
+          <input type="file" id="n-dir-input" webkitdirectory multiple hidden>
+          <strong>Drop files or a folder</strong>
+          <div class="drop-btns"><button class="btn small" type="button" id="n-pick-files">Choose files</button><button class="btn small" type="button" id="n-pick-dir">Choose folder</button></div>
+          <div class="staged" id="n-staged" hidden><span></span><button type="button" class="linkbtn" id="n-clear">Remove</button></div>
+        </div>
+      </div>
     </div>
     <div class="err" id="n-err" role="alert"></div>
     <div class="form-foot">
@@ -150,6 +162,15 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="/upload/upload.js"></script>
+<div class="login" id="boot-err" hidden><div class="login-card"><h1>Connection problem</h1><p>The page could not load completely. Check your internet connection and reload.</p><button class="btn primary" type="button" onclick="location.reload()">Reload</button></div></div>
+<script>
+// Load the app script with retries: a dropped connection must not leave a blank page
+(function load(n) {
+  var s = document.createElement("script");
+  s.src = "/upload/upload.js" + (n ? "?r=" + Date.now() : "");
+  s.onerror = function () { s.remove(); if (n < 3) setTimeout(function () { load(n + 1); }, 1000 * (n + 1)); else document.getElementById("boot-err").hidden = false; };
+  document.body.appendChild(s);
+})(0);
+</script>
 </body>
 </html>

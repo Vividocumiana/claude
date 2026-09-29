@@ -22,7 +22,7 @@ export default {
       if (p === "/upload" || p === "/upload/") return env.ASSETS.fetch(new Request(new URL("/upload/index.html", url), req));
       if (p === "/preview" || p === "/preview/") return env.ASSETS.fetch(new Request(new URL("/preview/index.html", url), req));
       if (p.startsWith("/f/")) return await serveFile(req, env, decodeKey(p.slice(3)), url.searchParams.has("dl"));
-      if (p.startsWith("/zip/")) return await serveZip(req, env, ctx, cleanFolder(decodeURIComponent(p.slice(5))));
+      if (p.startsWith("/zip/")) return await serveZip(req, env, ctx, cleanFolder(decodeURIComponent(p.slice(5))), url.searchParams.get("sub") || "");
       if (p === "/api/list") return cors(json(await listFolder(env, cleanFolder(url.searchParams.get("folder") || ""), url.origin)));
       if (p === "/api/login" && req.method === "POST") return await login(req, env);
       if (p.startsWith("/api/admin/")) {
@@ -58,6 +58,7 @@ function slug(s) {
   return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
+function slugPart(s) { return String(s).split("/").map(slug).filter(Boolean).join("-"); }
 function cleanFolder(f) {
   const parts = String(f).split("/").map(slug).filter(Boolean);
   if (parts.length > 4) fail("Folder too deep");
@@ -68,6 +69,16 @@ function cleanName(n) {
   if (!name || name.startsWith(".")) fail("Invalid file name");
   return name;
 }
+// "Press photos/Day 1/img.jpg": every segment cleaned like a file name
+function cleanPath(p) {
+  const parts = String(p).split("/").map((x) => x.replace(/[\\\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim()).filter(Boolean);
+  if (!parts.length || parts.length > 8) fail("Invalid file name");
+  const out = parts.map(cleanName).join("/");
+  if (out.length > 700) fail("File path too long");
+  return out;
+}
+// Media folder of a document = first two segments (brand/document)
+function docFolderOf(key) { return key.split("/").slice(0, 2).join("/"); }
 function kindOf(name, type) {
   const ext = name.split(".").pop().toLowerCase();
   if (/^image\//.test(type) || ["jpg", "jpeg", "png", "webp", "gif", "tif", "tiff", "heic", "avif"].includes(ext)) return "image";
@@ -94,14 +105,13 @@ async function listFolder(env, folder, origin) {
   const [objs, derived] = await Promise.all([listAll(env, prefix), listAll(env, DERIVED + prefix)]);
   const have = new Set(derived.map((o) => o.key));
   const files = objs
-    .filter((o) => !o.key.slice(prefix.length).includes("/"))
     .map((o) => {
-      const name = o.key.slice(prefix.length);
+      const path = o.key.slice(prefix.length), name = path.split("/").pop(), dir = path.slice(0, Math.max(0, path.length - name.length - 1));
       const m = o.customMetadata || {};
       const type = (o.httpMetadata && o.httpMetadata.contentType) || "application/octet-stream";
       const t = DERIVED + o.key + ".thumb.jpg", pv = DERIVED + o.key + ".preview.jpg";
       return {
-        key: o.key, name, size: o.size, type, kind: kindOf(name, type), uploaded: o.uploaded,
+        key: o.key, name, path, dir, size: o.size, type, kind: kindOf(name, type), uploaded: o.uploaded,
         width: +m.w || null, height: +m.h || null, duration: +m.dur || null, pages: +m.pages || null,
         url: origin + "/f/" + encodeKey(o.key),
         download: origin + "/f/" + encodeKey(o.key) + "?dl",
@@ -110,13 +120,18 @@ async function listFolder(env, folder, origin) {
         zippable: !!m.crc32,
       };
     })
-    .sort((a, b) => a.name.localeCompare(b.name, "en", { numeric: true }));
+    .sort((a, b) => (a.dir ? 1 : 0) - (b.dir ? 1 : 0) || a.dir.localeCompare(b.dir, "en", { numeric: true }) || a.name.localeCompare(b.name, "en", { numeric: true }));
   const total = files.reduce((s, f) => s + f.size, 0);
-  const zipFiles = files.filter((f) => f.zippable);
-  return {
-    folder, count: files.length, total, files,
-    zip: zipFiles.length > 1 ? { url: origin + "/zip/" + folder, count: zipFiles.length, size: zipFiles.reduce((s, f) => s + f.size, 0) } : null,
+  const zipOf = (list, sub) => {
+    const z = list.filter((f) => f.zippable);
+    return z.length > 1 ? { url: origin + "/zip/" + folder + (sub ? "?sub=" + encodeURIComponent(sub) : ""), count: z.length, size: z.reduce((s, f) => s + f.size, 0) } : null;
   };
+  // Sub-folders (first level) with their own "download folder" ZIP
+  const dirs = [...new Set(files.filter((f) => f.dir).map((f) => f.dir.split("/")[0]))].map((d) => {
+    const inside = files.filter((f) => f.dir === d || f.dir.startsWith(d + "/"));
+    return { name: d, count: inside.length, size: inside.reduce((s, f) => s + f.size, 0), zip: zipOf(inside, d) };
+  });
+  return { folder, count: files.length, total, files, dirs, zip: zipOf(files, "") };
 }
 
 async function serveFile(req, env, key, asDownload) {
@@ -143,16 +158,18 @@ async function serveFile(req, env, key, asDownload) {
   return cors(new Response(obj.body, { headers: h }));
 }
 
-async function serveZip(req, env, ctx, folder) {
+async function serveZip(req, env, ctx, folder, sub) {
   if (!folder) fail("Not found", 404);
-  const prefix = folder + "/";
-  const objs = (await listAll(env, prefix)).filter((o) => !o.key.slice(prefix.length).includes("/") && o.customMetadata && o.customMetadata.crc32);
+  const base = folder + "/";
+  const prefix = base + (sub ? cleanPath(sub) + "/" : "");
+  const objs = (await listAll(env, prefix)).filter((o) => o.customMetadata && o.customMetadata.crc32);
   if (!objs.length) return cors(new Response("Not found", { status: 404 }));
+  // Paths inside the ZIP keep the sub-folders (relative to the downloaded folder)
   const entries = objs.map((o) => ({ key: o.key, name: o.key.slice(prefix.length), size: o.size, crc: parseInt(o.customMetadata.crc32, 16) >>> 0, date: new Date(o.uploaded) }));
   const plan = zipPlan(entries);
   const { readable, writable } = new FixedLengthStream(plan.total);
   ctx.waitUntil(streamZip(plan, writable, (key) => env.MEDIA.get(key)));
-  const fname = "stellantis-paris-2026-" + folder.replace(/\//g, "-") + ".zip";
+  const fname = "stellantis-paris-2026-" + (folder + (sub ? "-" + slugPart(sub) : "")).replace(/\//g, "-") + ".zip";
   return cors(new Response(readable, {
     headers: { "content-type": "application/zip", "content-length": String(plan.total), "content-disposition": `attachment; filename="${fname}"`, "cache-control": "no-store" },
   }));
@@ -201,7 +218,7 @@ function metaFrom(url) {
 function targetKey(url) {
   const folder = cleanFolder(url.searchParams.get("folder") || "");
   if (!folder || !folder.includes("/")) fail("Choose a brand and a folder");
-  return folder + "/" + cleanName(url.searchParams.get("name") || "");
+  return folder + "/" + cleanPath(url.searchParams.get("name") || "");
 }
 
 async function folderStats(env) {
@@ -209,7 +226,7 @@ async function folderStats(env) {
   const folders = {};
   for (const o of objs) {
     if (o.key.startsWith(DERIVED)) continue;
-    const f = o.key.slice(0, o.key.lastIndexOf("/"));
+    const f = docFolderOf(o.key);
     const e = (folders[f] = folders[f] || { folder: f, count: 0, size: 0 });
     e.count++; e.size += o.size;
   }
@@ -374,6 +391,17 @@ async function admin(req, env, url, action) {
   if (action === "mpu/abort" && m === "POST") {
     const key = targetKey(url);
     await env.MEDIA.resumeMultipartUpload(key, url.searchParams.get("uploadId")).abort();
+    return json({ ok: true });
+  }
+  if (action === "folder" && m === "DELETE") {
+    // A sub-folder of a document (sub=...) or a whole folder that no document uses
+    const folder = cleanFolder(url.searchParams.get("folder") || "");
+    if (!folder || folder.split("/").length !== 2) fail("Invalid folder");
+    const sub = url.searchParams.get("sub");
+    if (sub) { await deleteFolder(env, folder + "/" + cleanPath(sub)); return json({ ok: true }); }
+    const docs = await new Webflow(env).listDocs();
+    if (docs.some((d) => d.folder === folder)) fail("This folder belongs to a document: delete the document instead", 409);
+    await deleteFolder(env, folder);
     return json({ ok: true });
   }
   if (action === "file" && m === "DELETE") {

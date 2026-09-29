@@ -19,7 +19,7 @@
 .stlm-tab:hover { color: var(--stlm-ink); }
 .stlm-tab.is-active { background: #fff; color: var(--stlm-ink); box-shadow: 0 1px 3px rgba(11,16,36,.08); }
 
-.stlm-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none !important; cursor: pointer; border: 1px solid transparent; transition: background .2s, border-color .2s, color .2s; white-space: nowrap; }
+.stlm-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 500; text-decoration: none !important; cursor: pointer; border: 1px solid transparent; transition: background .2s, border-color .2s, color .2s; white-space: nowrap; }
 .stlm-btn em { font-style: normal; font-weight: 400; opacity: .75; font-size: 13px; }
 .stlm-btn-primary { background: var(--stlm-blue); color: #fff !important; }
 .stlm-btn-primary:hover { background: var(--stlm-blue-d); }
@@ -43,7 +43,7 @@
 .stlm-badge { position: absolute; left: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: rgba(11,16,36,.72); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .02em; backdrop-filter: blur(6px); }
 .stlm-badge svg { width: 14px; height: 14px; }
 .stlm-info { padding: 14px 56px 16px 16px; }
-.stlm-name { font-size: 15px; font-weight: 600; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stlm-name { font-size: 15px; font-weight: 500; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stlm-sub { margin-top: 4px; font-size: 13px; color: var(--stlm-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stlm-card-dl { position: absolute; right: 12px; bottom: 14px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: var(--stlm-blue) !important; background: var(--stlm-soft); transition: background .2s, color .2s; }
 .stlm-card-dl:hover { background: var(--stlm-blue); color: #fff !important; }
@@ -103,3 +103,14 @@ html.stlm-noscroll, html.stlm-noscroll body { overflow: hidden !important; }
   .stlm-lb-media iframe { height: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .stlm *, .stlm-lb, .stlm-lb * { animation: none !important; transition: none !important; } }
+
+/* Sub-folders */
+.stlm-sec + .stlm-sec { margin-top: 36px; }
+.stlm-sec[hidden] { display: none; }
+.stlm-sec-h { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--stlm-line); flex-wrap: wrap; }
+.stlm-sec-h > svg { width: 26px; height: 26px; color: var(--stlm-blue); }
+.stlm-sec-t { display: flex; flex-direction: column; margin-right: auto; min-width: 0; }
+.stlm-sec-t strong { font-size: 18px; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+.stlm-sec-t span { font-size: 13px; color: var(--stlm-mute); }
+.stlm-btn-ghost { background: var(--stlm-soft); color: var(--stlm-blue) !important; min-height: 40px; }
+.stlm-btn-ghost:hover { background: #e7e9f2; }

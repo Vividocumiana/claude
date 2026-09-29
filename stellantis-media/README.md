@@ -12,7 +12,9 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
   - pick a brand (the brands are the items of the Webflow **Events** collection);
   - **New document** creates the Webflow CMS item (title, category, description,
     technical sheet) as a draft, with its own media folder `brand/slug`;
-  - drop files (no size limit: big files go up in 50 MB parts), rename or delete them;
+  - drop files or whole folders (sub-folders are kept; no size limit: big files go
+    up in 50 MB parts), rename or delete them; files can already be added in the
+    New document window (a single dropped folder becomes the document);
   - edit the details, **Publish** / **Unpublish**, **Delete** (item + files).
   Thumbnails, previews, video posters and PDF covers are generated in the
   browser; the CRC-32 of every file is stored so ZIPs cost no Worker CPU.
@@ -34,12 +36,13 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
 | --- | --- |
 | `GET /api/list?folder=brand/folder` | public file list (JSON) |
 | `GET /f/<key>` · `?dl` | file (range requests), `?dl` forces download |
-| `GET /zip/<brand>/<folder>` | streaming ZIP of the folder |
+| `GET /zip/<brand>/<folder>` · `?sub=` | streaming ZIP of the document (paths kept) or of one sub-folder |
 | `POST /api/login` | `{password}` → session token (12 h) |
 | `GET /api/admin/state` | brands, categories, documents (Webflow) + folder stats |
 | `POST /api/admin/docs` | create a document (draft) |
 | `PATCH/DELETE /api/admin/docs/:id` | edit (republished if live) / delete with its files |
 | `POST /api/admin/docs/:id/publish` · `unpublish` · `folder` | publishing, media folder for older items |
+| `DELETE /api/admin/folder` | delete a sub-folder, or a folder no document uses |
 | `/api/admin/*` | upload, multipart, rename, delete file, folders (Bearer token) |
 
 ## Deploy
@@ -78,4 +81,5 @@ npx wrangler dev          # local R2, http://localhost:8787/upload/ (password: t
 node test/zip.test.mjs && node test/zip64.test.mjs /tmp/t64.zip
 # browser end-to-end (needs `npm i --no-save playwright`), see the header of the file
 BASE=http://localhost:8787 PW=test FILES=/path/to/fixtures node test/e2e.mjs
+BASE=http://localhost:8787 PW=test FIXTURES=/path/to/fixtures node test/e2e-folders.mjs
 ```
