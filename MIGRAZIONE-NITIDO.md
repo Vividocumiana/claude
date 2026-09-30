@@ -1,13 +1,13 @@
 # Migrazione: nuovo account Claude per Nitido Studio
 
-Il nuovo account (piano Max) serve solo a **Nitido Studio**, cioè il repo `Vividocumiana/vivido-sites`,
-e ai contenuti Nitido. Tutto il resto **resta su questo account**:
+Il nuovo account (piano Max) serve soprattutto a **Nitido Studio**, cioè il repo `Vividocumiana/vivido-sites`,
+e ai contenuti Nitido. Porta con sé anche il lavoro Vivido: preventivi, contratti, pricing, roundtable e
+contesto dei clienti. **Restano su questo account**:
 
 - le routine automatiche del Vivido Assistant (morning, weekly, EOD, log-ingest, reminder, LinkedIn);
-- preventivi, proposte e pricing Vivido;
 - tutto quello che riguarda Nest (non si porta niente).
 
-Tempo stimato: circa 1h30 di configurazione, più mezz'ora di prova.
+Tempo stimato: circa 2 ore di configurazione, più mezz'ora di prova.
 
 > Questo repo è **pubblico**: qui c'è solo la checklist. Il file di contesto e gli zip delle skill
 > sono stati consegnati a parte e non vanno committati qui (contengono prezzi e dettagli interni).
@@ -33,10 +33,15 @@ Carica gli zip in Impostazioni → Capabilities → Skills:
 | `vivido-prototipo-animato` | Da Figma a prototipo animato (GSAP), verificato e consegnabile |
 | `seo-geo` | Audit SEO/GEO dei siti clienti prima e dopo il lancio |
 | `frontend-design` | Interfacce web con qualità di design alta. Se il nuovo account la ha già, salta |
+| `vivido-pricing` | Prezzi ufficiali e regole di scoping |
+| `vivido-proposal-design` | Proposte HTML Layout C per `vivido.world/quotations` |
+| `preventivo-pdf` | Il PDF di una pagina che accompagna ogni proposta |
+| `vivido-branding` | Brand Vivido per mail e documenti ai clienti |
+| `vivido-roundtable` | Workshop → questionario → documento strategico |
+| `vivido-notion-task` | Task nel database Tasks di Vivido su Notion |
 
 Le skill standard (pdf, docx, xlsx, pptx, skill-creator, import-memory…) ci sono già su ogni account.
-**Non portare**: `vivido-assistant`, `vivido-pricing`, `vivido-proposal-design`, `preventivo-pdf`,
-`vivido-roundtable`, `vivido-notion-task`, `vivido-branding`, `dnd-master`, `google-flights`.
+**Non portare**: `vivido-assistant` (le routine restano qui), `dnd-master`, `google-flights`.
 
 ## 3. Connettori (15 min)
 
@@ -46,13 +51,15 @@ Ogni connettore si autorizza di nuovo sul nuovo account. Quello vecchio continua
 | Connettore | Serve per |
 |---|---|
 | **Figma** | leggere i design e portarli in codice |
-| **Notion** | calendario contenuti Nitido e task del progetto Nitido |
-| **Webflow** | solo finché ci sono siti da migrare fuori da Webflow |
-| Google Drive | materiali dei clienti (opzionale) |
+| **Notion** | calendario contenuti Nitido, CRM e task Vivido |
+| **Granola** | trascrizioni delle call per le proposte (Granola → Claude → proposta) |
+| **Gmail** / **Google Calendar** | mail ai clienti e disponibilità per le call |
+| **Webflow** | siti clienti ancora su Webflow e pubblicazione delle proposte |
+| Google Drive | materiali dei clienti, Google Sheet "Contabilità 2026" |
 | Higgsfield / ElevenLabs | immagini e video per i contenuti (opzionale) |
 | Mobbin | riferimenti UI (opzionale) |
 
-Slack, Gmail, Calendar e Granola servono alle routine: restano qui.
+Slack serve alle routine: si può collegare anche qui, ma le routine non vanno ricreate.
 
 ## 4. Ambiente cloud (20 min)
 
@@ -72,7 +79,7 @@ Per lavorare su `vivido-sites` dalle sessioni cloud:
 
 ## 5. Memoria e contesto (15 min)
 
-- [ ] Incolla `CONTESTO-NITIDO.md` nelle istruzioni del nuovo account, oppure importalo con la skill `import-memory`. È la memoria dell'account Vivido già filtrata: niente Nest, preventivi, contratti o progetti personali.
+- [ ] Incolla `CONTESTO-NITIDO.md` nelle istruzioni del nuovo account, oppure importalo con la skill `import-memory`. È la memoria dell'account Vivido già filtrata: tutto Vivido e Nitido, niente Nest e niente progetti personali.
 - [ ] Il contesto tecnico non va copiato: sta già nel repo (`CLAUDE.md`, `README.md`,
       `docs/superpowers/stato.md`) e arriva da solo in ogni sessione.
 - [ ] Lo storico delle chat non si trasferisce. Se c'è una conversazione con decisioni importanti
