@@ -30,6 +30,12 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
     set on new items), `createRef` (a new brand also gets its own entry in
     Markets, so contacts can be assigned to it), `noDelete` (brands can only be
     unpublished: deleting one would orphan its documents).
+  - **Brand logos row** (Webflow, top of every brand page): a collection list of
+    the brands (main event excluded, sorted by "Sort Order") showing the "Logo"
+    field, or the brand name while no logo is set. The current brand is
+    highlighted; the page head code sets the links (`/events/<slug>`) and places
+    the row under the fixed navbar. Publishing one brand from the uploader
+    refreshes the row on every page.
   - **How it works**: a guide for the people who upload, shown at the first sign-in.
   - **Technical sheet**: documents flagged as technical sheets get a badge and a
     "Technical sheets" filter on the brand page. The Worker keeps the list of
