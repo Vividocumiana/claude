@@ -138,7 +138,7 @@ button { font: inherit; }
 .full { grid-column: 1 / -1; }
 .check { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
 .check input { width: 18px; height: 18px; accent-color: var(--blue); }
-.seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .seg button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border: 1px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ink); }
 .seg button svg { width: 22px; height: 22px; color: var(--blue); }
 .seg button.is-on { border-color: var(--blue); background: #eef0f8; box-shadow: inset 0 0 0 1px var(--blue); }
@@ -166,7 +166,7 @@ button { font: inherit; }
   .side h4 { display: none; }
   .side button { width: auto; flex: 0 0 auto; margin: 0; }
   .form-grid { grid-template-columns: 1fr; }
-  .seg { grid-template-columns: repeat(2, 1fr); }
+  .seg { grid-template-columns: repeat(3, 1fr); }
   .doc { grid-template-columns: 36px 1fr; }
   .doc .ic { width: 36px; height: 36px; }
   .doc .r { grid-column: 2; justify-content: flex-start; }

@@ -68,7 +68,8 @@ export class Webflow {
   async schema() {
     const c = await this.call("GET", `/collections/${this.docs}`);
     const typeField = (c.fields || []).find((f) => f.slug === F.type);
-    const types = typeField && typeField.validations && typeField.validations.options ? typeField.validations.options.map((o) => ({ id: o.id, name: o.name })) : [];
+    // "embargo" is no longer offered (the site has no embargo any more)
+    const types = typeField && typeField.validations && typeField.validations.options ? typeField.validations.options.filter((o) => o.name !== "embargo").map((o) => ({ id: o.id, name: o.name })) : [];
     return { types };
   }
 
