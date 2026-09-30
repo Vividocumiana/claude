@@ -492,13 +492,15 @@
   }
 
   // ---------- other collections (press contacts, …) ----------
-  var C = { key: null, data: null, q: "", item: null };
+  var C = { key: null, data: null, q: "", item: null, img: {}, uploading: 0 };
   // Italian labels for the Webflow fields (fallback: the Webflow name)
   var FIELD_IT = { name: "Nome e cognome", position: "Ruolo", email: "Email", "phone-number": "Telefono", country: "Brand / mercato" };
-  function fieldLabel(f) { return FIELD_IT[f.slug] || f.name; }
+  function fieldLabel(f) { return f.label || FIELD_IT[f.slug] || f.name; }
+  function singular() { return (C.data && C.data.singular || "elemento").toLowerCase(); }
+  function imgUrl(v) { return v && typeof v === "object" ? v.url || "" : ""; }
   function openCms(key) {
     S.view = "cms:" + key; renderSide();
-    if (C.key !== key) { C = { key: key, data: null, q: "", item: null }; $("cms-search").value = ""; }
+    if (C.key !== key) { C = { key: key, data: null, q: "", item: null, img: {}, uploading: 0 }; $("cms-search").value = ""; }
     $("cms-title").textContent = (S.cms.filter(function (c) { return c.key === key; })[0] || { title: key }).title;
     $("cms-sub").textContent = ""; $("cms-list").innerHTML = '<div class="loading"><span class="spin"></span> Loading…</div>';
     $("cms-new").hidden = true;
@@ -511,21 +513,29 @@
   function refLabel(f, id) { var l = (C.data.refs[f.slug] || []).filter(function (r) { return r.id === id; })[0]; return l ? l.name : ""; }
   function renderCms() {
     var j = C.data, q = C.q.toLowerCase();
-    $("cms-new").hidden = false; $("cms-new").textContent = "+ Nuovo " + (C.key === "contacts" ? "contatto" : "elemento");
+    $("cms-new").hidden = false; $("cms-new").textContent = "+ Nuovo " + singular();
     var live = j.items.filter(function (i) { return i.status !== "draft"; }).length;
     $("cms-sub").textContent = j.items.length + (j.items.length === 1 ? " elemento" : " elementi") + " · " + live + " online sul sito";
+    var key = j.sort || "name";
     var list = j.items.filter(function (i) { return !q || JSON.stringify(i.data).toLowerCase().indexOf(q) >= 0; })
-      .sort(function (a, b) { return String(a.data.name || "").localeCompare(String(b.data.name || ""), "en"); });
+      .sort(function (a, b) {
+        var x = a.data[key], y = b.data[key];
+        if (typeof x === "number" || typeof y === "number") return (x == null ? 1e9 : x) - (y == null ? 1e9 : y) || String(a.data.name || "").localeCompare(String(b.data.name || ""), "en");
+        return String(x || "").localeCompare(String(y || ""), "en");
+      });
     $("cms-list").innerHTML = list.length ? list.map(function (i) {
-      var d = i.data, bits = j.fields.filter(function (f) { return f.slug !== "name"; }).map(function (f) {
+      var d = i.data, logo = j.fields.filter(function (f) { return f.type === "Image"; }).map(function (f) { return imgUrl(d[f.slug]); }).filter(Boolean)[0];
+      var bits = j.fields.filter(function (f) { return f.slug !== "name" && f.type !== "Image" && f.type !== "Link"; }).map(function (f) {
         var v = d[f.slug];
         if (f.type === "MultiReference") return (v || []).map(function (id) { return refLabel(f, id); }).filter(Boolean).join(", ");
         if (f.type === "Reference") return refLabel(f, v);
         if (f.type === "Option") return ((f.options || []).filter(function (o) { return o.id === v; })[0] || {}).name || "";
         if (f.type === "Switch") return v ? fieldLabel(f) : "";
-        return v || "";
+        if (f.type === "Number") return v == null ? "" : fieldLabel(f) + ": " + v;
+        v = String(v || ""); return v.length > 70 ? v.slice(0, 68) + "…" : v;
       }).filter(Boolean);
-      return '<a class="doc" href="#cms=' + esc(C.key) + '" data-item="' + i.id + '"><div class="ic">' + ICON.contact + '</div><div class="t"><b>' + esc(d.name || "(senza nome)") + "</b><span>" + esc(bits.join(" · ")) + '</span></div><div class="r"><span class="pill ' + STATUS[i.status][0] + '">' + (i.status === "live" ? "Online" : i.status === "draft" ? "Bozza" : "Modifiche da pubblicare") + "</span></div></a>";
+      var ic = logo ? '<div class="ic logo-ic"><img src="' + esc(logo) + '" alt=""></div>' : '<div class="ic">' + ICON.contact + "</div>";
+      return '<a class="doc" href="#cms=' + esc(C.key) + '" data-item="' + i.id + '">' + ic + '<div class="t"><b>' + esc(d.name || "(senza nome)") + "</b><span>" + esc(bits.join(" · ")) + '</span></div><div class="r"><span class="pill ' + STATUS[i.status][0] + '">' + (i.status === "live" ? "Online" : i.status === "draft" ? "Bozza" : "Modifiche da pubblicare") + "</span></div></a>";
     }).join("") : '<div class="none">' + (j.items.length ? "Nessun risultato per questa ricerca." : "Ancora nessun elemento.") + "</div>";
   }
   $("cms-search").addEventListener("input", function () { C.q = this.value; if (C.data) renderCms(); });
@@ -537,27 +547,31 @@
   });
   $("cms-new").onclick = function () { openItem(null); };
   function openItem(item) {
-    var j = C.data; C.item = item;
+    var j = C.data; C.item = item; C.img = {}; C.uploading = 0;
     var d = item ? item.data : {};
-    $("i-title").textContent = item ? (d.name || "Modifica") : (C.key === "contacts" ? "Nuovo contatto" : "Nuovo elemento");
+    $("i-title").textContent = item ? (d.name || "Modifica") : "Nuovo " + singular();
     $("i-pill").hidden = !item;
     if (item) { $("i-pill").className = "pill " + STATUS[item.status][0]; $("i-pill").textContent = STATUS[item.status][1]; }
     $("i-fields").innerHTML = j.fields.map(function (f) {
       var id = "if-" + f.slug, v = d[f.slug], label = esc(fieldLabel(f)) + (f.required ? "" : " <em>facoltativo</em>");
-      if (f.type === "Switch") return '<label class="check full"><input type="checkbox" id="' + id + '"' + (v ? " checked" : "") + "> <span>" + esc(fieldLabel(f)) + "</span></label>";
+      var hint = f.help ? '<small class="hint">' + esc(f.help) + "</small>" : "";
+      if (f.type === "Image") {
+        return '<div class="field full"><span>' + label + '</span><div class="imgfield" id="' + id + '" data-slug="' + f.slug + '"><div class="imgprev">' + imgPreview(imgUrl(v)) + '</div><div class="imgbtns"><label class="btn small ghost">' + (imgUrl(v) ? "Cambia immagine" : "Carica immagine") + '<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" hidden></label><button type="button" class="btn small ghost" data-img-clear' + (imgUrl(v) ? "" : " hidden") + ">Rimuovi</button></div></div>" + hint + "</div>";
+      }
+      if (f.type === "Switch") return '<label class="check full"><input type="checkbox" id="' + id + '"' + (v ? " checked" : "") + "> <span>" + esc(fieldLabel(f)) + "</span></label>" + hint;
       if (f.type === "Option" || f.type === "Reference") {
         var opts = f.type === "Option" ? f.options : (j.refs[f.slug] || []);
-        return '<label class="field full"><span>' + label + '</span><select id="' + id + '"><option value="">—</option>' + opts.map(function (o) { return '<option value="' + o.id + '"' + (o.id === v ? " selected" : "") + ">" + esc(o.name) + "</option>"; }).join("") + "</select></label>";
+        return '<label class="field full"><span>' + label + '</span><select id="' + id + '"><option value="">—</option>' + opts.map(function (o) { return '<option value="' + o.id + '"' + (o.id === v ? " selected" : "") + ">" + esc(o.name) + "</option>"; }).join("") + "</select>" + hint + "</label>";
       }
       if (f.type === "MultiReference") {
         var sel = v || [];
-        return '<div class="field full"><span>' + label + '</span><div class="multi" id="' + id + '">' + (j.refs[f.slug] || []).map(function (o) { return '<label class="chipbox"><input type="checkbox" value="' + o.id + '"' + (sel.indexOf(o.id) >= 0 ? " checked" : "") + "><span>" + esc(o.name) + "</span></label>"; }).join("") + "</div></div>";
+        return '<div class="field full"><span>' + label + '</span><div class="multi" id="' + id + '">' + (j.refs[f.slug] || []).map(function (o) { return '<label class="chipbox"><input type="checkbox" value="' + o.id + '"' + (sel.indexOf(o.id) >= 0 ? " checked" : "") + "><span>" + esc(o.name) + "</span></label>"; }).join("") + "</div>" + hint + "</div>";
       }
       var type = { Email: "email", Phone: "tel", Link: "url", Number: "number" }[f.type] || "text";
-      return '<label class="field full"><span>' + label + '</span><input id="' + id + '" type="' + type + '"' + (f.max ? ' maxlength="' + f.max + '"' : "") + ' value="' + esc(v == null ? "" : v) + '"></label>';
+      return '<label class="field full"><span>' + label + '</span><input id="' + id + '" type="' + type + '"' + (f.max ? ' maxlength="' + f.max + '"' : "") + ' value="' + esc(v == null ? "" : v) + '">' + hint + "</label>";
     }).join("");
     $("i-err").textContent = "";
-    $("i-delete").hidden = !item;
+    $("i-delete").hidden = !item || j.canDelete === false;
     $("i-unpublish").hidden = !item || item.status === "draft";
     $("i-save").hidden = !!item && item.status !== "draft";
     $("i-publish").textContent = item && item.status !== "draft" ? "Salva modifiche" : "Salva e pubblica";
@@ -568,7 +582,8 @@
     var out = {};
     C.data.fields.forEach(function (f) {
       var el = $("if-" + f.slug);
-      if (f.type === "Switch") out[f.slug] = el.checked;
+      if (f.type === "Image") { if (f.slug in C.img) out[f.slug] = C.img[f.slug]; } // only changed images are sent
+      else if (f.type === "Switch") out[f.slug] = el.checked;
       else if (f.type === "MultiReference") out[f.slug] = Array.prototype.map.call(el.querySelectorAll("input:checked"), function (x) { return x.value; });
       else out[f.slug] = el.value.trim();
     });
@@ -580,12 +595,38 @@
     var list = C.data.items, i = list.findIndex(function (x) { return x.id === item.id; });
     if (i >= 0) list[i] = item; else list.push(item);
     $("m-item").hidden = true; renderCms(); toast(msg);
+    if (C.key === "brands") load(); // brand names/order in the sidebar
   }
+  function imgPreview(url) { return url ? '<img src="' + esc(url) + '" alt="">' : "<span>Nessuna immagine</span>"; }
+  // Image fields: the file goes to the media service first, Webflow imports it when the item is saved
+  $("i-fields").addEventListener("change", function (e) {
+    var input = e.target; if (input.type !== "file" || !input.files.length) return;
+    var box = input.closest(".imgfield"), slug = box.dataset.slug, file = input.files[0];
+    input.value = "";
+    if (!/^image\/(png|jpeg|webp|svg\+xml|gif)$/.test(file.type)) { toast("Formato non supportato: usa PNG, JPG, WebP o SVG", true); return; }
+    if (file.size > 8 * 1024 * 1024) { toast("Immagine troppo grande (massimo 8 MB)", true); return; }
+    var prev = box.querySelector(".imgprev"), old = prev.innerHTML;
+    prev.innerHTML = '<span class="spin"></span>'; C.uploading++;
+    api("/api/admin/image?name=" + encodeURIComponent(file.name), { method: "POST", body: file, headers: { "content-type": file.type }, timeout: 120000 }).then(function (j) {
+      C.img[slug] = { url: j.url, alt: ($("if-name") && $("if-name").value.trim()) || "" };
+      prev.innerHTML = imgPreview(j.url);
+      box.querySelector("[data-img-clear]").hidden = false;
+      box.querySelector("label.btn").firstChild.textContent = "Cambia immagine";
+    }).catch(function (err) { prev.innerHTML = old; toast(err.message, true); }).then(function () { C.uploading--; });
+  });
+  $("i-fields").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-img-clear]"); if (!b) return;
+    var box = b.closest(".imgfield");
+    C.img[box.dataset.slug] = null;
+    box.querySelector(".imgprev").innerHTML = imgPreview("");
+    b.hidden = true; box.querySelector("label.btn").firstChild.textContent = "Carica immagine";
+  });
   $("item-form").addEventListener("submit", function (e) {
     e.preventDefault();
     var btn = e.submitter || $("i-publish"), mode = btn.dataset.mode, item = C.item, data = itemValues(), base = "/api/admin/cms/" + encodeURIComponent(C.key);
     $("i-err").textContent = "";
-    var missing = C.data.fields.filter(function (f) { return f.required && !data[f.slug]; })[0];
+    if (C.uploading) { $("i-err").textContent = "Attendi la fine del caricamento dell’immagine."; return; }
+    var missing = C.data.fields.filter(function (f) { return f.required && f.type !== "Image" && !data[f.slug]; })[0];
     if (missing) { $("i-err").textContent = "Compila il campo “" + (FIELD_IT[missing.slug] || missing.name) + "”."; return; }
     if (btn.classList.contains("busy")) return;
     btn.classList.add("busy");

@@ -239,7 +239,7 @@ async function folderStats(env) {
   const objs = await listAll(env, "");
   const folders = {};
   for (const o of objs) {
-    if (o.key.startsWith(DERIVED) || o.key.startsWith("_meta/")) continue;
+    if (o.key.startsWith(DERIVED) || o.key.startsWith("_meta/") || o.key.startsWith("_img/")) continue;
     const f = docFolderOf(o.key);
     const e = (folders[f] = folders[f] || { folder: f, count: 0, size: 0 });
     e.count++; e.size += o.size;
@@ -356,12 +356,14 @@ function cmsConfig(env) {
   if (typeof c === "string") { try { c = JSON.parse(c); } catch (e) { c = {}; } }
   return c;
 }
-const EDITABLE = ["PlainText", "Email", "Phone", "Link", "Switch", "Option", "Number", "Reference", "MultiReference"];
+const EDITABLE = ["PlainText", "Email", "Phone", "Link", "Switch", "Option", "Number", "Reference", "MultiReference", "Image"];
+const IMG_TYPES = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg", "image/gif": "gif" };
 async function cmsSchema(wf, conf) {
   const meta = await wf.fields(conf.id);
   const bySlug = Object.fromEntries(meta.fields.map((f) => [f.slug, f]));
+  const labels = conf.labels || {}, help = conf.help || {};
   const fields = (conf.fields || meta.fields.map((f) => f.slug)).map((slug) => bySlug[slug]).filter((f) => f && EDITABLE.includes(f.type)).map((f) => ({
-    slug: f.slug, name: f.displayName, type: f.type, required: !!f.isRequired, help: f.helpText || "",
+    slug: f.slug, name: f.displayName, label: labels[f.slug] || "", type: f.type, required: !!f.isRequired, help: help[f.slug] || "",
     options: f.type === "Option" ? ((f.validations && f.validations.options) || []).map((o) => ({ id: o.id, name: o.name })) : undefined,
     ref: f.type === "Reference" || f.type === "MultiReference" ? f.validations && f.validations.collectionId : undefined,
     max: f.validations && f.validations.maxLength,
@@ -379,6 +381,12 @@ function cmsValue(f, v, refIds) {
     case "Option": if (!f.options.some((o) => o.id === v)) fail("Scelta non valida per “" + f.name + "”"); return v;
     case "Reference": if (!refIds.has(v)) fail("Scelta non valida per “" + f.name + "”"); return v;
     case "MultiReference": { const a = [].concat(v).filter((x) => refIds.has(x)); return a; }
+    case "Image": {
+      // Only images uploaded through /api/admin/image (served by this service) are accepted
+      const u = String(v && v.url || "");
+      if (!/^https?:\/\/[^/]+\/f\/_img\//.test(u)) fail("Carica di nuovo l’immagine “" + f.name + "”");
+      return { url: u, alt: String(v.alt || "").slice(0, 200) };
+    }
     default: { const t = String(v).replace(/\s+/g, " ").trim(); if (f.max && t.length > f.max) fail("“" + f.name + "” è troppo lungo"); return t; }
   }
 }
@@ -399,9 +407,11 @@ async function cms(req, env, url, rest) {
     }
     return out;
   };
+  // conf.filter: only items whose fields match (e.g. brands: not the main event)
+  const visible = (i) => Object.entries(c.filter || {}).every(([k, v]) => (i.data[k] == null ? false : i.data[k]) === v);
   if (!id && m === "GET") {
-    const items = await wf.items(c.id);
-    return json({ key, title: c.title || schema.name, singular: c.singular || schema.singular, fields: schema.fields, refs: Object.fromEntries(schema.fields.filter((f) => f.ref).map((f) => [f.slug, refLists[f.ref]])), items });
+    const items = (await wf.items(c.id)).filter(visible);
+    return json({ key, title: c.title || schema.name, singular: c.singular || schema.singular, sort: c.sort || "name", canDelete: !c.noDelete, fields: schema.fields, refs: Object.fromEntries(schema.fields.filter((f) => f.ref).map((f) => [f.slug, refLists[f.ref]])), items });
   }
   if (!id && m === "POST") {
     const data = await input();
@@ -409,7 +419,17 @@ async function cms(req, env, url, rest) {
     const base = slugify(data.name || "item") || "item";
     let s = base;
     for (let n = 2; taken.has(s); n++) s = base + "-" + n;
-    return json({ item: await wf.createItem(c.id, { ...data, slug: s }) });
+    const extra = { ...(c.defaults || {}) };
+    // conf.createRef: also create a linked item (e.g. a new brand gets its own contacts group)
+    if (c.createRef && data.name) {
+      const r = c.createRef, existing = (await wf.items(r.collection)).find((i) => String(i.data.name || "").toLowerCase() === String(data.name).toLowerCase());
+      const ref = existing || await wf.createItem(r.collection, { name: data.name, slug: slugify(data.name) || s });
+      if (!existing) await wf.publishItem(r.collection, ref.id).catch(() => {});
+      extra[r.field] = ref.id;
+    }
+    const fieldData = { ...extra, slug: s };
+    for (const [k, v] of Object.entries(data)) if (!(v == null && k in extra)) fieldData[k] = v; // empty field keeps the default
+    return json({ item: await wf.createItem(c.id, fieldData) });
   }
   if (!/^[0-9a-f]{24}$/.test(id || "")) fail("Not found", 404);
   if (!op && m === "PATCH") {
@@ -419,13 +439,33 @@ async function cms(req, env, url, rest) {
   }
   if (op === "publish" && m === "POST") { await wf.publishItem(c.id, id); return json({ item: await wf.getItem(c.id, id) }); }
   if (op === "unpublish" && m === "POST") { await wf.unpublishItem(c.id, id); return json({ item: await wf.getItem(c.id, id) }); }
-  if (!op && m === "DELETE") { await wf.deleteItem(c.id, id); return json({ ok: true }); }
+  if (!op && m === "DELETE") {
+    if (c.noDelete) fail("Questo elemento non si può eliminare da qui: puoi ritirarlo dal sito");
+    await wf.deleteItem(c.id, id); return json({ ok: true });
+  }
   fail("Not found", 404);
+}
+
+// Images for CMS image fields: stored in R2 under _img/, served by /f/ so Webflow can import them
+async function uploadImage(req, env, url) {
+  const type = (req.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const ext = IMG_TYPES[type];
+  if (!ext) fail("Formato non supportato: usa PNG, JPG, WebP, SVG o GIF");
+  const size = +req.headers.get("content-length") || 0;
+  if (size > 8 * 1024 * 1024) fail("Immagine troppo grande (massimo 8 MB)");
+  const body = await req.arrayBuffer();
+  if (!body.byteLength) fail("File vuoto");
+  if (body.byteLength > 8 * 1024 * 1024) fail("Immagine troppo grande (massimo 8 MB)");
+  const base = slug(String(url.searchParams.get("name") || "image").replace(/\.[a-z0-9]+$/i, "")).slice(0, 60) || "image";
+  const key = "_img/" + crypto.randomUUID().slice(0, 8) + "-" + base + "." + ext;
+  await env.MEDIA.put(key, body, { httpMetadata: { contentType: type, cacheControl: "public, max-age=31536000, immutable" } });
+  return json({ url: url.origin + "/f/" + encodeKey(key) });
 }
 
 async function admin(req, env, url, action) {
   const m = req.method;
   if (action.startsWith("cms/")) return cms(req, env, url, action.slice(4));
+  if (action === "image" && m === "POST") return uploadImage(req, env, url);
   if (action === "state" || action === "docs" || action.startsWith("docs/")) return documents(req, env, url, action);
   if (action === "folders" && m === "GET") return json({ folders: await folderStats(env) });
   if (action === "rename" && m === "POST") {

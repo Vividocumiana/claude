@@ -20,10 +20,16 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
   browser; the CRC-32 of every file is stored so ZIPs cost no Worker CPU.
   Files uploaded to a folder no document uses are listed under
   "Folders not linked to a document" with a one-click **Create document**.
-  - **Press contacts** (and any collection listed in `CMS_COLLECTIONS` in
-    `wrangler.jsonc`): add, edit, publish, unpublish, delete items. The form is
-    generated from the Webflow fields (text, email, phone, link, switch, option,
-    reference, multi-reference).
+  - **Brands** and **Press contacts** (any collection listed in `CMS_COLLECTIONS`
+    in `wrangler.jsonc`): add, edit, publish, unpublish, delete items. The form is
+    generated from the Webflow fields (text, email, phone, link, number, switch,
+    option, reference, multi-reference, image) with Italian `labels` and `help`
+    from the config. Images (brand logo, cover) are stored in R2 under `_img/`,
+    served by `/f/`, and imported by Webflow when the item is saved.
+    Per-collection options: `filter` (items shown), `sort`, `defaults` (fields
+    set on new items), `createRef` (a new brand also gets its own entry in
+    Markets, so contacts can be assigned to it), `noDelete` (brands can only be
+    unpublished: deleting one would orphan its documents).
   - **How it works**: a guide for the people who upload, shown at the first sign-in.
   - **Technical sheet**: documents flagged as technical sheets get a badge and a
     "Technical sheets" filter on the brand page. The Worker keeps the list of
@@ -53,7 +59,8 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
 | `POST /api/admin/docs` | create a document (draft) |
 | `PATCH/DELETE /api/admin/docs/:id` | edit (republished if live) / delete with its files |
 | `POST /api/admin/docs/:id/publish` · `unpublish` · `folder` | publishing, media folder for older items |
-| `/api/admin/cms/<key>[/<id>[/publish\|unpublish]]` | other collections (press contacts) |
+| `/api/admin/cms/<key>[/<id>[/publish\|unpublish]]` | other collections (brands, press contacts) |
+| `POST /api/admin/image?name=` | image for a CMS image field (body = file, max 8 MB) → `{ url }` |
 | `DELETE /api/admin/folder` | delete a sub-folder, or a folder no document uses |
 | `/api/admin/*` | upload, multipart, rename, delete file, folders (Bearer token) |
 

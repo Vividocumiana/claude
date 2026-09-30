@@ -10,7 +10,20 @@
     "SITE_URL": "https://alfaromeopresskit-b75e626c62ba0a8ba3bb9.webflow.io",
     // Other collections editable from the manager (fields shown in this order)
     "CMS_COLLECTIONS": {
-      "contacts": { "id": "6ab5f7c03bc1be2290997df5", "title": "Contatti stampa", "singular": "Contatto", "fields": ["name", "position", "email", "phone-number", "country"] }
+      "brands": {
+        "id": "6ab5f7c03bc1be2290997df3", "title": "Brand", "singular": "Brand", "sort": "sort-order", "noDelete": true,
+        "fields": ["name", "logo", "event-description", "event-key-visual", "event-date", "sort-order", "media-site-link", "instagram", "tiktok", "linkedin", "facebook"],
+        "filter": { "main-event": false },
+        "defaults": { "main-event": false, "multimarket-event": true, "embargo": true, "status": "2473844870a72a60d721c34e8011ccdb", "event-reference": "6ab5fc446967b0ffc4144635", "event-date": "12 – 18 October 2026" },
+        "createRef": { "field": "market", "collection": "6ab5f7c03bc1be2290997df4" },
+        "labels": { "name": "Nome del brand", "logo": "Logo", "event-description": "Descrizione", "event-key-visual": "Immagine di copertina", "event-date": "Date", "sort-order": "Posizione nella lista", "media-site-link": "Link al Media Site", "instagram": "Instagram", "tiktok": "TikTok", "linkedin": "LinkedIn", "facebook": "Facebook" },
+        "help": { "logo": "SVG o PNG con sfondo trasparente. Compare nella fila di loghi in alto nelle pagine brand.", "event-key-visual": "Immagine grande in testa alla pagina del brand e nella card in home. Orizzontale, almeno 2000 px di larghezza.", "event-description": "Una o due frasi, in inglese: compare nella card del brand e in testa alla sua pagina.", "sort-order": "1 = primo della lista. Gli altri brand non si spostano da soli: se serve, aggiorna anche le loro posizioni.", "media-site-link": "Pulsante “Media Site” nella pagina del brand. Lascia vuoto per nasconderlo.", "instagram": "Lascia vuoto un social per non mostrare il pulsante." }
+      },
+      "contacts": {
+        "id": "6ab5f7c03bc1be2290997df5", "title": "Contatti stampa", "singular": "Contatto", "fields": ["name", "position", "email", "phone-number", "country"],
+        "labels": { "name": "Nome e cognome", "position": "Ruolo", "email": "Email", "phone-number": "Telefono", "country": "Brand" },
+        "help": { "phone-number": "Con il prefisso internazionale, senza (0): es. +33 6 75 58 80 41", "country": "Il contatto compare nella tab di questi brand nella pagina Contatti. Stellantis Corporate = blocco in alto." }
+      }
     }
   },
   "r2_buckets": [

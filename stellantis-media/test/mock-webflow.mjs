@@ -19,6 +19,14 @@ const db = {
 db[MARKETS] = ["France", "Italy", "Germany"].map((n) => item({ name: n, slug: n.toLowerCase() }, { isDraft: false, lastPublished: now() }));
 db[CONTACTS] = [item({ name: "[TEST] Fiat Press", slug: "test-fiat-press", position: "Fiat PR", email: "fiat@example.com", "phone-number": null, country: [db[MARKETS][1].id] }, { isDraft: false, lastPublished: now() })];
 const SCHEMAS = {
+  [EVENTS]: { displayName: "Events", singularName: "Event", fields: [
+    { slug: "name", displayName: "Name", type: "PlainText", isRequired: true, validations: { maxLength: 256 } }, { slug: "slug", displayName: "Slug", type: "PlainText", isRequired: true },
+    { slug: "event-description", displayName: "Event Description", type: "PlainText" }, { slug: "event-key-visual", displayName: "Event Key Visual", type: "Image" },
+    { slug: "logo", displayName: "Logo", type: "Image" }, { slug: "event-date", displayName: "Event Date", type: "PlainText" },
+    { slug: "sort-order", displayName: "Sort Order", type: "Number" }, { slug: "media-site-link", displayName: "Media Site Link", type: "Link" },
+    { slug: "instagram", displayName: "Instagram", type: "Link" }, { slug: "tiktok", displayName: "TikTok", type: "Link" },
+    { slug: "linkedin", displayName: "LinkedIn", type: "Link" }, { slug: "facebook", displayName: "Facebook", type: "Link" },
+    { slug: "main-event", displayName: "Main Event", type: "Switch" }, { slug: "market", displayName: "Market", type: "Reference", validations: { collectionId: MARKETS } }] },
   [CONTACTS]: { displayName: "Contacts", singularName: "Contact", fields: [
     { slug: "position", displayName: "Position", type: "PlainText" }, { slug: "phone-number", displayName: "Phone number", type: "Phone" },
     { slug: "email", displayName: "Email", type: "Email" }, { slug: "country", displayName: "Country", type: "MultiReference", validations: { collectionId: MARKETS } },
@@ -28,6 +36,8 @@ const fiat = db[EVENTS][3];
 db[DOCS].push(item({ name: "[TEST] Fiat – Photos", slug: "test-fiat-photos", event: fiat.id, "tipologia-documento": TYPES[0][0], descrizione: "Photos", "media-folder": "fiat/photos", "scheda-tecnica": false }, { isDraft: false, lastPublished: now() }));
 db[DOCS].push(item({ name: "[TEST] Fiat – Video – B-Roll", slug: "test-fiat-video", event: fiat.id, "tipologia-documento": TYPES[1][0], descrizione: "Legacy Box document", "media-folder": null, "box-id": "123" }, { isDraft: false, lastPublished: now() }));
 
+// Webflow imports image URLs into its CDN and answers with a fileId
+function images(fd) { for (const k of ["logo", "event-key-visual"]) if (fd && fd[k] && fd[k].url && !fd[k].fileId) fd[k] = { fileId: id(), url: "https://cdn.example.com/" + fd[k].url.split("/").pop(), alt: fd[k].alt || null }; return fd; }
 function send(res, status, body) { res.writeHead(status, { "content-type": "application/json" }); res.end(body === undefined ? "" : JSON.stringify(body)); }
 
 http.createServer((req, res) => {
@@ -53,7 +63,7 @@ http.createServer((req, res) => {
     }
     if (p.length === 3 && req.method === "POST") {
       if (list.some((i) => i.fieldData.slug === body.fieldData.slug)) return send(res, 409, { message: "Validation Error: slug already in use" });
-      const it = item(body.fieldData, { isDraft: body.isDraft !== false });
+      const it = item(images(body.fieldData), { isDraft: body.isDraft !== false });
       list.push(it); return send(res, 202, it);
     }
     if (p.length === 3 && req.method === "PATCH") {
@@ -69,7 +79,7 @@ http.createServer((req, res) => {
     if (!it) return send(res, 404, { message: "Item not found" });
     if (p[4] === "live" && req.method === "DELETE") { if (!it.lastPublished || it.isDraft) return send(res, 404, { message: "not live" }); it.isDraft = true; it.lastPublished = null; return send(res, 204); }
     if (req.method === "GET") return send(res, 200, it);
-    if (req.method === "PATCH") { Object.assign(it.fieldData, body.fieldData || {}); if ("isArchived" in body) it.isArchived = body.isArchived; it.lastUpdated = now(); return send(res, 200, it); }
+    if (req.method === "PATCH") { Object.assign(it.fieldData, images(body.fieldData) || {}); if ("isArchived" in body) it.isArchived = body.isArchived; it.lastUpdated = now(); return send(res, 200, it); }
     if (req.method === "DELETE") { list.splice(list.indexOf(it), 1); return send(res, 204); }
     send(res, 404, {});
   });
