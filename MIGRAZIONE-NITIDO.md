@@ -1,4 +1,4 @@
-# Migrazione — nuovo account Claude per Nitido Studio
+# Migrazione: nuovo account Claude per Nitido Studio
 
 Il nuovo account (piano Max) serve solo a **Nitido Studio**, cioè il repo `Vividocumiana/vivido-sites`,
 e ai contenuti Nitido. Tutto il resto **resta su questo account**:
@@ -72,7 +72,7 @@ Per lavorare su `vivido-sites` dalle sessioni cloud:
 
 ## 5. Memoria e contesto (15 min)
 
-- [ ] Incolla `CONTESTO-NITIDO.md` nelle istruzioni del nuovo account, oppure importalo con la skill `import-memory`.
+- [ ] Incolla `CONTESTO-NITIDO.md` nelle istruzioni del nuovo account, oppure importalo con la skill `import-memory`. È la memoria dell'account Vivido già filtrata: niente Nest, preventivi, contratti o progetti personali.
 - [ ] Il contesto tecnico non va copiato: sta già nel repo (`CLAUDE.md`, `README.md`,
       `docs/superpowers/stato.md`) e arriva da solo in ogni sessione.
 - [ ] Lo storico delle chat non si trasferisce. Se c'è una conversazione con decisioni importanti
