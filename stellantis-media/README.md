@@ -30,10 +30,13 @@ Mondial de l'Auto Paris 2026 press kit (Webflow site) and replaces Box.
     set on new items), `createRef` (a new brand also gets its own entry in
     Markets, so contacts can be assigned to it), `noDelete` (brands can only be
     unpublished: deleting one would orphan its documents).
-  - **Brand logos row** (Webflow, top of every brand page): a collection list of
+  - **Contacts page**: a "Stellantis Corporate" tab (first, open by default) is
+    added by the page code; it shows the contacts whose brand is "Stellantis
+    Corporate" (CMS list filtered by Webflow) and takes over the tab switching.
+  - **Brand logos row** (Webflow, top of every brand page and of the Brands page): a collection list of
     the brands (main event excluded, sorted by "Sort Order") showing the "Logo"
     field, or the brand name while no logo is set. The current brand is
-    highlighted; the page head code sets the links (`/events/<slug>`) and places
+    highlighted; the site head code sets the links (`/events/<slug>`) and places
     the row under the fixed navbar. Publishing one brand from the uploader
     refreshes the row on every page.
   - **How it works**: a guide for the people who upload, shown at the first sign-in.
