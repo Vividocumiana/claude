@@ -39,7 +39,6 @@ export default async function handler(req, res) {
     return send(res, 200, { ok: true });
   } catch (err) {
     console.error(err);
-    // TODO: drop `detail` once the setup is verified — it only carries the Notion/Resend error text.
-    return send(res, 500, { error: 'Something went wrong. Try again in a moment.', detail: err.message });
+    return send(res, 500, { error: 'Something went wrong. Try again in a moment.' });
   }
 }
