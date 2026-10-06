@@ -34,53 +34,65 @@ export function renderWelcomeEmail({ name }) {
     'Samuele',
   ].join('\n');
 
-  const btn = (href, label, bg, color = '#FFFFFF') =>
-    `<a href="${href}" style="display:inline-block;background:${bg};color:${color};text-decoration:none;font-weight:600;font-size:15px;padding:14px 26px;border-radius:9999px;">${label}</a>`;
+  const font = "Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+  const company = (logo, name, role, line, href) => `
+        <tr><td style="padding:12px 0;border-top:1px solid #2D2D31;">
+          <a href="${href}" style="text-decoration:none;color:#F4F3EF;display:block;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td width="52" valign="middle"><img src="${base}/logos/${logo}" width="40" height="40" alt="${name}" style="display:block;width:40px;height:40px;border-radius:11px;"></td>
+            <td valign="middle" style="font-family:${font};">
+              <div style="font-size:15px;font-weight:500;color:#F4F3EF;line-height:1.3;">${name}<span style="font-size:13px;font-weight:400;color:#9A999E;">&nbsp;&nbsp;${role}</span></div>
+              <div style="font-size:13px;color:#9A999E;line-height:1.35;">${line}</div>
+            </td>
+            <td width="20" valign="middle" align="right" style="font-family:${font};font-size:15px;color:#9A999E;">&#8599;</td>
+          </tr></table></a>
+        </td></tr>`;
 
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light only"><title>${esc(subject)}</title></head>
-<body style="margin:0;padding:0;background:#F5F5F0;font-family:Poppins,'Helvetica Neue',Arial,sans-serif;color:#1D1D1F;">
+<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
+<title>${esc(subject)}</title></head>
+<body style="margin:0;padding:0;background:#F1F0EB;">
 <div style="display:none;max-height:0;overflow:hidden;">If what we talked about is worth 20 minutes, grab a slot.</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F5F0;padding:32px 12px;">
-<tr><td align="center">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F0EB;">
+<tr><td align="center" style="padding:28px 12px 36px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px;">
 
-    <!-- Card -->
-    <tr><td style="background:#644BF6;background-image:linear-gradient(135deg,#644BF6 0%,#3B1FC2 100%);border-radius:28px;padding:36px 32px;color:#FFFFFF;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td width="72" valign="middle"><img src="${base}/samuele.jpg" width="64" height="64" alt="Samuele" style="display:block;width:64px;height:64px;border-radius:50%;border:3px solid #FFFFFF;object-fit:cover;"></td>
-        <td valign="middle" style="padding-left:14px;">
-          <div style="font-size:18px;font-weight:700;line-height:1.2;">Samuele Poggio</div>
-          <div style="font-size:13px;opacity:.85;line-height:1.4;">Co-founder · Vivido &nbsp;|&nbsp; Founder · Nest</div>
-        </td>
-      </tr></table>
-      <div style="height:28px;"></div>
-      <div style="font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-0.02em;">${hello} at <span style="color:#FFD300;">${esc(event)}.</span></div>
-      <div style="height:14px;"></div>
-      <div style="font-size:16px;line-height:1.6;opacity:.95;">I'm Samuele: I run operations at Vivido and build Nest on the side. If what we talked about is worth 20 minutes, grab a slot below.</div>
-      <div style="height:26px;"></div>
-      ${btn(booking, 'Book a call →', '#EC612A')}
+    <!-- Card: dark bezel, photo, panel -->
+    <tr><td style="background:#121214;border-radius:36px;padding:7px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="border-radius:29px 29px 0 0;overflow:hidden;line-height:0;">
+          <img src="${base}/samuele-lg.jpg" width="406" alt="Samuele Poggio" style="display:block;width:100%;max-width:406px;height:auto;border-radius:29px 29px 0 0;">
+        </td></tr>
+        <tr><td style="background:#1E1E21;border-radius:0 0 29px 29px;padding:20px 20px 22px;font-family:${font};color:#F4F3EF;">
+          <div style="font-size:21px;font-weight:600;letter-spacing:-0.03em;line-height:1.2;">Samuele Poggio</div>
+          <div style="font-size:14px;color:#9A999E;margin-top:2px;">Founder · Vivido, Nest, Nitido</div>
+
+          <div style="font-size:24px;font-weight:600;letter-spacing:-0.03em;line-height:1.2;margin-top:22px;">${hello} at ${esc(event)}.</div>
+          <div style="font-size:16px;line-height:1.55;color:#C9C8CC;margin-top:10px;">I'm Samuele: I run operations at Vivido and build Nest on the side. If what we talked about is worth 20 minutes, grab a slot below.</div>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:22px;"><tr>
+            <td style="background:#FFFFFF;border-radius:9999px;"><a href="${booking}" style="display:inline-block;padding:14px 26px;font-family:${font};font-size:15px;font-weight:500;color:#111111;text-decoration:none;">Book a call &rarr;</a></td>
+          </tr></table>
+
+          <div style="font-family:'Geist Mono',ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9A999E;margin-top:28px;">Companies</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:4px;">
+            ${company('vivido.png', 'Vivido', 'Co-founder', 'Product design for founders', 'https://vivido.world')}
+            ${company('nest.png', 'Nest', 'Founder', 'Operations for agencies, without hiring', 'https://www.usanest.it/')}
+            ${company('nitido.png', 'Nitido', 'Co-founder', 'Pitch-ready websites for funded startups', 'https://nitido.design')}
+          </table>
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;"><tr>
+            <td width="50%" style="padding-right:4px;"><a href="https://www.linkedin.com/in/samuele-poggio-48b9a0219/" style="display:block;text-align:center;background:#2A2A2E;border-radius:14px;padding:12px;font-family:${font};font-size:14px;font-weight:500;color:#F4F3EF;text-decoration:none;">LinkedIn</a></td>
+            <td width="50%" style="padding-left:4px;"><a href="https://wa.me/393335839398" style="display:block;text-align:center;background:#2A2A2E;border-radius:14px;padding:12px;font-family:${font};font-size:14px;font-weight:500;color:#F4F3EF;text-decoration:none;">WhatsApp</a></td>
+          </tr></table>
+        </td></tr>
+      </table>
     </td></tr>
 
-    <tr><td style="height:16px;"></td></tr>
-
-    <!-- What we do -->
-    <tr><td style="background:#FFFFFF;border-radius:24px;padding:28px 32px;">
-      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#644BF6;">Vivido</div>
-      <div style="font-size:16px;line-height:1.6;margin-top:6px;">Vivido helps founders validate ideas fast, without wasting budget or time. Product design, websites and prototypes for startups and scale-ups.</div>
-      <div style="height:18px;"></div>
-      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#EC612A;">Nest</div>
-      <div style="font-size:16px;line-height:1.6;margin-top:6px;">Your operations team, without hiring one. I help agencies build systems that run without them.</div>
-      <div style="height:22px;"></div>
-      ${btn('https://vivido.world', 'See Vivido', '#1D1D1F')}
-      &nbsp;
-      ${btn('https://www.linkedin.com/in/samuele-poggio-48b9a0219/', 'LinkedIn', '#F2F2F0', '#1D1D1F')}
-    </td></tr>
-
-    <tr><td style="padding:22px 8px 0;font-size:13px;line-height:1.6;color:#6B6B70;text-align:center;">
+    <tr><td align="center" style="padding:22px 8px 0;font-family:${font};font-size:13px;line-height:1.6;color:#7A7976;">
       Just reply to this email to reach me directly.<br>
-      <a href="${base}" style="color:#644BF6;">My card</a> · <a href="https://vivido.world" style="color:#644BF6;">vivido.world</a>
+      <a href="${base}" style="color:#141416;">My card</a> &nbsp;·&nbsp; <a href="https://vivido.world" style="color:#141416;">vivido.world</a>
     </td></tr>
 
   </table>
