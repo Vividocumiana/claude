@@ -1,0 +1,13 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Poggio;Samuele;;;
+FN:Samuele Poggio
+ORG:Vivido
+TITLE:Co-founder & Operations Manager
+TEL;TYPE=CELL:+393335839398
+EMAIL;TYPE=INTERNET,WORK:samuele@vivido.world
+URL:https://vivido.world
+X-SOCIALPROFILE;TYPE=linkedin:https://www.linkedin.com/in/samuele-poggio-48b9a0219/
+ADR;TYPE=WORK:;;;Lisbon;;;Portugal
+NOTE:Met at Tech Week. Co-founder of Vivido · Founder of Nest.
+END:VCARD

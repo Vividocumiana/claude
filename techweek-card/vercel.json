@@ -1,0 +1,24 @@
+{
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/me",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/samuele.vcf",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/vcard; charset=utf-8"
+        }
+      ]
+    }
+  ]
+}

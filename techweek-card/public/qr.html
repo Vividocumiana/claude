@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Scan me · Samuele</title>
+<meta name="theme-color" content="#644BF6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My QR">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,600;0,800;1,700&display=swap" rel="stylesheet">
+<script src="/vendor/qrcode.js"></script>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body { font-family:'Poppins',system-ui,sans-serif; background:linear-gradient(160deg,#644BF6 0%,#2A1080 100%); color:#fff;
+         display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:24px 16px; text-align:center; overflow:hidden; }
+  h1 { font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1.1; }
+  h1 em { font-style:italic; color:#FFD300; }
+  .qr { background:#fff; border-radius:28px; padding:18px; width:min(82vw,360px); aspect-ratio:1; position:relative; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .qr svg { width:100%; height:100%; display:block; }
+  .qr .mark { position:absolute; left:50%; top:50%; width:18%; height:18%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; padding:6px; }
+  .who { font-size:16px; font-weight:600; opacity:.95; }
+  .who small { display:block; font-weight:400; opacity:.75; font-size:13px; margin-top:2px; }
+  .dots { display:flex; gap:8px; } .dots i { width:12px; height:12px; border-radius:50%; display:block; }
+</style>
+</head>
+<body>
+  <h1>Say hi, <em>scan me.</em></h1>
+  <div class="qr">
+    <div id="qr"></div>
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M20.8935 0.173846C21.0666 -0.0323956 21.3748 -0.0587845 21.581 0.114276L25.3095 3.24318C25.5157 3.41619 25.543 3.72346 25.3701 3.92971L18.7119 11.8643C18.6611 11.9247 18.5989 11.9695 18.5311 11.9982C18.3492 12.0753 18.133 12.122 17.9355 12.1221H14.0615C13.8627 12.1221 13.6447 12.0755 13.4618 11.9976C13.3944 11.969 13.3327 11.9244 13.2822 11.8643L6.62398 3.92971C6.45096 3.72351 6.47745 3.41627 6.68355 3.24318L10.413 0.114276C10.6192 -0.0587179 10.9265 -0.0321895 11.0996 0.173846L15.2492 5.11963C15.6388 5.58403 16.3533 5.58407 16.743 5.11971L20.8935 0.173846Z" fill="#EC612A"/>
+      <path d="M20.8955 31.8263C21.0686 32.0323 21.3759 32.0588 21.582 31.8859L25.3115 28.757C25.5177 28.5839 25.5441 28.2767 25.3711 28.0705L18.7129 20.1349C18.6608 20.073 18.5967 20.0277 18.5269 19.9993C18.3456 19.9254 18.1314 19.8811 17.9355 19.881H14.0615C13.8652 19.881 13.65 19.925 13.4682 19.9992C13.3984 20.0277 13.3343 20.073 13.2822 20.1349L6.62403 28.0705C6.45098 28.2767 6.47739 28.5839 6.6836 28.757L10.4131 31.8859C10.6192 32.0588 10.9265 32.0323 11.0996 31.8263L15.2502 26.8795C15.6399 26.4152 16.3543 26.4151 16.744 26.8795L20.8955 31.8263Z" fill="#74DB8B"/>
+      <path d="M31.8818 10.4162C32.0549 10.6224 32.0285 10.9296 31.8223 11.1027L26.8755 15.2532C26.4111 15.6429 26.4111 16.3574 26.8755 16.7471L31.8223 20.8976C32.0285 21.0707 32.0549 21.3779 31.8818 21.5841L28.7529 25.3136C28.5798 25.5197 28.2726 25.5462 28.0664 25.3732L20.1308 18.716C20.0683 18.6635 20.0227 18.5986 19.9943 18.5279C19.9216 18.3469 19.878 18.1337 19.8779 17.9386L19.8779 14.0646C19.8779 13.8691 19.921 13.6549 19.9941 13.4735C20.0226 13.4028 20.0683 13.3379 20.1308 13.2853L28.0664 6.62711C28.2726 6.45412 28.5798 6.48067 28.7529 6.68668L31.8818 10.4162Z" fill="#644BF6"/>
+      <path d="M0.173853 20.8962C-0.0324011 21.0693 -0.0587859 21.3775 0.114283 21.5837L3.24319 25.3122C3.4162 25.5184 3.72346 25.5457 3.92971 25.3728L11.8653 18.7146C11.9263 18.6633 11.9712 18.6003 11.9998 18.5317C12.0755 18.3501 12.1211 18.1349 12.1211 17.9382L12.1211 14.0642C12.1211 13.8662 12.0755 13.6493 11.9995 13.4665C11.971 13.398 11.9262 13.3351 11.8653 13.2839L3.92971 6.62668C3.7235 6.45365 3.41628 6.48011 3.24319 6.68625L0.114283 10.4157C-0.0587047 10.622 -0.0323172 10.9292 0.173853 11.1023L5.11964 15.2519C5.58404 15.6415 5.58407 16.356 5.11971 16.7457L0.173853 20.8962Z" fill="#EF87E7"/>
+    </svg>
+  </div>
+  <div class="who">Samuele Poggio<small>Co-founder · Vivido &nbsp;/&nbsp; Founder · Nest</small></div>
+  <div class="dots"><i style="background:#EF87E7"></i><i style="background:#EC612A"></i><i style="background:#74DB8B"></i><i style="background:#FFD300"></i></div>
+<script>
+  // QR points to the card on this same deploy. ?src=qr lets us tell scans apart later if needed.
+  const target = location.origin + '/?src=qr';
+  const qr = qrcode(0, 'H'); // high error correction so the center logo doesn't break it
+  qr.addData(target); qr.make();
+  document.getElementById('qr').innerHTML = qr.createSvgTag({ scalable: true, margin: 0 });
+  document.querySelector('#qr svg').querySelectorAll('path').forEach((p) => p.setAttribute('fill', '#1D1D1F'));
+  // Keep the screen awake while showing the QR, where supported.
+  if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {});
+</script>
+</body>
+</html>
