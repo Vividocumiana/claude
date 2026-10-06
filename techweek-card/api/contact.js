@@ -24,9 +24,9 @@ export default async function handler(req, res) {
   if (!body.consent) return send(res, 400, { error: 'Please tick the consent box.' });
 
   try {
+    // Same email twice: keep one row in Notion, but send the email again
+    // (people retry when the first one got lost or went to spam).
     const existing = await findByEmail(email);
-    if (existing?.emailSent) return send(res, 200, { ok: true, already: true });
-
     const contact = existing || (await createContact({ name, email, company, source: 'QR' }));
     // The contact is safe in Notion from here on. If the email fails, the visitor still sees
     // success and Samuele can send it later from /me ("Send email").
