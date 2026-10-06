@@ -1,0 +1,13 @@
+{
+  "name": "vivido-techweek-card",
+  "private": true,
+  "type": "module",
+  "description": "Samuele's Tech Week card: QR → card → contact saved in Notion + welcome email via Resend",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "test": "node --test"
+  }
+}

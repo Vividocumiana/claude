@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Samuele Poggio · Vivido</title>
+<meta name="description" content="Co-founder of Vivido, founder of Nest. I build systems that run without you.">
+<meta property="og:title" content="Samuele Poggio · Vivido">
+<meta property="og:description" content="I build systems that run without you.">
+<meta property="og:image" content="/samuele.jpg">
+<meta name="theme-color" content="#644BF6">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #644BF6; --purple-deep: #2A1080; --orange: #EC612A; --pink: #EF87E7;
+    --green: #74DB8B; --yellow: #FFD300; --black: #1D1D1F; --gray: #F2F2F0;
+    --bg: #F5F5F0; --muted: #6B6B70;
+    --font: 'Poppins', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: var(--font); background: var(--bg); color: var(--black); line-height: 1.5; min-height: 100vh; overflow-x: hidden; }
+  a { color: inherit; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px calc(40px + env(safe-area-inset-bottom)); }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 20px; }
+  header svg { height: 26px; width: auto; }
+  .pill-tag { background: var(--black); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 9999px; }
+
+  /* Hero card */
+  .hero { position: relative; background: linear-gradient(135deg, #644BF6 0%, #3B1FC2 100%); color: #fff; border-radius: 28px; padding: 28px 24px 26px; overflow: hidden; }
+  .hero .spark { position: absolute; color: var(--yellow); font-size: 22px; }
+  .hero .spark.s1 { top: 18px; right: 22px; transform: rotate(12deg); }
+  .hero .spark.s2 { bottom: 90px; right: 18px; color: var(--pink); font-size: 16px; }
+  .avatar { width: 96px; height: 96px; border-radius: 50%; padding: 4px; background: conic-gradient(var(--orange) 0 25%, var(--pink) 0 50%, var(--green) 0 75%, var(--yellow) 0); }
+  .avatar > * { width: 100%; height: 100%; border-radius: 50%; border: 3px solid #fff; object-fit: cover; display: block; background: var(--orange); }
+  .avatar .initials { display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 32px; color: #fff; }
+  .avatar.noimg img { display: none; } .avatar.noimg .initials { display: flex; }
+  h1 { font-size: 34px; line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; margin-top: 18px; }
+  .role { font-size: 14px; opacity: .9; margin-top: 6px; }
+  .role b { font-weight: 600; }
+  .tagline { font-size: 22px; line-height: 1.2; font-weight: 700; margin-top: 18px; letter-spacing: -0.01em; }
+  .tagline em { font-style: italic; color: var(--yellow); }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .meta span { font-size: 12px; font-weight: 500; background: rgba(255,255,255,.16); padding: 5px 11px; border-radius: 9999px; }
+
+  /* Buttons */
+  .actions { display: grid; gap: 10px; margin-top: 16px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; font: 600 16px var(--font); text-decoration: none; border: 0; border-radius: 9999px; padding: 16px 24px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; -webkit-tap-highlight-color: transparent; }
+  .btn:active { transform: scale(.98); }
+  .btn-orange { background: var(--orange); color: #fff; box-shadow: 0 8px 24px rgba(236,97,42,.35); }
+  .btn-dark { background: var(--black); color: #fff; }
+  .btn-light { background: #fff; color: var(--black); }
+  .icons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+  .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fff; border-radius: 20px; padding: 14px 4px 12px; text-decoration: none; font-size: 12px; font-weight: 500; }
+  .icon-btn svg { width: 24px; height: 24px; }
+
+  /* Sections */
+  section { margin-top: 16px; }
+  .card { background: #fff; border-radius: 24px; padding: 24px; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .two { display: grid; gap: 12px; }
+  .venture { border-radius: 24px; padding: 22px 22px 20px; color: #fff; text-decoration: none; display: block; position: relative; }
+  .venture.v { background: var(--black); }
+  .venture.n { background: var(--orange); }
+  .venture h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; margin: 4px 0 6px; }
+  .venture p { font-size: 15px; opacity: .92; }
+  .venture .since { font-size: 12px; opacity: .7; margin-top: 10px; }
+  .venture .arrow { position: absolute; top: 20px; right: 20px; font-size: 20px; }
+  .talk { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .talk span { font-size: 13px; font-weight: 500; padding: 7px 13px; border-radius: 9999px; background: var(--gray); }
+  .talk span:nth-child(4n+1) { background: #EFEAFE; } .talk span:nth-child(4n+2) { background: #FDE8DF; }
+  .talk span:nth-child(4n+3) { background: #E4F8E8; } .talk span:nth-child(4n+4) { background: #FCE7FA; }
+
+  /* Form */
+  .form h2 { font-size: 24px; line-height: 1.15; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px; }
+  .form h2 em { font-style: italic; color: var(--purple); }
+  .form p.sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .field { margin-top: 12px; }
+  .field input { width: 100%; font: 400 16px var(--font); padding: 14px 18px; border-radius: 16px; border: 2px solid var(--gray); background: var(--gray); color: var(--black); outline: none; transition: border-color .15s; }
+  .field input:focus { border-color: var(--purple); background: #fff; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); margin-top: 14px; line-height: 1.45; cursor: pointer; }
+  .consent input { width: 20px; height: 20px; accent-color: var(--purple); flex-shrink: 0; margin-top: 1px; }
+  .form .btn { margin-top: 16px; background: var(--purple); color: #fff; }
+  .form .btn[disabled] { opacity: .6; cursor: default; }
+  .error { color: #E64949; font-size: 14px; margin-top: 10px; min-height: 0; }
+  .done { display: none; text-align: center; padding: 10px 0 4px; }
+  .done .big { font-size: 44px; }
+  .done h2 { margin-top: 8px; }
+  .form.sent form { display: none; } .form.sent .done { display: block; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 28px; }
+  footer .dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; }
+  footer .dots i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rise { animation: rise .5s cubic-bezier(.2,.8,.2,1) both; }
+    .rise:nth-child(2) { animation-delay: .06s; } .rise:nth-child(3) { animation-delay: .12s; }
+    .rise:nth-child(4) { animation-delay: .18s; } .rise:nth-child(5) { animation-delay: .24s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="rise">
+    <a href="https://vivido.world" aria-label="Vivido">
+      <svg viewBox="0 0 125 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20.8935 0.173846C21.0666 -0.0323956 21.3748 -0.0587845 21.581 0.114276L25.3095 3.24318C25.5157 3.41619 25.543 3.72346 25.3701 3.92971L18.7119 11.8643C18.6611 11.9247 18.5989 11.9695 18.5311 11.9982C18.3492 12.0753 18.133 12.122 17.9355 12.1221H14.0615C13.8627 12.1221 13.6447 12.0755 13.4618 11.9976C13.3944 11.969 13.3327 11.9244 13.2822 11.8643L6.62398 3.92971C6.45096 3.72351 6.47745 3.41627 6.68355 3.24318L10.413 0.114276C10.6192 -0.0587179 10.9265 -0.0321895 11.0996 0.173846L15.2492 5.11963C15.6388 5.58403 16.3533 5.58407 16.743 5.11971L20.8935 0.173846Z" fill="#EC612A"/>
+        <path d="M20.8955 31.8263C21.0686 32.0323 21.3759 32.0588 21.582 31.8859L25.3115 28.757C25.5177 28.5839 25.5441 28.2767 25.3711 28.0705L18.7129 20.1349C18.6608 20.073 18.5967 20.0277 18.5269 19.9993C18.3456 19.9254 18.1314 19.8811 17.9355 19.881H14.0615C13.8652 19.881 13.65 19.925 13.4682 19.9992C13.3984 20.0277 13.3343 20.073 13.2822 20.1349L6.62403 28.0705C6.45098 28.2767 6.47739 28.5839 6.6836 28.757L10.4131 31.8859C10.6192 32.0588 10.9265 32.0323 11.0996 31.8263L15.2502 26.8795C15.6399 26.4152 16.3543 26.4151 16.744 26.8795L20.8955 31.8263Z" fill="#74DB8B"/>
+        <path d="M31.8818 10.4162C32.0549 10.6224 32.0285 10.9296 31.8223 11.1027L26.8755 15.2532C26.4111 15.6429 26.4111 16.3574 26.8755 16.7471L31.8223 20.8976C32.0285 21.0707 32.0549 21.3779 31.8818 21.5841L28.7529 25.3136C28.5798 25.5197 28.2726 25.5462 28.0664 25.3732L20.1308 18.716C20.0683 18.6635 20.0227 18.5986 19.9943 18.5279C19.9216 18.3469 19.878 18.1337 19.8779 17.9386L19.8779 14.0646C19.8779 13.8691 19.921 13.6549 19.9941 13.4735C20.0226 13.4028 20.0683 13.3379 20.1308 13.2853L28.0664 6.62711C28.2726 6.45412 28.5798 6.48067 28.7529 6.68668L31.8818 10.4162Z" fill="#644BF6"/>
+        <path d="M0.173853 20.8962C-0.0324011 21.0693 -0.0587859 21.3775 0.114283 21.5837L3.24319 25.3122C3.4162 25.5184 3.72346 25.5457 3.92971 25.3728L11.8653 18.7146C11.9263 18.6633 11.9712 18.6003 11.9998 18.5317C12.0755 18.3501 12.1211 18.1349 12.1211 17.9382L12.1211 14.0642C12.1211 13.8662 12.0755 13.6493 11.9995 13.4665C11.971 13.398 11.9262 13.3351 11.8653 13.2839L3.92971 6.62668C3.7235 6.45365 3.41628 6.48011 3.24319 6.68625L0.114283 10.4157C-0.0587047 10.622 -0.0323172 10.9292 0.173853 11.1023L5.11964 15.2519C5.58404 15.6415 5.58407 16.356 5.11971 16.7457L0.173853 20.8962Z" fill="#EF87E7"/>
+        <path d="M52.3913 5.77984H56.2608L49.1328 26H44.5942L37.4662 5.77984H41.3357L46.8635 21.665L52.3913 5.77984ZM59.9366 8.22371C58.511 8.22371 57.4054 7.20543 57.4054 5.77984C57.4054 4.35424 58.511 3.27777 59.9366 3.27777C61.3622 3.27777 62.4677 4.35424 62.4677 5.77984C62.4677 7.20543 61.3622 8.22371 59.9366 8.22371ZM58.0746 26V10.6676H61.7695V26H58.0746ZM75.7088 10.6676H79.5492L73.7013 26H69.4536L63.6058 10.6676H67.4462L71.5775 22.4506L75.7088 10.6676ZM83.2343 8.22371C81.8087 8.22371 80.7031 7.20543 80.7031 5.77984C80.7031 4.35424 81.8087 3.27777 83.2343 3.27777C84.6599 3.27777 85.7655 4.35424 85.7655 5.77984C85.7655 7.20543 84.6599 8.22371 83.2343 8.22371ZM81.3723 26V10.6676H85.0672V26H81.3723ZM100.112 4.73246H103.807V26H100.374V24.0507C99.1811 25.5054 97.4646 26.3491 95.3116 26.3491C90.9185 26.3491 87.7182 22.9161 87.7182 18.3483C87.7182 13.7515 90.8312 10.3185 95.2243 10.3185C97.2609 10.3185 98.9193 11.0749 100.112 12.355V4.73246ZM95.8062 23.0906C98.4538 23.0906 100.258 21.1413 100.258 18.3483C100.258 15.5262 98.4538 13.6061 95.8062 13.6061C93.2751 13.6061 91.4131 15.6135 91.4131 18.3483C91.4131 21.0832 93.2751 23.0906 95.8062 23.0906ZM114.617 26.3491C109.816 26.3491 106.442 22.9161 106.442 18.3483C106.442 13.7515 109.816 10.3185 114.617 10.3185C119.388 10.3185 122.792 13.7515 122.792 18.3483C122.792 22.9161 119.388 26.3491 114.617 26.3491ZM114.646 23.0615C117.264 23.0615 119.068 21.0832 119.068 18.3192C119.068 15.5844 117.294 13.6352 114.646 13.6352C111.969 13.6352 110.136 15.5844 110.136 18.3483C110.136 21.0832 111.969 23.0615 114.646 23.0615Z" fill="#1D1D1F"/>
+      </svg>
+    </a>
+    <span class="pill-tag">✦ Tech Week</span>
+  </header>
+
+  <div class="hero rise">
+    <span class="spark s1">✦</span><span class="spark s2">✦</span>
+    <div class="avatar" id="avatar">
+      <img src="/samuele.jpg" alt="Samuele Poggio" onerror="this.parentNode.classList.add('noimg')">
+      <div class="initials">SP</div>
+    </div>
+    <h1>Samuele Poggio</h1>
+    <p class="role"><b>Co-founder</b> · Vivido &nbsp;/&nbsp; <b>Founder</b> · Nest</p>
+    <p class="tagline">I build systems that run <em>without you.</em></p>
+    <div class="meta"><span>📍 Lisbon</span><span>Operations</span><span>Product design</span></div>
+  </div>
+
+  <div class="actions rise">
+    <a class="btn btn-orange" id="book" href="#" target="_blank" rel="noopener">Book a 20-min call →</a>
+    <a class="btn btn-dark" href="/samuele.vcf">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+      Save my contact
+    </a>
+    <div class="icons">
+      <a class="icon-btn" href="https://www.linkedin.com/in/samuele-poggio-48b9a0219/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="#0A66C2" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+        LinkedIn
+      </a>
+      <a class="icon-btn" href="https://wa.me/393335839398" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="#25D366" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35zM12.05 21.79h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.88 9.88zm8.41-18.3A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.16-3.48-8.41z"/></svg>
+        WhatsApp
+      </a>
+      <a class="icon-btn" href="mailto:samuele@vivido.world">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#644BF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m22 7-10 6L2 7"/></svg>
+        Email
+      </a>
+      <a class="icon-btn" href="https://vivido.world" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#EC612A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Vivido
+      </a>
+    </div>
+  </div>
+
+  <section class="form card rise" id="form">
+    <form novalidate>
+      <span class="label" style="color:var(--purple)">Let's keep in touch</span>
+      <h2>Get my card <em>in your inbox.</em></h2>
+      <p class="sub">Leave your email and I'll send you my links and a slot to talk. No newsletter.</p>
+      <div class="field"><input name="name" type="text" placeholder="Your name" autocomplete="name" maxlength="100"></div>
+      <div class="field"><input name="email" type="email" placeholder="you@company.com" autocomplete="email" inputmode="email" required maxlength="254"></div>
+      <div class="field"><input name="company" type="text" placeholder="Company (optional)" autocomplete="organization" maxlength="150"></div>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label class="consent"><input type="checkbox" name="consent"> I agree to receive an email from Samuele / Vivido. Your email is used only for this.</label>
+      <div class="error" role="alert"></div>
+      <button class="btn" type="submit">Send it to me ✦</button>
+    </form>
+    <div class="done" aria-live="polite">
+      <div class="big">💌</div>
+      <h2>Check your <em>inbox.</em></h2>
+      <p class="sub">It's on its way. Nice to meet you!</p>
+    </div>
+  </section>
+
+  <section class="two rise">
+    <a class="venture v" href="https://vivido.world" target="_blank" rel="noopener">
+      <span class="arrow">↗</span>
+      <span class="label" style="color:var(--pink)">Co-founder</span>
+      <h3>Vivido</h3>
+      <p>We help founders validate ideas fast, without wasting budget or time. Product design, websites and prototypes for startups and scale-ups.</p>
+      <p class="since">Since 2023</p>
+    </a>
+    <div class="venture n">
+      <span class="label" style="color:#fff;opacity:.85">Founder</span>
+      <h3>Nest</h3>
+      <p>Your operations team, without hiring one. I help agencies build systems that run without them.</p>
+      <p class="since">Since 2025</p>
+    </div>
+  </section>
+
+  <section class="card rise">
+    <span class="label" style="color:var(--orange)">Talk to me about</span>
+    <div class="talk">
+      <span>Ops & processes</span><span>n8n automations</span><span>AI in execution</span><span>Selling fast</span>
+      <span>UX audits</span><span>Building in public</span><span>Co-founder life</span><span>Surf & running 🏄</span>
+    </div>
+  </section>
+
+  <footer>
+    <div class="dots"><i style="background:#EF87E7"></i><i style="background:#EC612A"></i><i style="background:#644BF6"></i><i style="background:#74DB8B"></i></div>
+    Made with Vivido · <a href="https://vivido.world">vivido.world</a>
+  </footer>
+</div>
+
+<script>
+  // ── Config ───────────────────────────────────────────────
+  const BOOKING_URL = 'https://cal.com/vivido-wdkm3m/general-vivido?overlayCalendar=true';
+  // ─────────────────────────────────────────────────────────
+
+  document.getElementById('book').href = BOOKING_URL;
+
+  const section = document.getElementById('form');
+  const form = section.querySelector('form');
+  const errorEl = form.querySelector('.error');
+  const btn = form.querySelector('button');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.textContent = '';
+    const data = Object.fromEntries(new FormData(form));
+    data.consent = form.consent.checked;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email || '')) return (errorEl.textContent = 'Please enter a valid email.');
+    if (!data.consent) return (errorEl.textContent = 'Please tick the box so I can email you.');
+
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || 'Something went wrong.');
+      section.classList.add('sent');
+    } catch (err) {
+      errorEl.textContent = err.message;
+      btn.disabled = false; btn.textContent = 'Send it to me ✦';
+    }
+  });
+</script>
+</body>
+</html>
