@@ -7,7 +7,11 @@ import { sendWelcomeEmail } from './_lib/email.js';
 import { readJson, send, checkPin, clean, EMAIL_RE } from './_lib/http.js';
 
 export default async function handler(req, res) {
-  if (!checkPin(req)) return send(res, 401, { error: 'Wrong PIN' });
+  if (!checkPin(req)) {
+    // A short PIN is easy to guess: slow down every wrong attempt.
+    await new Promise((r) => setTimeout(r, 1500));
+    return send(res, 401, { error: 'Wrong PIN' });
+  }
 
   try {
     if (req.method === 'GET') {

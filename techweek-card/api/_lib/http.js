@@ -20,7 +20,7 @@ export function send(res, status, body) {
 export function checkPin(req) {
   const expected = process.env.ADMIN_PIN || '';
   const given = String(req.headers['x-pin'] || '');
-  if (expected.length < 6 || given.length !== expected.length) return false;
+  if (expected.length < 4 || given.length !== expected.length) return false;
   return timingSafeEqual(Buffer.from(given), Buffer.from(expected));
 }
 
