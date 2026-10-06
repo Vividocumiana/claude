@@ -60,6 +60,8 @@
   .saved { font-size:12px; color:var(--muted); height:16px; margin-top:4px; }
   .c-links { display:flex; gap:12px; margin-top:6px; font-size:13px; }
   .c-links a { color:var(--muted); }
+  .send { border:0; background:var(--orange); color:#fff; border-radius:9999px; padding:4px 12px; font-size:12px; font-weight:600; cursor:pointer; margin-left:auto; }
+  .send[disabled] { opacity:.6; }
 
   .empty { text-align:center; color:var(--muted); padding:40px 0; }
 
@@ -190,7 +192,7 @@ function render() {
       <div class="statuses">${STATUSES.map((s) => `<button class="st ${c.status === s ? 'on' : ''}" data-s="${s}">${s}</button>`).join('')}</div>
       <textarea class="notes" rows="2" placeholder="Quick note…">${esc(c.notes)}</textarea>
       <div class="saved"></div>
-      <div class="c-links"><a href="${esc(c.url)}" target="_blank" rel="noopener">Open in Notion ↗</a></div>
+      <div class="c-links"><a href="${esc(c.url)}" target="_blank" rel="noopener">Open in Notion ↗</a>${c.email && !c.emailSent ? '<button class="send">Send email ✉️</button>' : ''}</div>
     </div>`).join('')
     : `<div class="empty">${contacts.length ? 'No matches.' : 'No contacts yet. Go say hi 👋'}</div>`;
 }
@@ -204,6 +206,16 @@ $('stats').onclick = (e) => {
   const s = e.target.closest('.stat'); if (!s) return;
   filter = filter === s.dataset.f ? 'All' : s.dataset.f; render();
 };
+
+$('list').addEventListener('click', async (e) => {
+  const send = e.target.closest('.send'); if (!send) return;
+  const c = contacts.find((x) => x.id === send.closest('.c').dataset.id);
+  send.disabled = true; send.textContent = 'Sending…';
+  try {
+    const { contact } = await api('PATCH', { id: c.id, sendEmail: true });
+    Object.assign(c, contact); render(); toast('Email sent ✉️');
+  } catch (err) { send.disabled = false; send.textContent = 'Send email ✉️'; toast(err.message); }
+});
 
 $('list').addEventListener('click', async (e) => {
   const b = e.target.closest('.st'); if (!b) return;
@@ -237,7 +249,7 @@ $('addForm').onsubmit = async (e) => {
   try {
     const { contact } = await api('POST', body);
     contacts.unshift(contact); render(); $('cancel').click();
-    toast(contact.emailSent ? 'Saved & email sent ✉️' : 'Saved');
+    toast(contact.emailSent ? 'Saved & email sent ✉️' : body.sendEmail && body.email ? 'Saved — email failed, retry from the card' : 'Saved');
   } catch (err) { $('addErr').textContent = err.message; }
   finally { btn.disabled = false; btn.textContent = 'Save'; }
 };

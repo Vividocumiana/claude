@@ -28,8 +28,14 @@ export default async function handler(req, res) {
     if (existing?.emailSent) return send(res, 200, { ok: true, already: true });
 
     const contact = existing || (await createContact({ name, email, company, source: 'QR' }));
-    await sendWelcomeEmail({ name: name || contact.name, email });
-    await updateContact(contact.id, { emailSent: true });
+    // The contact is safe in Notion from here on. If the email fails, the visitor still sees
+    // success and Samuele can send it later from /me ("Send email").
+    try {
+      await sendWelcomeEmail({ name: name || contact.name, email });
+      await updateContact(contact.id, { emailSent: true });
+    } catch (err) {
+      console.error('Welcome email failed, contact saved:', err);
+    }
     return send(res, 200, { ok: true });
   } catch (err) {
     console.error(err);
