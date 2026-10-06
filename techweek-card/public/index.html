@@ -233,7 +233,7 @@
     try {
       const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       const out = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(out.error || 'Something went wrong.');
+      if (!res.ok) throw new Error([out.error || 'Something went wrong.', out.detail].filter(Boolean).join(' — '));
       section.classList.add('sent');
     } catch (err) {
       errorEl.textContent = err.message;
