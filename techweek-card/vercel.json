@@ -17,6 +17,10 @@
         {
           "key": "Content-Type",
           "value": "text/vcard; charset=utf-8"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "inline; filename=\"Samuele Poggio.vcf\""
         }
       ]
     }

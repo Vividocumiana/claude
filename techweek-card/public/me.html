@@ -162,7 +162,7 @@ async function load() {
     render();
   } catch (err) {
     $('app').classList.add('hidden'); $('lock').classList.remove('hidden');
-    $('lockErr').textContent = pin ? err.message : '';
+    $('lockErr').textContent = !pin ? '' : err.auth ? 'Wrong PIN' : 'PIN ok, but the server failed: ' + err.message;
   }
 }
 
