@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Scan me · Samuele</title>
+<title>Scan me · {{firstName}}</title>
 <meta name="theme-color" content="#F1F0EB" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B0B0C" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="My QR">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/samuele.jpg">
+<link rel="apple-touch-icon" href="{{photo}}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
@@ -74,8 +74,8 @@
       <span class="mark"><img src="/favicon.svg" alt=""></span>
     </div>
     <div class="who">
-      <img src="/samuele.jpg" alt="">
-      <div><b>Samuele Poggio</b><span>Founder · Vivido, Nest, Nitido</span></div>
+      <img src="{{photo}}" alt="">
+      <div><b>{{name}}</b><span>{{role}}</span></div>
     </div>
   </div>
 
@@ -86,9 +86,9 @@
   //  card    → QR opens the card page (form, Book a call, links)
   //  contact → QR holds the vCard itself: the phone camera offers "Add contact" natively
   const VCARD = [
-    'BEGIN:VCARD', 'VERSION:3.0', 'N:Poggio;Samuele;;;', 'FN:Samuele Poggio',
-    'ORG:Vivido', 'TITLE:Co-founder', 'TEL;TYPE=CELL:+393335839398',
-    'EMAIL:samuele@vivido.world', 'URL:' + location.origin, 'END:VCARD',
+    'BEGIN:VCARD', 'VERSION:3.0', 'N:{{vcardN}}', 'FN:{{name}}',
+    'ORG:{{qrOrg}}', 'TITLE:{{qrTitle}}', 'TEL;TYPE=CELL:{{phone}}',
+    'EMAIL:{{email}}', 'URL:' + location.origin, 'END:VCARD',
   ].join('\n');
   const MODES = {
     card: { data: location.origin + '/?src=qr', ec: 'H', hint: 'Scan to open my card' },

@@ -1,5 +1,6 @@
 {
-  "outputDirectory": "public",
+  "buildCommand": "node build.js",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "headers": [
     {
@@ -21,6 +22,19 @@
         {
           "key": "Content-Disposition",
           "value": "inline; filename=\"Samuele Poggio.vcf\""
+        }
+      ]
+    },
+    {
+      "source": "/alessandro.vcf",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/x-vcard; charset=utf-8"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "inline; filename=\"Alessandro Martinengo.vcf\""
         }
       ]
     }

@@ -1,8 +1,8 @@
-// Private endpoint for Samuele's view (/me), protected by ADMIN_PIN (x-pin header).
+// Private endpoint for the card owner's view (/me), protected by ADMIN_PIN (x-pin header).
 //   GET   → list all contacts (newest first)
 //   POST  → add a contact manually { name, email, company, notes, sendEmail }
 //   PATCH → update { id, notes?, status? } or send the welcome email { id, sendEmail: true }
-import { listContacts, createContact, updateContact, findByEmail } from './_lib/notion.js';
+import { listContacts, createContact, updateContact, findByEmail, notionEnabled } from './_lib/notion.js';
 import { sendWelcomeEmail } from './_lib/email.js';
 import { readJson, send, checkPin, clean, EMAIL_RE } from './_lib/http.js';
 
@@ -12,6 +12,8 @@ export default async function handler(req, res) {
     await new Promise((r) => setTimeout(r, 1500));
     return send(res, 401, { error: 'Wrong PIN' });
   }
+
+  if (!notionEnabled()) return send(res, 503, { error: 'Contacts are not connected to Notion on this card yet.' });
 
   try {
     if (req.method === 'GET') {

@@ -1,6 +1,6 @@
 // Public endpoint: someone scanned the QR and left their email.
-// Saves the contact in Notion and sends the "Nice to meet you" email once.
-import { findByEmail, createContact, updateContact } from './_lib/notion.js';
+// Saves the contact in Notion (when configured) and sends the "Nice to meet you" email.
+import { findByEmail, createContact, updateContact, notionEnabled } from './_lib/notion.js';
 import { sendWelcomeEmail } from './_lib/email.js';
 import { readJson, send, clean, EMAIL_RE } from './_lib/http.js';
 
@@ -23,13 +23,24 @@ export default async function handler(req, res) {
   if (!EMAIL_RE.test(email)) return send(res, 400, { error: 'Please enter a valid email.' });
   if (!body.consent) return send(res, 400, { error: 'Please tick the consent box.' });
 
+  // No Notion on this card: the email is the only record, so a failure must reach the visitor.
+  if (!notionEnabled()) {
+    try {
+      await sendWelcomeEmail({ name, email });
+      return send(res, 200, { ok: true });
+    } catch (err) {
+      console.error('Welcome email failed (no Notion configured):', err);
+      return send(res, 500, { error: 'Could not send the email. Try again in a moment.' });
+    }
+  }
+
   try {
     // Same email twice: keep one row in Notion, but send the email again
     // (people retry when the first one got lost or went to spam).
     const existing = await findByEmail(email);
     const contact = existing || (await createContact({ name, email, company, source: 'QR' }));
     // The contact is safe in Notion from here on. If the email fails, the visitor still sees
-    // success and Samuele can send it later from /me ("Send email").
+    // success and the card owner can send it later from /me ("Send email").
     try {
       await sendWelcomeEmail({ name: name || contact.name, email });
       await updateContact(contact.id, { emailSent: true });

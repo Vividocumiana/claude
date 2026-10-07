@@ -6,6 +6,9 @@
 //   Created (created_time)
 
 const NOTION_VERSION = '2022-06-28';
+
+// Notion is optional: a card without NOTION_TOKEN + NOTION_DATABASE_ID only sends the email.
+export const notionEnabled = () => Boolean(process.env.NOTION_TOKEN && process.env.NOTION_DATABASE_ID);
 export const STATUSES = ['New', 'Follow-up', 'Call booked', 'Done'];
 
 async function notion(path, { method = 'GET', body } = {}) {
