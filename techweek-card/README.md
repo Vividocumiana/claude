@@ -6,7 +6,7 @@ person is a Vercel project with its own domain and env vars.
 | Person | Config | Domain | Vercel project |
 |---|---|---|---|
 | Samuele Poggio | `people/samuele/` | samuele.vivido.world | `samuele-techweek-card` (CARD unset = samuele) |
-| Alessandro Martinengo | `people/alessandro/` | alessandrostaging.vivido.world (staging, noindex) | `alessandro-card` |
+| Alessandro Martinengo | `people/alessandro/` | alessandro.vivido.world (staging, noindex) | `alessandro-card` |
 
 ```
 people/<id>/person.js   all text, links, companies, theme, email copy for that person
@@ -90,7 +90,7 @@ Vercel project settings: Root Directory `techweek-card`, Framework **Other**
 
 ```
 CARD=alessandro
-PUBLIC_URL=https://alessandrostaging.vivido.world
+PUBLIC_URL=https://alessandro.vivido.world
 BOOKING_URL=https://cal.com/jessica-pretti-k562b0/30min
 RESEND_API_KEY=<same Resend key as Samuele>
 MAIL_FROM="Alessandro Martinengo <alessandro@vivido.world>"   # must be on a Resend-verified domain
@@ -99,8 +99,8 @@ ADMIN_PIN=<4+ digits>                                          # only matters on
 # NOTION_TOKEN / NOTION_DATABASE_ID: not set yet — the form just sends the email
 ```
 
-Domain: Vercel → project → Settings → Domains → add `alessandrostaging.vivido.world`,
-then at the DNS provider of vivido.world add `CNAME alessandrostaging → cname.vercel-dns.com`
+Domain: Vercel → project → Settings → Domains → add `alessandro.vivido.world`,
+then at the DNS provider of vivido.world add `CNAME alessandro → cname.vercel-dns.com`
 (if vivido.world uses Vercel nameservers, the record is created automatically).
 
 The welcome email attaches `/alessandro.vcf`, which Resend downloads from `PUBLIC_URL`,
@@ -110,4 +110,4 @@ Placeholders to replace in `people/alessandro/`: `public/logos/salesmagic.svg|pn
 `public/favicon.svg` (redrawn from a screenshot of salesmagic.tech), `public/logos/wearefounders.png`
 (neutral "WF" tile).
 
-DNS (vivido.world is on GoDaddy): `CNAME alessandrostaging → a71550f6828995dd.vercel-dns-016.com`.
+DNS (vivido.world is on GoDaddy): `CNAME alessandro → a71550f6828995dd.vercel-dns-016.com`.

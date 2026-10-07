@@ -1,4 +1,4 @@
-// Alessandro Martinengo — staging at alessandrostaging.vivido.world.
+// Alessandro Martinengo — staging at alessandro.vivido.world.
 // Build/run with CARD=alessandro (Vercel env var on Alessandro's project).
 
 export default {
