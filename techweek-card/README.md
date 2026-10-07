@@ -109,3 +109,5 @@ so it only works once the domain is live.
 Placeholders to replace in `people/alessandro/`: `public/logos/salesmagic.svg|png` and
 `public/favicon.svg` (redrawn from a screenshot of salesmagic.tech), `public/logos/wearefounders.png`
 (neutral "WF" tile).
+
+DNS (vivido.world is on GoDaddy): `CNAME alessandrostaging → a71550f6828995dd.vercel-dns-016.com`.

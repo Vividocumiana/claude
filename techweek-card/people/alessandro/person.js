@@ -23,8 +23,8 @@ export default {
   ],
   companies: [
     { name: 'SalesMagic', role: 'Founder', line: 'B2B sales systems and outbound campaigns that multiply results', href: 'https://www.salesmagic.tech/', logo: '/logos/salesmagic.png', emailLogo: 'salesmagic.png' },
-    // No official URL found for We Are Founders: shown without a link. TODO(logo): placeholder "WF" mark.
-    { name: 'We Are Founders', role: 'Startup Mentor', line: 'Free mentoring for founders, from people who have done it before', logo: '/logos/wearefounders.png', emailLogo: 'wearefounders.png' },
+    // TODO(logo): placeholder "WF" mark.
+    { name: 'We Are Founders', role: 'Startup Mentor', line: 'Free mentoring for founders, from people who have done it before', href: 'https://wearefounders.ju.mp/', logo: '/logos/wearefounders.png', emailLogo: 'wearefounders.png' },
   ],
   sign: { logo: '/logos/salesmagic.svg', title: 'SalesMagic', line: 'Feels like magic ✦' },
   themeColor: '#0B0B0C',
