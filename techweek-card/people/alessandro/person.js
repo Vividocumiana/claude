@@ -17,8 +17,8 @@ export default {
   photo: '/alessandro.jpg', // 600×600, used by /me, /qr
   photoLg: '/alessandro-lg.jpg', // 800×800, card hero, OG image, email
   pills: [
-    // TODO(logo): logos/salesmagic.svg|png and favicon.svg are redrawn from a screenshot; swap in the official files.
-    { label: 'SalesMagic', img: '/logos/salesmagic.svg', href: 'https://www.salesmagic.tech/' },
+    // Official SalesMagic mark (white, transparent): logos/salesmagic-mark.png
+    { label: 'SalesMagic', img: '/logos/salesmagic-mark.png', href: 'https://www.salesmagic.tech/' },
     { label: 'Based in Milan', icon: 'pin' },
   ],
   companies: [
@@ -26,7 +26,7 @@ export default {
     // TODO(logo): placeholder "WF" mark.
     { name: 'We Are Founders', role: 'Startup Mentor', line: 'Free mentoring for founders, from people who have done it before', href: 'https://wearefounders.ju.mp/', logo: '/logos/wearefounders.png', emailLogo: 'wearefounders.png' },
   ],
-  sign: { logo: '/logos/salesmagic.svg', title: 'SalesMagic', line: 'Feels like magic ✦' },
+  sign: { logo: '/logos/salesmagic-mark.png', title: 'SalesMagic', line: 'Feels like magic ✦' },
   themeColor: '#0B0B0C',
   themeCss: `
   :root { color-scheme: dark; }

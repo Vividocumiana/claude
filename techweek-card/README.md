@@ -106,8 +106,7 @@ then at the DNS provider of vivido.world add `CNAME alessandro → cname.vercel-
 The welcome email attaches `/alessandro.vcf`, which Resend downloads from `PUBLIC_URL`,
 so it only works once the domain is live.
 
-Placeholders to replace in `people/alessandro/`: `public/logos/salesmagic.svg|png` and
-`public/favicon.svg` (redrawn from a screenshot of salesmagic.tech), `public/logos/wearefounders.png`
-(neutral "WF" tile).
+Placeholder to replace in `people/alessandro/`: `public/logos/wearefounders.png` (neutral "WF" tile).
+The SalesMagic mark is the official one (`public/logos/salesmagic-mark.png`).
 
 DNS (vivido.world is on GoDaddy): `CNAME alessandro → a71550f6828995dd.vercel-dns-016.com`.
