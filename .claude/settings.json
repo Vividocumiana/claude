@@ -6,6 +6,20 @@
           { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/install-skill.sh\"" }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/play-sound.sh\" stop" }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/play-sound.sh\" notification" }
+        ]
+      }
     ]
   }
 }
