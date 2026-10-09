@@ -1,6 +1,6 @@
 # Suono a fine task (hook)
 
-Claude Code riproduce un suono quando finisce una risposta/task (evento `Stop`)
+Claude Code riproduce `.claude/sounds/done.mp3` quando finisce una risposta/task (evento `Stop`)
 e quando ha bisogno di te, es. richiesta permesso (evento `Notification`).
 Funziona in terminale, VS Code, JetBrains e desktop app: gli hook sono di Claude Code,
 non dell'editor.

@@ -14,8 +14,8 @@ if [ -n "${1:-}" ]; then
   cp "$1" "$HOME/.claude/sounds/done.$ext"
   echo "suono personalizzato: ~/.claude/sounds/done.$ext"
 elif [ ! -e "$HOME/.claude/sounds/done.wav" ] && [ ! -e "$HOME/.claude/sounds/done.mp3" ]; then
-  cp "$HERE/../sounds/done.wav" "$HOME/.claude/sounds/done.wav"
-  echo "suono di default: ~/.claude/sounds/done.wav"
+  cp "$HERE/../sounds/done.mp3" "$HOME/.claude/sounds/done.mp3"
+  echo "suono di default: ~/.claude/sounds/done.mp3"
 fi
 
 SETTINGS="$HOME/.claude/settings.json"
