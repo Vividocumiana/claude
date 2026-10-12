@@ -84,6 +84,7 @@ export const M = {
   lipGuru: clay(C.lipGuru, { roughness: 0.45 }),
   eye: clay(0xffffff, { roughness: 0.2, sheen: 0, clearcoat: 1, coatRough: 0.05, rimK: 0.04 }),
   pupil: clay(C.pupil, { roughness: 0.1, sheen: 0, clearcoat: 1, coatRough: 0.02, rimK: 0 }),
+  mouthIn: clay(C.mouth, { roughness: 0.7, sheen: 0, rimK: 0 }),
   catch: new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
   teeth: clay(C.teeth, { roughness: 0.3, sheen: 0, clearcoat: 0.6 }),
   tongue: clay(C.tongue, { roughness: 0.5 }),
@@ -305,8 +306,15 @@ export function buildCharacter(kit) {
   const skin = M[A.skinMat];
 
   // "O" dello spavento, comune a tutti
-  const mouthO = add(new THREE.SphereGeometry(0.12, 32, 16), M.pupil);
-  mouthO.position.set(0, 0.44, MOUTH_Z - 0.03);
+  const O_Y = 0.46, O_Z = frontZ(skinBase, 0, O_Y);
+  const mouthO = new THREE.Group(); char.add(mouthO);
+  mouthO.position.set(0, O_Y, O_Z);
+  mouthO.rotation.x = -0.12;
+  const oIn = add(new THREE.SphereGeometry(1, 24, 12), M.mouthIn, mouthO);
+  oIn.scale.set(0.085, 0.11, 0.025);
+  const oLip = add(new THREE.TorusGeometry(0.095, 0.03, 12, 32), M[type === 'guru' ? 'lipGuru' : 'lip'], mouthO);
+  oLip.scale.set(1, 1.25, 0.8);
+  mouthO.traverse((o) => { if (o.isMesh) o.userData.moving = true; });
 
   const eyes = [buildEye(char, -1, skin), buildEye(char, 1, skin)];
   const extra = {};
@@ -328,7 +336,7 @@ export function buildCharacter(kit) {
     }
   } else {
     // sorrisetto storto: un angolo su
-    add(new THREE.TubeGeometry(faceCurve(skinBase, range(-0.2, 0.25, 20), (x) => 0.45 + 0.08 * sstep(-0.02, 0.25, x) - 0.012 * (x < 0 ? (x / 0.2) ** 2 : 0)), 40, 0.024, 8), M.lipGuru);
+    extra.smirk = add(new THREE.TubeGeometry(faceCurve(skinBase, range(-0.2, 0.25, 20), (x) => 0.45 + 0.08 * sstep(-0.02, 0.25, x) - 0.012 * (x < 0 ? (x / 0.2) ** 2 : 0)), 40, 0.024, 8), M.lipGuru);
     // sopracciglio alzato sopra gli occhiali, l'altro piatto
     for (const s of [-1, 1]) {
       const b = add(new THREE.CapsuleGeometry(0.055, 0.28, 6, 12), M.brow);
@@ -360,10 +368,16 @@ export function buildCharacter(kit) {
     glasses.traverse((o) => { if (o.isMesh) o.userData.moving = true; });
     extra.glasses = glasses;
     // catena d'oro a grani, appoggiata sulla maglia
-    for (let i = 0; i < 52; i++) {
-      const th = (i / 52) * Math.PI * 2, front = Math.max(Math.cos(th), 0);
+    const BEADS = 56;
+    for (let i = 0; i < BEADS; i++) {
+      const th = (i / BEADS) * Math.PI * 2, front = Math.max(Math.cos(th), 0);
+      const y = -0.36 - 0.12 * front ** 2;
+      // da fuori verso l'asse del collo finché non si tocca la maglia
+      const dx = Math.sin(th), dz = Math.cos(th);
+      let r = 1.3;
+      while (r > 0.3 && torso(dx * r, y, dz * r - 0.04) > 0) r -= 0.005;
       const bead = add(new THREE.SphereGeometry(0.05, 12, 8), M.gold);
-      bead.position.set(0.64 * Math.sin(th), -0.3 - 0.24 * front ** 2, 0.52 * Math.cos(th) - 0.04 + 0.06 * front);
+      bead.position.set(dx * (r + 0.035), y, dz * (r + 0.035) - 0.04);
     }
   }
 
@@ -391,9 +405,12 @@ export function buildCharacter(kit) {
       e.setLid(lerp(lid, 1, face.blink * (1 - s)));
       e.setPupil(lerp(face.elev, 0, s), lerp(face.look, 0, s), lerp(face.pupil, 0.8, s));
     });
-    const o = Math.max(s, 0.001);
-    mouthO.scale.set(0.9 * o, 1.15 * o, 0.4 * o);
-    extra.smile?.forEach((m) => { m.visible = s < 0.5; });
+    // guru: "O" di spavento al posto del sorrisetto; rookie: denti stretti nel sorriso ("ahi")
+    const o = hurt ? 0 : s;
+    mouthO.visible = o > 0.02;
+    mouthO.scale.setScalar(Math.max(o, 0.001));
+    if (extra.smirk) extra.smirk.visible = o < 0.5;
+    if (extra.smile) extra.smile[1].visible = s < 0.5; // la lingua sparisce, i denti restano
     if (extra.glasses) {
       const f = face.fly;
       extra.glasses.visible = f < 1;

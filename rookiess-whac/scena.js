@@ -7,7 +7,7 @@ import { buildKit, buildCharacter, M, DEBUG, KEY_VIEW } from './personaggio.js';
 
 const DEG = Math.PI / 180;
 const lerp = (a, b, t) => a + (b - a) * t;
-const S = 0.225;          // scala personaggio: testa larga ~ quanto il buco
+const S = 0.195;          // scala personaggio: testa con le orecchie larga quanto il buco
 const LEAN = -25 * DEG;   // inclinato all'indietro, verso la camera
 const PIVOT = 0.6;        // punto del personaggio (sotto il mento) che sta al livello del tavolo
 const RING = { inner: HERO.holeInnerR, outer: 0.343, h: 0.05 };
@@ -92,17 +92,18 @@ export function mount(canvas, ui) {
 
   // ---- personaggi ----
   // ---- personaggi: uno per buco, nascosti sotto il tavolo finché non salgono ----
-  const DOWN = -(2.7 + PIVOT) * S - 0.04; // cima del beanie sotto il piano
+  const DOWN = -(2.75 + PIVOT) * S - 0.05; // lungo l'asse: cima del beanie sotto il piano
   const chars = holes.map((h, i) => {
     const ring = new THREE.Mesh(ringGeo, ringMat); ring.position.copy(h); scene.add(ring);
     const pit = new THREE.Mesh(pitGeo, pitMat); pit.position.copy(h); scene.add(pit);
 
     const root = new THREE.Group(); root.position.copy(h); scene.add(root);
-    const pop = new THREE.Group(); root.add(pop);
-    const orient = new THREE.Group(); pop.add(orient);
+    // sale lungo il proprio asse inclinato: l'asse passa sempre per il centro del buco
+    const orient = new THREE.Group(); root.add(orient);
     orient.rotation.order = 'YXZ';
     orient.rotation.set(LEAN, Math.atan2(camera.position.x - h.x, camera.position.z - h.z), 0);
-    const squash = new THREE.Group(); orient.add(squash);
+    const pop = new THREE.Group(); orient.add(pop);
+    const squash = new THREE.Group(); pop.add(squash);
     // in ogni buco ci sono entrambi; a ogni uscita se ne mostra uno
     const actors = {};
     for (const type of ['rookie', 'guru']) {
