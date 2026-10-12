@@ -89,11 +89,13 @@ function logoMaterial() {
   cv.width = 1024; cv.height = 256;
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   const img = new Image();
   img.onload = () => {
-    const ctx = cv.getContext('2d'), w = 960, h = (w * 50) / 232;
-    ctx.drawImage(img, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+    // tratto ingrossato (il logo è sottile e a distanza si perde): lo stesso disegno ripetuto in un piccolo cerchio
+    const ctx = cv.getContext('2d'), w = 980, h = (w * 50) / 232, x0 = (cv.width - w) / 2, y0 = (cv.height - h) / 2;
+    for (let a = 0; a < 16; a++) ctx.drawImage(img, x0 + Math.cos(a / 16 * Math.PI * 2) * 5, y0 + Math.sin(a / 16 * Math.PI * 2) * 5, w, h);
+    ctx.drawImage(img, x0, y0, w, h);
     tex.needsUpdate = true;
   };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(LOGO_SVG);
@@ -281,7 +283,7 @@ export function buildCharacter(kit) {
     extra.teeth = [teethG];
   }
   if (ex.has('logo')) { // logo sul risvolto del beanie: una striscia che segue la superficie (coste comprese)
-    const SEG_U = 72, SEG_V = 14, TH = 0.5, Y0 = 1.7, H = 0.23;
+    const SEG_U = 96, SEG_V = 16, TH = 0.72, Y0 = 1.7, H = 0.36; // largo quasi quanto il davanti del risvolto
     const pos = [], uv = [], idx = [];
     for (let j = 0; j <= SEG_V; j++) for (let i = 0; i <= SEG_U; i++) {
       const u = i / SEG_U, v = j / SEG_V, th = (u * 2 - 1) * TH, y = Y0 + (v - 0.5) * H;
