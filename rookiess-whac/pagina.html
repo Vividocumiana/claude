@@ -28,6 +28,13 @@
   .score { position:absolute; left:74%; top:63%; display:grid; gap:2px; pointer-events:none; transform:rotate(8deg); }
   .score span { font-size:clamp(11px, 1.4vw, 16px); opacity:.7; }
   .score b { font:800 clamp(28px, 4.4vw, 56px)/1 ui-sans-serif, system-ui, sans-serif; font-variant-numeric:tabular-nums; }
+  .burst { position:absolute; width:0; height:0; pointer-events:none; }
+  .burst i { position:absolute; left:-5px; top:-5px; width:10px; height:10px; background:#fff;
+             clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+             animation:pop .6s cubic-bezier(.15,.8,.3,1) forwards; }
+  .burst.bad i { background:#ff9a9a; }
+  @keyframes pop { from { transform:rotate(var(--a)) translateY(0) scale(.4); opacity:1; }
+                   to { transform:rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(1.1) rotate(90deg); opacity:0; } }
   .pop-label.bad { color:#ffd2d2; text-shadow:0 2px 0 #9a1222; }
   canvas.squint { filter:blur(2.5px); }
   #stats { white-space:pre-line;  position:fixed; left:16px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); font:11px/1.4 ui-monospace, Menlo, monospace; opacity:.75; font-variant-numeric:tabular-nums; }
@@ -36,7 +43,7 @@
   <h1>Rookiess · 3 guru e 3 rookie<small>Colpisci i guru (+10), risparmia i rookie (−20)</small></h1>
   <div class="grp" id="modes"><span>Vista</span><button data-mode="hero" aria-pressed="true">Hero</button><button data-mode="studio" aria-pressed="false">Confronto</button></div>
   <div class="grp" id="debug"><span>Debug</span><button data-debug="final" aria-pressed="true">Finale</button><button data-debug="bake">Luce</button><button data-debug="normals">Normali</button><button data-debug="parts">Parti</button><button data-debug="wire">Wireframe</button></div>
-  <div class="grp"><button id="blur" aria-pressed="false" title="Sfoca come visto di sfuggita: si distinguono ancora?">Test sfocato</button></div>
+  <div class="grp"><button id="fx" aria-pressed="true" title="Effetti leggeri: luce riflessa, grana, ombre, rimbalzi">Effetti</button><button id="blur" aria-pressed="false" title="Sfoca come visto di sfuggita: si distinguono ancora?">Test sfocato</button></div>
   <label class="grp" id="ovl"><span>Figma</span><input id="ovr" type="range" min="0" max="100" value="0" aria-label="Opacità del design Figma sovrapposto"></label>
 </header>
 <div class="stage"><div class="frame">

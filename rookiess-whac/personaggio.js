@@ -14,6 +14,7 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 // Sotto il livello del tavolo il personaggio sfuma nel colore del buco.
 export const DEBUG = { value: 0 }; // 0 finale · 1 luce precalcolata · 2 normali · 3 parti
 export const KEY_VIEW = new THREE.Vector3(-0.42, 0.42, 0.8).normalize(); // luce chiave, spazio camera
+export const FX = { grain: { value: 1 } }; // effetti leggeri attivabili (per il confronto con/senza)
 const PIT = 0x07116c, MOUTH = 0x5a1a22;
 const ALL = new Set(); // tutti i materiali, per le viste di debug
 
@@ -30,19 +31,31 @@ function clay(color, o = {}) {
     uPit: { value: new THREE.Color(PIT) }, uBoardY: { value: 0 },
     uBlush: { value: new THREE.Color(o.blush ?? 0xff7f7a) }, uMouth: { value: new THREE.Color(MOUTH) },
     uDebug: DEBUG, uPart: { value: new THREE.Color().setHSL(Math.random(), 0.7, 0.55) },
+    uGrain: FX.grain,
   };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec2 bake; attribute vec2 tint; varying vec2 vBake; varying vec2 vTint; varying float vWY;')
-      .replace('#include <project_vertex>', '#include <project_vertex>\nvBake = bake; vTint = tint; vWY = (modelMatrix * vec4(transformed, 1.0)).y;');
+      .replace('#include <common>', '#include <common>\nattribute vec2 bake; attribute vec2 tint; varying vec2 vBake; varying vec2 vTint; varying float vWY; varying vec3 vObj;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvBake = bake; vTint = tint; vObj = position; vWY = (modelMatrix * vec4(transformed, 1.0)).y;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        varying vec2 vBake; varying vec2 vTint; varying float vWY;
-        uniform vec3 uSSS, uKey, uRim, uPit, uPart, uBlush, uMouth; uniform float uRimK, uBoardY; uniform int uDebug;`)
+        varying vec2 vBake; varying vec2 vTint; varying float vWY; varying vec3 vObj;
+        uniform vec3 uSSS, uKey, uRim, uPit, uPart, uBlush, uMouth; uniform float uRimK, uBoardY, uGrain; uniform int uDebug;
+        // rumore a valori, due ottave: la grana delle impronte sulla plasticina
+        float h3(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+        float vn(vec3 x) {
+          vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
+                     mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z);
+        }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         diffuseColor.rgb = mix(diffuseColor.rgb, uBlush, vTint.x);
-        diffuseColor.rgb = mix(diffuseColor.rgb, uMouth, vTint.y);`)
+        diffuseColor.rgb = mix(diffuseColor.rgb, uMouth, vTint.y);
+        float grain = (vn(vObj * 16.0) * 0.6 + vn(vObj * 47.0) * 0.4 - 0.5) * uGrain;
+        diffuseColor.rgb *= 1.0 + grain * 0.07;`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        roughnessFactor = clamp(roughnessFactor + grain * 0.18, 0.04, 1.0);`)
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
         reflectedLight.directDiffuse *= vBake.y;
         reflectedLight.directSpecular *= vBake.y;

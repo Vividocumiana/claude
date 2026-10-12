@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { HERO } from './hero-camera.js';
-import { loadKits, buildCharacter, setWireframe, DEBUG, KEY_VIEW } from './personaggio.js';
+import { loadKits, buildCharacter, setWireframe, DEBUG, KEY_VIEW, FX } from './personaggio.js';
 import { GROUPS } from './shapes.js';
 
 const DEG = Math.PI / 180;
@@ -40,6 +40,10 @@ export function mount(canvas, ui) {
   const rim = new THREE.DirectionalLight(0xffffff, 1.4);
   rim.position.copy(new THREE.Vector3(0.4, 0.7, -0.6).applyQuaternion(camera.quaternion)).multiplyScalar(10);
   scene.add(key, rim);
+  // luce riflessa dal tavolo blu: le parti basse dei personaggi prendono un po' di blu
+  const bounce = new THREE.HemisphereLight(0xffffff, 0x2a40ff, 0.5);
+  scene.add(bounce);
+  const fxObjects = [bounce];
 
   // luce chiave nello spazio del personaggio (inclinato, rivolto alla camera)
   const leanQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(LEAN, 0, 0));
@@ -57,23 +61,49 @@ export function mount(canvas, ui) {
   floor.renderOrder = -1;
   scene.add(floor);
 
-  const ringGeo = (() => {
-    const { inner: a, outer: b, h } = RING, r = 0.008;
-    const g = new THREE.LatheGeometry([
-      new THREE.Vector2(a, -0.002), new THREE.Vector2(a, h - r), new THREE.Vector2(a + r, h),
-      new THREE.Vector2(b - r, h), new THREE.Vector2(b, h - r), new THREE.Vector2(b, -0.002),
-    ], 96);
-    // colori presi dal design: piano come il fondo, fianco scuro, interno come il buco
-    const top = new THREE.Color('#2135e7'), side = new THREE.Color('#0f1a6e'), inner = new THREE.Color('#0b1680');
-    const col = [], p = g.attributes.position;
+  const makeRing = (shine) => {
+    const { inner: a, outer: b, h } = RING, r = 0.012;
+    const prof = [new THREE.Vector2(a, -0.002)];
+    for (let k = 0; k <= 5; k++) { const t = (k / 5) * Math.PI / 2; prof.push(new THREE.Vector2(a + r - r * Math.cos(t), h - r + r * Math.sin(t))); }
+    for (let k = 0; k <= 5; k++) { const t = (k / 5) * Math.PI / 2; prof.push(new THREE.Vector2(b - r + r * Math.sin(t), h - r + r * Math.cos(t))); }
+    prof.push(new THREE.Vector2(b, -0.002));
+    const g = new THREE.LatheGeometry(prof, 96);
+    // colori presi dal design: piano come il fondo, fianco scuro, interno come il buco;
+    // con gli effetti, i bordi arrotondati prendono un riflesso dalla luce chiave
+    const top = new THREE.Color('#2135e7'), side = new THREE.Color('#0f1a6e'), inner = new THREE.Color('#0b1680'), hi = new THREE.Color('#7f8fff');
+    const col = [], p = g.attributes.position, n = g.attributes.normal, N = new THREE.Vector3();
     for (let i = 0; i < p.count; i++) {
       const rr = Math.hypot(p.getX(i), p.getZ(i)), y = p.getY(i);
-      const c = y > RING.h - 0.004 && rr > a + 0.002 && rr < b - 0.002 ? top : rr < (a + b) / 2 ? inner : side;
+      const isTop = y > h - 0.0005 && rr > a + r - 0.001 && rr < b - r + 0.001;
+      const c = (isTop ? top : y > h - r ? top.clone().lerp(rr < (a + b) / 2 ? inner : side, (h - y) / r) : rr < (a + b) / 2 ? inner : side).clone();
+      if (shine && !isTop && y > h - r - 0.001) c.lerp(hi, Math.pow(Math.max(N.fromBufferAttribute(n, i).dot(keyDir), 0), 3) * 0.75);
       col.push(c.r, c.g, c.b);
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     return g;
-  })();
+  };
+  const ringGeo = makeRing(true), ringGeoPlain = makeRing(false);
+  const rings = [];
+
+  // ombre: alone di contatto attorno a ogni buco + ombra del personaggio sul tavolo
+  // alphaMap legge la luminosità: bianco = ombra piena, nero = niente. Dentro "inner" resta vuoto (il buco).
+  const softTex = (inner, outer) => {
+    const cv = Object.assign(document.createElement('canvas'), { width: 256, height: 256 });
+    const x = cv.getContext('2d'), gr = x.createRadialGradient(128, 128, 0, 128, 128, outer * 128);
+    if (inner > 0) { gr.addColorStop(0, '#000'); gr.addColorStop(inner / outer - 0.01, '#000'); gr.addColorStop(inner / outer, '#fff'); }
+    else gr.addColorStop(0, '#fff');
+    gr.addColorStop(1, '#000');
+    x.fillStyle = '#000'; x.fillRect(0, 0, 256, 256);
+    x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(cv);
+  };
+  const flat = (tex, size, opacity) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({
+      color: 0x040a40, alphaMap: tex, transparent: true, opacity, depthWrite: false, toneMapped: false }));
+    m.rotation.x = -Math.PI / 2;
+    return m;
+  };
+  const aoTex = softTex(RING.outer / (RING.outer + 0.07), 1), blobTex = softTex(0, 1);
   const ringMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
 
   const pitGeo = (() => {
@@ -94,7 +124,11 @@ export function mount(canvas, ui) {
   // ---- personaggi: uno per buco, nascosti sotto il tavolo finché non salgono ----
   const DOWN = -(2.75 + PIVOT) * S - 0.05; // lungo l'asse: cima del beanie sotto il piano
   const chars = holes.map((h, i) => {
-    const ring = new THREE.Mesh(ringGeo, ringMat); ring.position.copy(h); scene.add(ring);
+    const ring = new THREE.Mesh(ringGeo, ringMat); ring.position.copy(h); scene.add(ring); rings.push(ring);
+    const ao = flat(aoTex, (RING.outer + 0.07) * 2, 0.28); ao.position.copy(h).setY(0.001); scene.add(ao); fxObjects.push(ao);
+    // ombra del personaggio: cade a destra e verso il fondo, lontano dalla luce
+    const blob = flat(blobTex, 0.5, 0); blob.position.copy(h).add(new THREE.Vector3(0.16, RING.h + 0.002, -0.1)); blob.scale.set(1, 0.7, 1);
+    blob.renderOrder = 1; scene.add(blob); fxObjects.push(blob);
     const pit = new THREE.Mesh(pitGeo, pitMat); pit.position.copy(h); scene.add(pit);
 
     const root = new THREE.Group(); root.position.copy(h); scene.add(root);
@@ -107,7 +141,7 @@ export function mount(canvas, ui) {
     // in ogni buco c'è un'istanza di ogni personaggio (geometrie condivise); a ogni uscita se ne mostra uno
     pop.position.y = DOWN;
     root.visible = false;
-    return { i, h, root, pop, squash, actors: {}, rk: null, phase: 'down', t: 0, stay: 0, peak: 1, from: DOWN, cool: 0,
+    return { i, h, root, pop, squash, blob, prevY: DOWN, actors: {}, rk: null, phase: 'down', t: 0, stay: 0, peak: 1, from: DOWN, cool: 0,
       blinkT: -1, nextBlink: 800 + Math.random() * 4000 };
   });
 
@@ -216,6 +250,19 @@ export function mount(canvas, ui) {
     el.style.top = ((1 - p.y) / 2) * 100 + '%';
     ui.labels.appendChild(el);
     setTimeout(() => el.remove(), 900);
+    if (!fxOn || reduce) return;
+    const burst = document.createElement('span');
+    burst.className = 'burst' + (bad ? ' bad' : '');
+    burst.style.left = el.style.left;
+    burst.style.top = ((1 - p.y) / 2) * 100 + 6 + '%';
+    for (let k = 0; k < 7; k++) {
+      const s = document.createElement('i');
+      s.style.setProperty('--a', (k / 7) * 360 + Math.random() * 20 + 'deg');
+      s.style.setProperty('--d', 26 + Math.random() * 22 + 'px');
+      burst.appendChild(s);
+    }
+    ui.labels.appendChild(burst);
+    setTimeout(() => burst.remove(), 650);
   }
 
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -270,7 +317,19 @@ export function mount(canvas, ui) {
     }
     c.pop.position.y = y;
     c.root.visible = c.phase !== 'down';
-    c.squash.scale.set(1 + sq * 0.2, 1 - sq * 0.32, 1 + sq * 0.2);
+    const out = Math.min(Math.max((y - DOWN) / -DOWN, 0), 1);
+    let st = 0, land = 0, sway = 0;
+    if (fxOn && !reduce) {
+      st = THREE.MathUtils.clamp(((y - c.prevY) / Math.max(dt, 1)) * 60, -0.12, 0.18); // velocità → allungamento
+      if (c.phase === 'up' && c.t < 180) land = Math.sin((c.t / 180) * Math.PI) * 0.08;  // atterraggio
+      if (c.phase === 'up') sway = Math.sin(clock / 650 + c.i * 1.7) * 0.035;
+    }
+    c.prevY = y;
+    const sy = 1 - sq * 0.32 + st - land, sxz = 1 + sq * 0.2 - st * 0.45 + land * 0.6;
+    c.squash.scale.set(sxz, sy, sxz);
+    c.squash.rotation.z = sway;
+    c.blob.material.opacity = fxOn && c.rk ? 0.32 * out : 0;
+    c.blob.scale.set(0.7 + 0.3 * out, 0.5 + 0.2 * out, 1);
 
     if (!reduce && c.blinkT < 0 && clock > c.nextBlink) c.blinkT = 0;
     let blink = 0;
@@ -299,6 +358,16 @@ export function mount(canvas, ui) {
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
   setMode(ui.startMode || 'hero');
   requestAnimationFrame(frame);
+  let fxOn = true;
+  function setFx(on) {
+    fxOn = on;
+    FX.grain.value = on ? 1 : 0;
+    for (const o of fxObjects) o.visible = on;
+    for (const r of rings) r.geometry = on ? ringGeo : ringGeoPlain;
+    ui.fx?.setAttribute('aria-pressed', String(on));
+  }
+  ui.fx?.addEventListener('click', () => setFx(!fxOn));
+  setFx(true);
   ui.blur?.addEventListener('click', () => {
     const on = canvas.classList.toggle('squint');
     ui.blur.setAttribute('aria-pressed', String(on));

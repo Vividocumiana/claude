@@ -12,6 +12,7 @@ requestAnimationFrame(() => {
     labels: document.getElementById('labels'),
     onScore: (v) => { document.getElementById('score').textContent = v; },
     blur: document.getElementById('blur'),
+    fx: document.getElementById('fx'),
     workerSrc: document.getElementById('worker-src')?.textContent,
     onStats: (all, done, total) => {
       document.getElementById('stats').textContent = (done < total ? `Preparo i personaggi… ${done}/${total}\n` : '') +
