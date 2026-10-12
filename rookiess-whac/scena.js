@@ -5,7 +5,6 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { HERO } from './hero-camera.js';
 import { loadKits, buildCharacter, setWireframe, DEBUG, KEY_VIEW, FX } from './personaggio.js';
 import { GROUPS } from './shapes.js';
-import { createHammer } from './hammer.js';
 
 const DEG = Math.PI / 180;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -23,7 +22,6 @@ export function mount(canvas, ui) {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  const hammer = createHammer(renderer, scene.environment);
   scene.environmentIntensity = 0.55;
 
   // ---- camera della hero ----
@@ -206,7 +204,6 @@ export function mount(canvas, ui) {
   function setMode(m) {
     if (mode === 'studio' && m === 'hero') for (const c of chars) Object.assign(c, { phase: 'fall', t: 0, from: c.pop.position.y });
     mode = m;
-    if (m !== 'hero') { hammer.show(false); canvas.classList.remove('hammer-on'); }
     if (m === 'hero') {
       camera.position.copy(heroCam.pos); camera.quaternion.copy(heroCam.quat);
       camera.fov = HERO.fovYDeg;
@@ -232,7 +229,6 @@ export function mount(canvas, ui) {
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     renderer.setSize(w, h, false);
-    hammer.resize(w, h);
     camera.aspect = w / h;
     if (mode === 'hero') {
       // il centro ottico sta HERO.viewShiftPx sotto il centro del frame
@@ -299,13 +295,6 @@ export function mount(canvas, ui) {
   }
 
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-  // martello 3D al posto del cursore, solo col mouse (sul touch non c'è un cursore da sostituire)
-  const local = (ev) => { const r = canvas.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; };
-  const hammerOn = (ev) => ev.pointerType === 'mouse' && mode === 'hero';
-  canvas.addEventListener('pointerenter', (ev) => { if (!hammerOn(ev)) return; hammer.move(...local(ev)); hammer.show(true); canvas.classList.add('hammer-on'); });
-  canvas.addEventListener('pointermove', (ev) => { if (!hammerOn(ev)) return; hammer.move(...local(ev)); if (!hammer.visible) { hammer.show(true); canvas.classList.add('hammer-on'); } });
-  canvas.addEventListener('pointerleave', () => { hammer.show(false); canvas.classList.remove('hammer-on'); });
-  canvas.addEventListener('pointerdown', (ev) => { if (hammerOn(ev)) hammer.hit(); });
   canvas.addEventListener('pointerdown', (ev) => {
     const r = canvas.getBoundingClientRect();
     ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
@@ -393,8 +382,6 @@ export function mount(canvas, ui) {
       for (const c of chars) step(c, dt);
     }
     renderer.render(scene, camera);
-    hammer.update(dt);
-    hammer.render();
     requestAnimationFrame(frame);
   }
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
