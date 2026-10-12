@@ -1,27 +1,26 @@
-// Rookiess — primo personaggio clay, costruito tutto in codice.
-// Riferimento: busto col cappellino, palpebre calate, AirPods, t-shirt nera.
+// Rookiess — personaggio clay costruito in SDF.
+// Pelle, beanie e maglia sono superfici uniche (unione morbida) messe in mesh al caricamento;
+// occhi, palpebre e bocca sono pezzi rigidi perché si animano.
+// Luce precalcolata per vertice: la vista della hero è fissa.
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { smin, smax, ellipsoid, capsule, roundRect2, meshSDF, bake, openEdges } from './sdf.js';
 
 const DEG = Math.PI / 180;
 const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
 
-// ---------- palette (letta dalla reference) ----------
-const C = {
-  skin: 0xeea397, skinDeep: 0xd8847a, lip: 0xb8655c,
-  eye: 0xf7f4ef, pupil: 0x141414,
-  cap: 0xece4d2, capSeam: 0xd9cfba,
-  tee: 0x26262a, pod: 0xf5f5f3,
+// ---------- palette ----------
+export const C = {
+  skin: 0xeea397, lip: 0xb8655c,
+  pupil: 0x141414, beanie: 0xece4d2, tee: 0x26262a,
+  pit: 0x07116c,
 };
 
-// ---------- materiali clay ----------
-// Fisico + ambiente RoomEnvironment; sulla pelle una banda calda sul
-// terminatore (finto subsurface) che dà l'effetto plastilina.
-const KEY_DIR_VIEW = new THREE.Vector3(-0.55, 0.6, 0.6).normalize();
+// ---------- materiale clay con luce precalcolata ----------
+// bake.x = AO (moltiplica la luce ambiente), bake.y = ombra (moltiplica la luce chiave).
+// Sotto il livello del tavolo il personaggio sfuma nel colore del buco.
+export const DEBUG = { value: 0 }; // 0 finale · 1 luce precalcolata · 2 normali · 3 parti
+export const KEY_VIEW = new THREE.Vector3(-0.42, 0.42, 0.8).normalize(); // luce chiave, spazio camera
 
 function clay(color, o = {}) {
   const m = new THREE.MeshPhysicalMaterial({
@@ -29,272 +28,223 @@ function clay(color, o = {}) {
     sheen: o.sheen ?? 0.35, sheenRoughness: 0.8,
     sheenColor: new THREE.Color(o.sheenColor ?? 0xffffff),
     clearcoat: o.clearcoat ?? 0, clearcoatRoughness: o.coatRough ?? 0.35,
-    side: o.side ?? THREE.FrontSide,
   });
-  // luce di bordo (fresnel) su tutto; sulla pelle anche la banda calda
-  const sss = new THREE.Color(o.sss ?? 0x000000);
-  const rimCol = new THREE.Color(o.rim ?? 0xbfd0ff);
-  const rimK = o.rimK ?? 0.1;
+  const u = {
+    uSSS: { value: new THREE.Color(o.sss ?? 0x000000) }, uKey: { value: KEY_VIEW },
+    uRim: { value: new THREE.Color(o.rim ?? 0xbfd0ff) }, uRimK: { value: o.rimK ?? 0.1 },
+    uPit: { value: new THREE.Color(C.pit) }, uBoardY: { value: 0 },
+    uDebug: DEBUG, uPart: { value: new THREE.Color().setHSL(Math.random(), 0.7, 0.55) },
+  };
+  m.userData.u = u;
   m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, { uSSS: { value: sss }, uKey: { value: KEY_DIR_VIEW }, uRim: { value: rimCol }, uRimK: { value: rimK } });
+    Object.assign(sh.uniforms, u);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec2 bake; varying vec2 vBake; varying float vWY;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvBake = bake; vWY = (modelMatrix * vec4(transformed, 1.0)).y;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uSSS; uniform vec3 uKey; uniform vec3 uRim; uniform float uRimK;')
+      .replace('#include <common>', `#include <common>
+        varying vec2 vBake; varying float vWY;
+        uniform vec3 uSSS, uKey, uRim, uPit, uPart; uniform float uRimK, uBoardY; uniform int uDebug;`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+        reflectedLight.directDiffuse *= vBake.y;
+        reflectedLight.directSpecular *= vBake.y;
+        reflectedLight.indirectDiffuse *= vBake.x;
+        reflectedLight.indirectSpecular *= mix(1.0, vBake.x, 0.7);`)
       .replace('#include <opaque_fragment>', `
         vec3 nn = normalize(normal);
         float w = dot(nn, uKey);
         float band = smoothstep(-0.45, 0.05, w) * (1.0 - smoothstep(0.05, 0.6, w));
         float fr = pow(1.0 - saturate(dot(nn, normalize(vViewPosition))), 3.0);
-        outgoingLight += uSSS * (band * 0.28 + fr * 0.12) + uRim * fr * uRimK;
+        outgoingLight += (uSSS * (band * 0.28 * vBake.y + fr * 0.12) + uRim * fr * uRimK) * vBake.x;
+        outgoingLight = mix(outgoingLight, uPit, smoothstep(0.0, 0.22, uBoardY - vWY) * 0.95);
+        if (uDebug == 1) outgoingLight = vec3(vBake.x * mix(0.35, 1.0, vBake.y));
+        if (uDebug == 2) outgoingLight = nn * 0.5 + 0.5;
+        if (uDebug == 3) outgoingLight = uPart * (0.4 + 0.6 * max(dot(nn, uKey), 0.0));
         #include <opaque_fragment>`);
   };
-  m.customProgramCacheKey = () => 'clay';
+  m.customProgramCacheKey = () => 'clay-baked';
   return m;
 }
 
-const M = {
+export const M = {
   skin: clay(C.skin, { roughness: 0.55, sheen: 0.5, sheenColor: 0xffd6cc, sss: 0xff6a3d }),
-  skinDeep: clay(C.skinDeep, { roughness: 0.6, sss: 0xff5a30 }),
   lip: clay(C.lip, { roughness: 0.5 }),
   eye: clay(0xffffff, { roughness: 0.2, sheen: 0, clearcoat: 1, coatRough: 0.05, rimK: 0.04 }),
   pupil: clay(C.pupil, { roughness: 0.1, sheen: 0, clearcoat: 1, coatRough: 0.02, rimK: 0 }),
   catch: new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
-  cap: clay(C.cap, { roughness: 0.9, sheen: 0.8, sheenColor: 0xfffaf0 }),
-  capSeam: clay(C.capSeam, { roughness: 0.9, sheen: 0.6 }),
+  beanie: clay(C.beanie, { roughness: 0.92, sheen: 1, sheenColor: 0xfff8ec, rimK: 0.08 }),
   tee: clay(C.tee, { roughness: 0.85, sheen: 0.7, sheenColor: 0x6a6a78, rimK: 0.08 }),
-  pod: clay(C.pod, { roughness: 0.15, sheen: 0, clearcoat: 1, coatRough: 0.05, rimK: 0.05 }),
 };
 
-// ---------- forme ----------
-// Profilo della testa (r, y): mento in basso, guance piene, cupola nascosta dal cappello.
-const HEAD_PROFILE = [
-  [0.0, 0.0], [0.5, 0.04], [0.8, 0.2], [0.94, 0.5], [0.97, 0.85],
-  [0.96, 1.2], [0.93, 1.55], [0.85, 1.85], [0.55, 2.1], [0.0, 2.2],
-].map(([r, y]) => new THREE.Vector2(r, y));
-const HEAD_DEPTH = 0.9; // schiacciata davanti-dietro
-const headCurve = new THREE.SplineCurve(HEAD_PROFILE);
-const headPts = headCurve.getSpacedPoints(160);
+// ---------- forme (spazio personaggio: mento a y=0, faccia verso +z) ----------
+const EAR = { x: 0.9, y: 1.0, z: -0.05, yaw: 0.3 };
 
-function headR(y) {
-  for (let i = 1; i < headPts.length; i++) {
-    const a = headPts[i - 1], b = headPts[i];
-    if ((a.y - y) * (b.y - y) <= 0) return lerp(a.x, b.x, (y - a.y) / (b.y - a.y || 1));
-  }
-  return 0;
+function headCore(x, y, z) {
+  let d = ellipsoid(x, y - 1.25, z, 0.93, 1.0, 0.85);                     // cranio
+  d = smin(d, ellipsoid(x, y - 0.55, z - 0.04, 0.95, 0.62, 0.82), 0.35);   // guance e mascella
+  return d;
 }
-// punto sulla faccia davanti, dato x,y
-function surfZ(x, y) {
-  const r = headR(y);
-  return HEAD_DEPTH * Math.sqrt(Math.max(r * r - x * x, 0));
+// punto della faccia davanti a (x, y): bisezione lungo z
+function frontZ(f, x, y) {
+  let a = 0, b = 2;
+  for (let i = 0; i < 40; i++) { const m = (a + b) / 2; f(x, y, m) < 0 ? (a = m) : (b = m); }
+  return a;
 }
+const NOSE = { y: 0.9, z: frontZ(headCore, 0, 0.9) + 0.03 };
 
-function lathe(points, seg = 96) {
-  const g = new THREE.LatheGeometry(points, seg);
-  g.computeVertexNormals();
-  return g;
+function ear(x, y, z, side) {
+  const a = -side * EAR.yaw, c = Math.cos(a), s = Math.sin(a);
+  const dx = x - side * EAR.x, dy = y - EAR.y, dz = z - EAR.z;
+  const lx = c * dx + s * dz, lz = -s * dx + c * dz;
+  let d = ellipsoid(lx - side * 0.13, dy, lz, 0.13, 0.42, 0.3);                          // padiglione
+  d = smax(d, -ellipsoid(lx - side * 0.26, dy + 0.03, lz - 0.03, 0.09, 0.28, 0.19), 0.04); // conca
+  return d;
 }
 
-function mesh(geo, mat, parent, cast = true) {
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = cast; m.receiveShadow = true;
-  parent.add(m);
-  return m;
+export function skinSDF(x, y, z) {
+  let d = headCore(x, y, z);
+  d = smin(d, capsule(x, y, z, 0, -1.6, -0.05, 0, 0.4, -0.1, 0.47), 0.22);  // collo raccordato al mento
+  d = smin(d, ellipsoid(x, y - NOSE.y, z - NOSE.z, 0.22, 0.21, 0.2), 0.06);  // naso
+  d = smin(d, ear(x, y, z, 1), 0.1);
+  d = smin(d, ear(x, y, z, -1), 0.1);
+  return d;
 }
 
-// ---------- occhio con palpebre animabili ----------
-function buildEye(parent, x, y, side) {
-  const R = 0.31;
+export function beanieSDF(x, y, z) {
+  let crown = ellipsoid(x, y - 1.6, z + 0.03, 1.0, 1.0, 0.94);
+  crown = smax(crown, 1.58 - y, 0.05);
+  const rr = Math.hypot(x, (z + 0.03) / 0.93);
+  const cuff = roundRect2(rr - 1.0, y - 1.7, 0.095, 0.19, 0.085) * 0.93;     // risvolto
+  const d = smin(crown, cuff, 0.035);
+  // coste verticali: più marcate sul risvolto, sfumano verso la cima
+  const ang = Math.atan2(x, z + 0.03);
+  const amp = (y < 1.9 ? 0.016 : 0.009) * sstep(0.25, 0.7, rr);
+  return d + amp * Math.cos(ang * 44);
+}
+
+export function teeSDF(x, y, z) {
+  let d = capsule(x, y, z / 0.8, 0, -1.15, 0, 0, -5, 0, 0.98) * 0.8;          // busto a pillola
+  const neckHole = Math.max(Math.hypot(x, z + 0.06) - 0.5, -0.65 - y);
+  d = smax(d, -neckHole, 0.05);
+  const rr = Math.hypot(x, (z + 0.06) / 0.94);
+  d = smin(d, Math.hypot(rr - 0.55, y + 0.31) - 0.085, 0.06);                // colletto
+  return d;
+}
+
+// ---------- occhio con palpebre ----------
+const EYE = { x: 0.34, y: 1.24, R: 0.31, scale: [1.0, 0.82, 0.78] };
+let eyeZ = null; // calcolato al primo uso (dipende dalla pelle)
+const getEyeZ = () => (eyeZ ??= frontZ(skinSDF, EYE.x, EYE.y) - 0.1);
+
+function buildEye(parent, side) {
+  const { R } = EYE;
   const g = new THREE.Group();
-  g.position.set(x, y, surfZ(x, y) - 0.1);
+  g.position.set(side * EYE.x, EYE.y, getEyeZ());
   g.rotation.y = side * 0.2;
-  g.scale.set(1.0, 0.82, 0.78);
+  g.scale.set(...EYE.scale);
   parent.add(g);
+  const add = (geo, mat) => { const m = new THREE.Mesh(geo, mat); g.add(m); return m; };
 
-  mesh(new THREE.SphereGeometry(R, 48, 32), M.eye, g, false);
-
-  // pupilla: appena sotto il bordo della palpebra, sguardo un po' di lato
-  const pupil = mesh(new THREE.SphereGeometry(0.088, 32, 16), M.pupil, g, false);
-  const glint = mesh(new THREE.SphereGeometry(0.024, 16, 8), M.catch, g, false);
-  const dir = (elev, az) => new THREE.Vector3(Math.sin(az) * Math.cos(elev), Math.sin(elev), Math.cos(az) * Math.cos(elev));
+  add(new THREE.SphereGeometry(R, 48, 32), M.eye);
+  const pupil = add(new THREE.SphereGeometry(0.088, 32, 16), M.pupil);
+  const glint = add(new THREE.SphereGeometry(0.024, 16, 8), M.catch);
+  const dir = (el, az) => new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
   const Z = new THREE.Vector3(0, 0, 1);
-  const setPupil = (elev, az) => {
-    pupil.position.copy(dir(elev, az)).multiplyScalar(R * 0.975);
-    pupil.quaternion.setFromUnitVectors(Z, dir(elev, az));
+  const setPupil = (el, az) => {
+    pupil.position.copy(dir(el, az)).multiplyScalar(R * 0.975);
+    pupil.quaternion.setFromUnitVectors(Z, dir(el, az));
     pupil.scale.set(1, 1, 0.35);
-    // riflesso: in alto a sinistra della pupilla, dalla luce chiave
-    glint.position.copy(dir(elev + 0.07, az - 0.1)).multiplyScalar(R + 0.03);
-    glint.quaternion.copy(pupil.quaternion);
+    glint.position.copy(dir(el + 0.07, az - 0.1)).multiplyScalar(R + 0.03);
     glint.scale.set(1, 1, 0.4);
   };
 
-  // palpebra superiore: calotta + bordo arrotondato, ruota attorno a X
   const COVER = 95 * DEG, RL = R * 1.05;
   const upper = new THREE.Group(); g.add(upper);
-  mesh(new THREE.SphereGeometry(RL, 48, 24, 0, Math.PI * 2, 0, COVER), M.skin, upper);
-  const rimU = mesh(new THREE.TorusGeometry(RL * Math.sin(COVER), 0.04, 12, 64), M.skin, upper);
+  upper.add(new THREE.Mesh(new THREE.SphereGeometry(RL, 48, 24, 0, Math.PI * 2, 0, COVER), M.skin));
+  const rimU = new THREE.Mesh(new THREE.TorusGeometry(RL * Math.sin(COVER), 0.04, 12, 64), M.skin);
   rimU.rotation.x = Math.PI / 2; rimU.position.y = RL * Math.cos(COVER);
+  upper.add(rimU);
 
-  // palpebra inferiore, fissa
-  const LCOVER = 55 * DEG;
+  const LC = 55 * DEG;
   const lower = new THREE.Group(); g.add(lower);
-  mesh(new THREE.SphereGeometry(RL * 0.99, 48, 16, 0, Math.PI * 2, Math.PI - LCOVER, LCOVER), M.skin, lower);
-  const rimL = mesh(new THREE.TorusGeometry(RL * 0.99 * Math.sin(LCOVER), 0.022, 12, 64), M.skin, lower);
-  rimL.rotation.x = Math.PI / 2; rimL.position.y = -RL * 0.99 * Math.cos(LCOVER);
+  lower.add(new THREE.Mesh(new THREE.SphereGeometry(RL * 0.99, 48, 16, 0, Math.PI * 2, Math.PI - LC, LC), M.skin));
+  const rimL = new THREE.Mesh(new THREE.TorusGeometry(RL * 0.99 * Math.sin(LC), 0.022, 12, 64), M.skin);
+  rimL.rotation.x = Math.PI / 2; rimL.position.y = -RL * 0.99 * Math.cos(LC);
+  lower.add(rimL);
   lower.rotation.x = 8 * DEG;
 
-  // closed: 0 = spalancato, 1 = chiuso. Bordo frontale a elev = -5° - a.
   const setLid = (closed) => { upper.rotation.x = lerp(-70, 78, closed) * DEG; };
   return { setLid, setPupil, group: g };
 }
 
-// ---------- cappellino ----------
-function buildCap(parent) {
-  const cap = new THREE.Group();
-  cap.position.y = 1.74;
-  parent.add(cap);
-  const RX = 1.0, RY = 0.98, RZ = 0.97;
+// distanza da tutto il personaggio (per AO e ombre); gli occhi come ellissoidi
+function sceneSDF(x, y, z) {
+  let d = Math.min(skinSDF(x, y, z), beanieSDF(x, y, z), teeSDF(x, y, z));
+  const ez = getEyeZ();
+  for (const s of [-1, 1])
+    d = Math.min(d, ellipsoid(x - s * EYE.x, y - EYE.y, z - ez, EYE.R * 1.05, EYE.R * 0.86, EYE.R * 0.82));
+  return d;
+}
+const staticSDF = (x, y, z) => Math.min(skinSDF(x, y, z), beanieSDF(x, y, z), teeSDF(x, y, z));
 
-  const dome = mesh(new THREE.SphereGeometry(1, 96, 48, 0, Math.PI * 2, 0, Math.PI / 2), M.cap, cap);
-  dome.scale.set(RX, RY, RZ);
-  // bordino interno, chiude il bordo inferiore della calotta
-  const band = mesh(new THREE.TorusGeometry(1, 0.035, 12, 96), M.cap, cap);
-  band.rotation.x = Math.PI / 2; band.scale.set(RX, RZ, 1);
-
-  // cuciture lungo i meridiani + bottone in cima
-  for (let i = 0; i < 6; i++) {
-    const az = (i / 6) * Math.PI * 2 + Math.PI / 6;
-    const pts = [];
-    for (let k = 0; k <= 24; k++) {
-      const el = (k / 24) * (Math.PI / 2 - 0.05);
-      pts.push(new THREE.Vector3(Math.cos(el) * Math.sin(az) * RX, Math.sin(el) * RY, Math.cos(el) * Math.cos(az) * RZ).multiplyScalar(1.004));
-    }
-    mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.012, 6), M.capSeam, cap, false);
-  }
-  const btn = mesh(new THREE.SphereGeometry(0.085, 24, 12), M.cap, cap);
-  btn.position.y = RY * 0.99; btn.scale.y = 0.55;
-
-  // visiera: il bordo interno segue la calotta e resta fermo;
-  // si piega solo la parte che sporge (più ai lati che al centro)
-  const sh = new THREE.Shape();
-  const OX = 1.1, OZ = 1.72, A = 74 * DEG, N = 64, IN = 0.97;
-  for (let i = 0; i <= N; i++) {
-    const t = lerp(-A, A, i / N);
-    const pt = [Math.sin(t) * OX, -Math.cos(t) * OZ];
-    i ? sh.lineTo(...pt) : sh.moveTo(...pt);
-  }
-  for (let i = N; i >= 0; i--) {
-    const t = lerp(-A, A, i / N);
-    sh.lineTo(Math.sin(t) * RX * IN, -Math.cos(t) * RZ * IN);
-  }
-  const vg = new THREE.ExtrudeGeometry(sh, { depth: 0.035, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 5, curveSegments: 64 });
-  vg.rotateX(-Math.PI / 2); // shape (x, -z) -> piano orizzontale
-  const p = vg.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), z = p.getZ(i);
-    const q = Math.hypot(x / RX, z / RZ);
-    const s = THREE.MathUtils.smoothstep(q, IN, 1.75);
-    p.setY(i, p.getY(i) - s * s * (0.06 + 0.34 * (x / OX) ** 2));
-  }
-  vg.computeVertexNormals();
-  const visor = mesh(vg, M.cap, cap);
-  visor.position.y = -0.03;
-  return cap;
+// ---------- costruzione: mesh SDF una volta sola, poi istanze ----------
+// L = direzione verso la luce chiave nello spazio del personaggio.
+export function buildKit(L, quality = 1) {
+  const t0 = performance.now();
+  const h = (v) => v / quality;
+  const parts = {
+    skin: meshSDF(skinSDF, [new THREE.Vector3(-1.35, -1.25, -1.0), new THREE.Vector3(1.35, 2.35, 1.15)], h(0.026)),
+    beanie: meshSDF(beanieSDF, [new THREE.Vector3(-1.2, 1.35, -1.15), new THREE.Vector3(1.2, 2.7, 1.1)], h(0.022)),
+    tee: meshSDF(teeSDF, [new THREE.Vector3(-1.15, -2.7, -0.95), new THREE.Vector3(1.15, 0.0, 0.95)], h(0.035)),
+  };
+  const tMesh = performance.now();
+  for (const g of Object.values(parts)) bake(g, sceneSDF, L);
+  const stats = {
+    meshMs: Math.round(tMesh - t0), bakeMs: Math.round(performance.now() - tMesh),
+    tris: Object.fromEntries(Object.entries(parts).map(([k, g]) => [k, g.index.count / 3])),
+    // bordi aperti sopra i tagli voluti (collo dentro la maglia, busto dentro il buco)
+    open: { skin: openEdges(parts.skin, -1.2), beanie: openEdges(parts.beanie), tee: openEdges(parts.tee, -2.65) },
+  };
+  return { parts, L, stats };
 }
 
-// ---------- orecchio + AirPod ----------
-function buildEar(parent, side) {
-  const y = 0.98, x = side * headR(y) * 0.95;
-  const g = new THREE.Group();
-  g.position.set(x, y, -0.05);
-  g.rotation.set(0, side * 0.3, side * -0.08);
-  g.scale.setScalar(1.3);
-  parent.add(g);
+export function buildRookie(kit) {
+  const char = new THREE.Group();
+  const add = (geo, mat) => { const m = new THREE.Mesh(geo, mat); char.add(m); return m; };
+  add(kit.parts.skin, M.skin);
+  add(kit.parts.beanie, M.beanie);
+  add(kit.parts.tee, M.tee);
 
-  // padiglione
-  const body = mesh(new THREE.SphereGeometry(1, 40, 24), M.skin, g);
-  body.scale.set(0.1, 0.32, 0.23);
-  body.position.x = side * 0.1;
-  // elice: anello a C aperto davanti in basso, dove l'orecchio si apre verso la guancia
-  const helixWrap = new THREE.Group();
-  helixWrap.position.set(side * 0.15, 0, 0);
-  helixWrap.scale.set(0.45, 0.31, 0.22);
-  g.add(helixWrap);
-  const helix = mesh(new THREE.TorusGeometry(1, 0.2, 20, 64, Math.PI * 1.55), M.skin, helixWrap);
-  helix.rotation.y = -Math.PI / 2;
-  const concha = mesh(new THREE.SphereGeometry(1, 32, 16), M.skinDeep, g, false);
-  concha.scale.set(0.05, 0.17, 0.11);
-  concha.position.set(side * 0.16, -0.05, 0.03);
-
-  // AirPod: la gemma dentro la conca, lo stelo scende in avanti verso la guancia
-  const pod = new THREE.Group();
-  pod.position.set(side * 0.19, -0.08, 0.08);
-  pod.rotation.set(-0.35, 0, -side * 0.12);
-  g.add(pod);
-  const bud = mesh(new THREE.SphereGeometry(0.085, 32, 16), M.pod, pod);
-  bud.scale.set(1, 0.95, 1.1);
-  const stem = mesh(new THREE.CapsuleGeometry(0.036, 0.26, 8, 16), M.pod, pod);
-  stem.position.set(0, -0.19, 0.02);
-}
-
-// ---------- personaggio ----------
-export function buildRookie() {
-  const root = new THREE.Group();     // pivot alla base: qui si fa lo squash
-  const body = new THREE.Group();
-  root.add(body);
-  body.position.y = 2.6;
-
-  // busto: t-shirt, colletto, collo
-  const torsoPts = [[0.5, -0.4], [0.72, -0.5], [1.15, -0.64], [1.55, -0.82], [1.78, -1.1], [1.86, -1.55], [1.85, -2.6], [1.84, -5.0]]
-    .map(([r, y]) => new THREE.Vector2(r, y));
-  const tg = lathe(new THREE.SplineCurve(torsoPts).getSpacedPoints(60), 128);
-  const tp = tg.attributes.position;
-  for (let i = 0; i < tp.count; i++) {
-    const x = tp.getX(i), z = tp.getZ(i), r = Math.hypot(x, z);
-    tp.setZ(i, z * lerp(1, 0.56, THREE.MathUtils.smoothstep(r, 0.6, 1.4)));
-  }
-  tg.computeVertexNormals();
-  mesh(tg, M.tee, body);
-  const collar = mesh(new THREE.TorusGeometry(0.57, 0.1, 20, 96), M.tee, body);
-  collar.rotation.x = Math.PI / 2; collar.position.y = -0.46;
-
-  const neck = mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.7, 64, 1, true), M.skin, body);
-  neck.position.y = -0.13;
-
-  // testa
-  const head = new THREE.Group();
-  head.position.y = -0.3;
-  body.add(head);
-  const hg = lathe(headPts, 128);
-  hg.scale(1, 1, HEAD_DEPTH);
-  hg.computeVertexNormals();
-  mesh(hg, M.skin, head);
-
-  // naso
-  const nose = mesh(new THREE.SphereGeometry(0.22, 48, 32), M.skin, head);
-  nose.position.set(0, 0.9, surfZ(0, 0.9) + 0.08);
-  nose.scale.set(1, 0.95, 0.9);
-
-  // bocca: linea piatta, un filo all'ingiù; più una "O" per lo spavento
-  const mouthPts = [];
+  // bocca: linea un filo all'ingiù, più la "O" dello spavento
+  const pts = [];
   for (let i = 0; i <= 20; i++) {
-    const x = lerp(-0.24, 0.24, i / 20);
-    const y = 0.44 - 0.035 * (x / 0.24) ** 2;
-    mouthPts.push(new THREE.Vector3(x, y, surfZ(x, y) + 0.004));
+    const x = lerp(-0.24, 0.24, i / 20), y = 0.44 - 0.035 * (x / 0.24) ** 2;
+    pts.push(new THREE.Vector3(x, y, frontZ(skinSDF, x, y) + 0.004));
   }
-  const mouth = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(mouthPts), 40, 0.017, 8), M.lip, head, false);
-  const mouthO = mesh(new THREE.SphereGeometry(0.11, 32, 16), M.pupil, head, false);
-  mouthO.position.set(0, 0.42, surfZ(0, 0.42) - 0.04);
-  mouthO.scale.set(0.9, 1.15, 0.4).multiplyScalar(0.001);
+  const mouth = add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.017, 8), M.lip);
+  const mouthO = add(new THREE.SphereGeometry(0.11, 32, 16), M.pupil);
+  mouthO.position.set(0, 0.42, frontZ(skinSDF, 0, 0.42) - 0.04);
 
-  const eyes = [buildEye(head, -0.34, 1.24, -1), buildEye(head, 0.34, 1.24, 1)];
-  buildEar(head, -1); buildEar(head, 1);
-  buildCap(head);
+  const eyes = [buildEye(char, -1), buildEye(char, 1)];
 
-  // ---- espressioni ----
-  const face = { lid: 0.3, look: 8 * DEG, scared: 0 };
+  // le parti rigide prendono la luce precalcolata come le altre (una volta per kit)
+  char.updateMatrixWorld(true);
+  // (stesso ordine di attraversamento a ogni istanza: si riusano le geometrie già cotte)
+  const first = !kit.rigid;
+  kit.rigid ??= [];
+  let n = 0;
+  char.traverse((o) => {
+    if (!o.isMesh || o.geometry.attributes.bake) return;
+    if (first) kit.rigid.push(bake(o.geometry, staticSDF, kit.L, o.matrixWorld));
+    else o.geometry = kit.rigid[n];
+    n++;
+  });
+
+  const face = { lid: 0.3, look: 8 * DEG, scared: 0, blink: 0 };
   function applyFace() {
     const s = face.scared;
     eyes.forEach((e) => {
-      e.setLid(lerp(face.lid, 0.02, s));
+      e.setLid(lerp(lerp(face.lid, 0.02, s), 1, face.blink * (1 - s)));
       e.setPupil(lerp(4, 0, s) * DEG, lerp(face.look, 0, s));
     });
     mouth.scale.setScalar(Math.max(1 - s * 1.2, 0.001));
@@ -302,152 +252,5 @@ export function buildRookie() {
     mouthO.scale.set(0.9 * o, 1.15 * o, 0.4 * o);
   }
   applyFace();
-
-  return { root, head, face, applyFace };
-}
-
-// ---------- scena di prova ----------
-export function mount(canvas, ui) {
-  THREE.ColorManagement.enabled = true;
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = 1.0;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.VSMShadowMap;
-
-  const scene = new THREE.Scene();
-
-  // sfondo dentro la scena (serve opaco per la post-produzione)
-  const BG = {
-    blue: ['#1d3df0', '#0a1890'],
-    green: ['#6a9a76', '#6a9a76'],
-    cream: ['#efebe4', '#e4ded4'],
-  };
-  const bgCanvas = Object.assign(document.createElement('canvas'), { width: 512, height: 512 });
-  const bgTex = new THREE.CanvasTexture(bgCanvas);
-  bgTex.colorSpace = THREE.SRGBColorSpace;
-  function setBg(name) {
-    const [a, b] = BG[name] || BG.blue;
-    const x = bgCanvas.getContext('2d');
-    const gr = x.createRadialGradient(256, 150, 0, 256, 220, 460);
-    gr.addColorStop(0, a); gr.addColorStop(1, b);
-    x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
-    bgTex.needsUpdate = true;
-    document.body.dataset.bg = name;
-  }
-  setBg(document.body.dataset.bg || 'blue');
-  scene.background = bgTex;
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.55;
-
-  const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
-  camera.position.set(0, 3.4, 14.5);
-  camera.lookAt(0, 3.0, 0);
-
-  // luci ferme rispetto alla camera: chiave in alto a sinistra, controluce dietro
-  const rig = new THREE.Group(); scene.add(rig);
-  const key = new THREE.DirectionalLight(0xfff3ea, 2.4);
-  key.position.set(-5, 9, 7);
-  key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
-  key.shadow.radius = 18; key.shadow.blurSamples = 24;
-  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
-  Object.assign(key.shadow.camera, { left: -4, right: 4, top: 6, bottom: -2, near: 1, far: 25 });
-  key.target.position.set(0, 3, 0);
-  const fill = new THREE.DirectionalLight(0xdfe6ff, 0.5);
-  fill.position.set(6, 2, 5);
-  const rim = new THREE.DirectionalLight(0xffffff, 1.6);
-  rim.position.set(3, 6, -7);
-  rig.add(key, key.target, fill, rim);
-
-  const char = buildRookie();
-  scene.add(char.root);
-
-  // ---- interazione: trascina per ruotare (yaw + un po' di pitch), inerzia ----
-  let yaw = -12 * DEG, pitch = 0, vy = 0, drag = null;
-  canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, t: performance.now() }; canvas.setPointerCapture(e.pointerId); });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!drag) return;
-    const dx = e.clientX - drag.x, dy = e.clientY - drag.y, now = performance.now();
-    const k = (1.5 * Math.PI) / canvas.clientWidth;
-    yaw += dx * k; pitch = THREE.MathUtils.clamp(pitch + dy * k * 0.5, -0.35, 0.35);
-    vy = (dx * k) / Math.max(now - drag.t, 1);
-    drag = { x: e.clientX, y: e.clientY, t: now };
-  });
-  const up = () => { if (drag && performance.now() - drag.t > 90) vy = 0; drag = null; };
-  canvas.addEventListener('pointerup', up);
-  canvas.addEventListener('pointercancel', up);
-
-  // ---- colpo: squash dal basso + faccia spaventata, poi torna ----
-  let hitT = -1;
-  const hit = () => { hitT = 0; };
-  ui.hit?.addEventListener('click', hit);
-  canvas.addEventListener('dblclick', hit);
-  ui.bg?.forEach((b) => b.addEventListener('click', () => setBg(b.dataset.bg)));
-
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let nextBlink = 1500, blinkT = -1, last = performance.now(), clock = 0;
-
-  // post: MSAA + ambient occlusion (ombre morbide nelle pieghe) + tone mapping finale
-  const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
-  const composer = new EffectComposer(renderer, rt);
-  composer.addPass(new RenderPass(scene, camera));
-  const ao = new GTAOPass(scene, camera, 1, 1);
-  ao.blendIntensity = 1.0;
-  ao.updateGtaoMaterial({ radius: 0.45, distanceExponent: 1.6, thickness: 1.2, scale: 1.25, samples: 16 });
-  ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
-  composer.addPass(ao);
-  composer.addPass(new OutputPass());
-
-  function resize() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    renderer.setSize(w, h, false);
-    composer.setPixelRatio(renderer.getPixelRatio());
-    composer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  addEventListener('resize', resize);
-  resize();
-
-  function frame(now) {
-    const dt = Math.min(now - last, 50); last = now; clock += dt;
-
-    if (!drag && vy) { yaw += vy * dt; vy *= Math.exp(-dt / 320); if (Math.abs(vy) < 1e-5) vy = 0; }
-    const idle = reduce ? 0 : Math.sin(clock / 1400) * 0.03;
-    char.root.rotation.set(pitch, yaw + idle, 0);
-
-    // blink
-    if (!reduce && blinkT < 0 && clock > nextBlink) blinkT = 0;
-    let blink = 0;
-    if (blinkT >= 0) {
-      blinkT += dt;
-      blink = Math.sin(Math.min(blinkT / 160, 1) * Math.PI);
-      if (blinkT > 160) { blinkT = -1; nextBlink = clock + 2200 + Math.random() * 3000; }
-    }
-
-    // colpo: squash con molla smorzata
-    let sq = 0, scared = 0;
-    if (hitT >= 0) {
-      hitT += dt;
-      const t = hitT / 1000;
-      sq = Math.exp(-t * 6) * Math.cos(t * 22);
-      scared = t < 0.9 ? 1 : Math.max(1 - (t - 0.9) / 0.3, 0);
-      if (t > 1.6) hitT = -1;
-    }
-    char.root.scale.set(1 + sq * 0.18, 1 - sq * 0.28, 1 + sq * 0.18);
-    char.face.scared = scared;
-    const baseLid = char.face.lid;
-    char.face.lid = lerp(baseLid, 1, blink * (1 - scared));
-    char.applyFace();
-    char.face.lid = baseLid;
-
-    composer.render(dt / 1000);
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-  return { renderer, scene, camera, char, hit, ao, setBg, setYaw: (v) => { yaw = v; vy = 0; } };
+  return { char, face, applyFace };
 }
