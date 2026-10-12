@@ -2,7 +2,8 @@
 // Le forme stanno in shapes.js; il worker le mette in mesh e precalcola la luce.
 import * as THREE from 'three';
 import { bake } from './sdf.js';
-import { ARCH, EYE, EYE_Z, EYE_FRONT, DEG, lerp, frontZ, torso, eyesSDF } from './shapes.js';
+import { ARCH, EYE, EYE_Z, EYE_FRONT, DEG, lerp, frontZ, torso, eyesSDF, beanie } from './shapes.js';
+import LOGO_SVG from './logo-rookiess.svg';
 import { buildArrays } from './worker-core.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -79,7 +80,28 @@ const SHARED = {
   lens: clay(0x0d0e14, { roughness: 0.06, metalness: 0.5, sheen: 0, clearcoat: 1, coatRough: 0.02, rimK: 0.25 }),
   plastic: clay(0x1a1a1e, { roughness: 0.3, sheen: 0, clearcoat: 0.8, rimK: 0.1 }),
   lash: clay(0x17110f, { roughness: 0.6, sheen: 0, rimK: 0 }),
+  logo: logoMaterial(),
 };
+
+// logo Rookiess ricamato sul risvolto del beanie: SVG disegnato su un canvas, usato come texture con ritaglio
+function logoMaterial() {
+  const cv = document.createElement('canvas');
+  cv.width = 1024; cv.height = 256;
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const img = new Image();
+  img.onload = () => {
+    const ctx = cv.getContext('2d'), w = 960, h = (w * 50) / 232;
+    ctx.drawImage(img, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+    tex.needsUpdate = true;
+  };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(LOGO_SVG);
+  const m = clay(0xffffff, { roughness: 0.75, sheen: 0.8, sheenColor: 0x8090ff, rimK: 0 });
+  m.map = tex; m.alphaTest = 0.45;
+  m.polygonOffset = true; m.polygonOffsetFactor = -2;
+  return m;
+}
 
 function materialsFor(A) {
   const c = A.colors;
@@ -94,7 +116,7 @@ function materialsFor(A) {
       : { roughness: 0.9, sheen: 1, sheenColor: 0xffffff, rimK: 0.08 }),
     string: clay(c.string ?? 0xffffff, { roughness: 0.8, sheen: 0.5 }),
     hairMatte: clay(c.hair ?? 0x222222, { roughness: 0.85, sheen: 0.6, sheenColor: 0x6b5a50, rimK: 0.1 }),
-    hairGloss: clay(c.hair ?? 0x222222, { roughness: 0.4, sheen: 0, clearcoat: 1, coatRough: 0.3, rimK: 0.12 }),
+    hairGloss: clay(c.hair ?? 0x222222, { roughness: 0.4, sheen: 0, clearcoat: A.hairCoat ? 0.6 : 1, coatRough: A.hairCoat ?? 0.3, rimK: 0.12 }),
     brow: clay(c.hair ?? 0x2b1d16, { roughness: 0.75, sheen: 0.2, rimK: 0 }),
   };
 }
@@ -234,13 +256,51 @@ export function buildCharacter(kit) {
     tongue.scale.set(w * 0.55, 0.07, 0.09); tongue.position.set(0, 0.53 - h * 0.75, head.mouthZ - 0.09);
     extra.tongue = tongue;
   }
-  if (ex.has('veneers')) { // sorriso a 32 denti, bianchissimi
+  if (ex.has('veneers')) { // sorriso a 32 denti: denti singoli lungo l'arco, sopra e sotto
     const { w } = A.head.smile;
-    const top = add(new THREE.CapsuleGeometry(0.065, w * 1.3, 6, 12), M.veneers);
-    top.rotation.z = Math.PI / 2; top.scale.set(1, 1, 0.5); top.position.set(0, 0.49, head.mouthZ - 0.045);
-    const bot = add(new THREE.CapsuleGeometry(0.05, w * 1.05, 6, 12), M.veneers);
-    bot.rotation.z = Math.PI / 2; bot.scale.set(1, 1, 0.5); bot.position.set(0, 0.41, head.mouthZ - 0.07);
-    extra.teeth = [top, bot];
+    const toothShape = (tw, th, r) => {
+      const s = new THREE.Shape(), x0 = -tw / 2, y0 = -th / 2;
+      s.moveTo(x0 + r, y0); s.lineTo(x0 + tw - r, y0); s.quadraticCurveTo(x0 + tw, y0, x0 + tw, y0 + r);
+      s.lineTo(x0 + tw, y0 + th); s.lineTo(x0, y0 + th); s.lineTo(x0, y0 + r); s.quadraticCurveTo(x0, y0, x0 + r, y0);
+      return s;
+    };
+    const teethG = new THREE.Group(); char.add(teethG);
+    const row = (n, y, th, back, flip) => {
+      for (let i = 0; i < n; i++) {
+        const u = (i + 0.5) / n * 2 - 1;                        // -1..1 lungo il sorriso
+        const tw = (w * 2 * 0.9) / n * (1.15 - 0.3 * u * u);     // incisivi più larghi, laterali più stretti
+        const g = new THREE.ExtrudeGeometry(toothShape(tw * 0.9, th, 0.025), { depth: 0.03, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 3, curveSegments: 6 });
+        const t = add(g, M.veneers, teethG);
+        const x = u * w * 0.86;
+        // appesi al bordo superiore della bocca, che sale ai lati
+        t.position.set(x, (head.smileTop ? head.smileTop(x) : y) - th / 2 - 0.012, head.mouthZ - back - 0.32 * x * x);
+        t.rotation.set(0, -x * 1.3, flip ? Math.PI : 0);
+      }
+    };
+    row(8, 0.475, 0.11, 0.035, false);  // solo l'arcata superiore: il sorriso da pubblicità
+    extra.teeth = [teethG];
+  }
+  if (ex.has('logo')) { // logo sul risvolto del beanie: una striscia che segue la superficie (coste comprese)
+    const SEG_U = 72, SEG_V = 14, TH = 0.5, Y0 = 1.7, H = 0.23;
+    const pos = [], uv = [], idx = [];
+    for (let j = 0; j <= SEG_V; j++) for (let i = 0; i <= SEG_U; i++) {
+      const u = i / SEG_U, v = j / SEG_V, th = (u * 2 - 1) * TH, y = Y0 + (v - 0.5) * H;
+      const dx = Math.sin(th), dz = Math.cos(th);
+      let a = 0.3, b = 1.6; // bisezione lungo il raggio fino alla superficie del beanie
+      for (let k = 0; k < 30; k++) { const m = (a + b) / 2; beanie(dx * m, y, dz * m - 0.03) < 0 ? (a = m) : (b = m); }
+      const r = a + 0.006;
+      pos.push(dx * r, y, dz * r - 0.03);
+      uv.push(u, v);
+    }
+    for (let j = 0; j < SEG_V; j++) for (let i = 0; i < SEG_U; i++) {
+      const a = j * (SEG_U + 1) + i, b = a + 1, c = a + SEG_U + 1, d = c + 1;
+      idx.push(a, b, d, a, d, c);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx); g.computeVertexNormals();
+    add(g, M.logo);
   }
   if (ex.has('strings')) for (const s of [-1, 1]) { // cordini della felpa
     add(tube([[s * 0.2, -0.36, 0.5], [s * 0.22, -0.55, 0.62], [s * 0.24, -0.85, 0.66]], 0.032, 16), M.string);

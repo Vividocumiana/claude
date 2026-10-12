@@ -43,9 +43,12 @@ export function makeHead(o = {}) {
     return smin(d, ear(x, y, z, -1), 0.1);
   };
   const mouthZ = frontZ(core, 0, 0.5);
-  const cav = o.smile && ((x, y, z) => Math.max(ellipsoid(x, y - 0.53, z - (mouthZ - 0.02), o.smile.w, o.smile.h, 0.15), y - 0.54));
+  // bordo superiore dritto (D) oppure curvo all'insù ai lati (sorriso da pubblicità)
+  const curve = o.smile?.curve ?? 0;
+  const top = (x) => 0.54 + curve * (x / o.smile.w) ** 2;
+  const cav = o.smile && ((x, y, z) => Math.max(ellipsoid(x, y - 0.53 - curve * 0.5, z - (mouthZ - 0.02), o.smile.w, o.smile.h + curve * 0.5, 0.15), y - top(x)));
   const skin = cav ? (x, y, z) => smax(base(x, y, z), -cav(x, y, z), 0.03) : base;
-  return { core, base, skin, cav, mouthZ };
+  return { core, base, skin, cav, mouthZ, smileTop: o.smile ? top : null };
 }
 
 const DEFAULT_HEAD = makeHead();
@@ -56,7 +59,7 @@ export const eyesSDF = (x, y, z) => Math.min(
   ellipsoid(x + EYE.x, y - EYE.y, z - EYE_Z, EYE.R * 1.05, EYE.R * 0.86, EYE.R * 0.82));
 
 // ---------- copricapi e capelli ----------
-function beanie(x, y, z) {
+export function beanie(x, y, z) {
   let crown = ellipsoid(x, y - 1.6, z + 0.03, 1.0, 1.0, 0.94);
   crown = smax(crown, 1.58 - y, 0.05);
   const rr = Math.hypot(x, (z + 0.03) / 0.93);
@@ -67,12 +70,17 @@ function beanie(x, y, z) {
   return d + amp * Math.cos(ang * 44);
 }
 
-// ricci voluminosi che escono dal beanie ai lati e dietro (Amara)
+// ricci lunghi che escono dal beanie e scendono dietro e ai lati fino alle spalle (Amara)
+// larghezza massima come la testa con le orecchie: devono passare dal buco
 function curls(x, y, z) {
-  let d = ellipsoid(x, y - 1.15, z + 0.32, 1.22, 1.0, 0.98);
-  d = smax(d, z - 0.18, 0.12);            // la faccia resta libera
-  d = smax(d, 0.15 - y, 0.12);            // lunghezza: fino alle spalle
-  return d - 0.045 * Math.sin(x * 11) * Math.sin(y * 11 + 1) * Math.sin(z * 11 + 2); // boccoli
+  let d = ellipsoid(x, y - 1.2, z + 0.3, 1.12, 1.0, 0.95);                     // volume attorno al cranio
+  d = smin(d, capsule(x, y, z, 0, 1.0, -0.55, 0, -0.9, -0.6, 0.72), 0.3);      // massa che scende dietro
+  for (const s of [-1, 1])                                                     // ciocche ai lati del collo
+    d = smin(d, capsule(x, y, z, s * 0.86, 1.2, -0.05, s * 0.78, -0.75, 0.05, 0.27), 0.22);
+  const face = Math.max(0.12 - z, Math.abs(x) - 0.76, y - 1.55);               // la faccia resta libera
+  d = smax(d, -face, 0.08);
+  d = smax(d, -0.95 - y, 0.1);                                                 // punte sotto le spalle
+  return d - 0.05 * Math.sin(x * 10) * Math.sin(y * 10 + 1) * Math.sin(z * 10 + 2); // boccoli
 }
 
 // caschetto dritto sotto il beanie (Mei)
@@ -173,19 +181,19 @@ export const ARCH = {
       { name: 'hoodie', f: hoodie, box: TORSO_BOX, h: 0.035, mat: 'clothes', clip: -2.65 },
     ],
     face: { lid: 0.2, look: 0, elev: 7 * DEG, pupil: 1.12 },
-    extras: ['smile', 'strings'], hurt: 'grit',
+    extras: ['smile', 'strings', 'logo'], hurt: 'grit',
   }),
   amara: arch({
     group: 'rookie', label: 'Amara',
     head: { jaw: 0.88, nose: 0.2, smile: { w: 0.3, h: 0.22 } }, tint: { blush: 0.3, lips: 0.85 },
     colors: { skin: 0x8a5236, lip: 0x6e3226, blush: 0xb4524a, clothes: 0xe7ddf6, string: 0xffffff, hair: 0x2a1a14 },
     parts: [
-      { name: 'hair', f: curls, box: box([-1.5, 0.0, -1.5], [1.5, 2.3, 0.6]), h: 0.03, mat: 'hairMatte' },
+      { name: 'hair', f: curls, box: box([-1.4, -1.15, -1.5], [1.4, 2.35, 0.75]), h: 0.03, mat: 'hairMatte', clip: -1.1 },
       { name: 'beanie', f: beanie, box: box([-1.2, 1.35, -1.15], [1.2, 2.7, 1.1]), h: 0.022, mat: 'beanie' },
       { name: 'hoodie', f: hoodie, box: TORSO_BOX, h: 0.035, mat: 'clothes', clip: -2.65 },
     ],
     face: { lid: 0.16, look: -6 * DEG, elev: 8 * DEG, pupil: 1.15 },
-    extras: ['smile', 'strings', 'lashes'], hurt: 'grit',
+    extras: ['smile', 'strings', 'lashes', 'logo'], hurt: 'grit',
   }),
   mei: arch({
     group: 'rookie', label: 'Mei',
@@ -197,7 +205,7 @@ export const ARCH = {
       { name: 'hoodie', f: hoodie, box: TORSO_BOX, h: 0.035, mat: 'clothes', clip: -2.65 },
     ],
     face: { lid: 0.22, look: 6 * DEG, elev: 6 * DEG, pupil: 1.1 },
-    extras: ['smile', 'strings', 'lashes'], hurt: 'grit',
+    extras: ['smile', 'strings', 'lashes', 'logo'], hurt: 'grit',
   }),
   crypto: arch({
     group: 'guru', label: 'Crypto Bro',
@@ -215,20 +223,20 @@ export const ARCH = {
   thought: arch({
     group: 'guru', label: 'Thought Leader',
     head: { jaw: 0.97, nose: 0.23 }, tint: { beard: 0.85 },
-    colors: { skin: 0xa8694a, lip: 0x6f3a2a, blush: 0x2a211d, clothes: 0x1d1d21, hair: 0x48443f },
-    skinGloss: true,
+    colors: { skin: 0xa8694a, lip: 0x6f3a2a, blush: 0x2a211d, clothes: 0x1d1d21, hair: 0x3f3c38 },
+    skinGloss: true, hairCoat: 0.6,
     parts: [
       { name: 'hair', f: sweptBack, box: box([-1.15, 1.2, -1.05], [1.15, 2.5, 1.1]), h: 0.022, mat: 'hairGloss' },
       { name: 'turtleneck', f: turtleneck, box: box([-1.15, -2.7, -1.05], [1.15, 0.3, 0.98]), h: 0.032, mat: 'clothes', clip: -2.65 },
     ],
-    face: { lid: 0.44, look: 10 * DEG, elev: 2 * DEG, pupil: 0.95 },
+    face: { lid: 0.27, look: 10 * DEG, elev: 6 * DEG, pupil: 1.12 },
     brows: [{ y: 1.6, rot: -0.08 }, { y: 1.74, rot: 0.38 }],
     smirk: (x) => 0.46 + 0.035 * sstep(0.05, 0.25, x),
     extras: ['roundGlasses'], hurt: 'O',
   }),
   coach: arch({
     group: 'guru', label: 'LinkedIn Coach',
-    head: { jaw: 0.87, nose: 0.19, smile: { w: 0.36, h: 0.17 } }, tint: { lips: 1 },
+    head: { jaw: 0.87, nose: 0.19, smile: { w: 0.36, h: 0.17, curve: 0.11 } }, tint: { lips: 1 },
     colors: { skin: 0xd9946e, lip: 0x9e2232, blush: 0xc4182e, clothes: 0x1b1b20, shirt: 0xf4f4f2, hair: 0x120f12 },
     skinGloss: true,
     parts: [

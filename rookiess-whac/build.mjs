@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const esbuild = process.env.ESBUILD || 'esbuild';
-const bundle = (entry) => execFileSync(esbuild, [join(here, entry), '--bundle', '--format=iife', '--minify', '--target=es2020'],
+const bundle = (entry) => execFileSync(esbuild, [join(here, entry), '--bundle', '--format=iife', '--minify', '--target=es2020', '--loader:.svg=text'],
   { env: process.env, maxBuffer: 64 << 20 }).toString();
 const js = bundle('main.js');
 const worker = bundle('worker.js'); // finisce in un <script type="text/plain"> e parte come Worker da un Blob
