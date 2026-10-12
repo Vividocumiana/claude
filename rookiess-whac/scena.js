@@ -5,6 +5,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { HERO } from './hero-camera.js';
 import { loadKits, buildCharacter, setWireframe, DEBUG, KEY_VIEW, FX } from './personaggio.js';
 import { GROUPS } from './shapes.js';
+import { createHammer } from './hammer.js';
 
 const DEG = Math.PI / 180;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -22,6 +23,7 @@ export function mount(canvas, ui) {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  const hammer = createHammer(renderer, scene.environment);
   scene.environmentIntensity = 0.55;
 
   // ---- camera della hero ----
@@ -61,6 +63,23 @@ export function mount(canvas, ui) {
   floor.renderOrder = -1;
   scene.add(floor);
 
+  // interno del buco illuminato dalla luce chiave: il bordo fa ombra sulla parete dalla parte della luce,
+  // la parete opposta resta in luce, più giù è più buio. P e N nello spazio del buco (centro in 0).
+  const LIT = new THREE.Color('#1729b4'), SHADE = new THREE.Color('#070f5e');
+  const jitter = [[0, 0], [0.07, 0], [-0.07, 0], [0, 0.07], [0, -0.07], [0.05, 0.05], [-0.05, -0.05]];
+  function holeShade(P, N) {
+    let lit = 0;
+    for (const [jx, jz] of jitter) {
+      const L = new THREE.Vector3(keyDir.x + jx, keyDir.y, keyDir.z + jz).normalize();
+      const t = (RING.h - P.y) / L.y;
+      lit += Math.hypot(P.x + L.x * t, P.z + L.z * t) < RING.inner * 0.985 ? 1 : 0;
+    }
+    lit /= jitter.length;
+    const lambert = 0.5 + 0.5 * Math.max(N.dot(keyDir), 0);
+    const depth = 1 - 0.6 * THREE.MathUtils.smoothstep(-P.y, 0, 0.45);
+    return SHADE.clone().lerp(LIT, lit * lambert).multiplyScalar(depth);
+  }
+
   const makeRing = (shine) => {
     const { inner: a, outer: b, h } = RING, r = 0.012;
     const prof = [new THREE.Vector2(a, -0.002)];
@@ -75,7 +94,12 @@ export function mount(canvas, ui) {
     for (let i = 0; i < p.count; i++) {
       const rr = Math.hypot(p.getX(i), p.getZ(i)), y = p.getY(i);
       const isTop = y > h - 0.0005 && rr > a + r - 0.001 && rr < b - r + 0.001;
-      const c = (isTop ? top : y > h - r ? top.clone().lerp(rr < (a + b) / 2 ? inner : side, (h - y) / r) : rr < (a + b) / 2 ? inner : side).clone();
+      let c = (isTop ? top : y > h - r ? top.clone().lerp(rr < (a + b) / 2 ? inner : side, (h - y) / r) : rr < (a + b) / 2 ? inner : side).clone();
+      if (shine && rr < a + 0.002 && y < h - r) { // parete interna: stessa luce dell'interno del buco
+        N.fromBufferAttribute(n, i);
+        if (N.x * p.getX(i) + N.z * p.getZ(i) > 0) N.negate();
+        c = holeShade(new THREE.Vector3(p.getX(i), y, p.getZ(i)), N);
+      }
       if (shine && !isTop && y > h - r - 0.001) c.lerp(hi, Math.pow(Math.max(N.fromBufferAttribute(n, i).dot(keyDir), 0), 3) * 0.75);
       col.push(c.r, c.g, c.b);
     }
@@ -106,18 +130,22 @@ export function mount(canvas, ui) {
   const aoTex = softTex(RING.outer / (RING.outer + 0.07), 1), blobTex = softTex(0, 1);
   const ringMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
 
-  const pitGeo = (() => {
-    const g = new THREE.CylinderGeometry(RING.inner, RING.inner * 0.9, 0.9, 64, 8, false);
+  const makePit = (lit) => {
+    const g = new THREE.CylinderGeometry(RING.inner, RING.inner * 0.9, 0.9, 72, 18, false);
     g.translate(0, -0.45, 0);
-    const p = g.attributes.position, col = [];
+    const p = g.attributes.position, n = g.attributes.normal, col = [];
     const top = new THREE.Color('#0e1b8c'), deep = new THREE.Color('#050b4a');
+    const P = new THREE.Vector3(), N = new THREE.Vector3();
     for (let i = 0; i < p.count; i++) {
-      const c = top.clone().lerp(deep, Math.min(-p.getY(i) / 0.5, 1));
+      P.fromBufferAttribute(p, i); N.fromBufferAttribute(n, i).negate(); // si vede da dentro
+      const c = lit ? holeShade(P, N) : top.clone().lerp(deep, Math.min(-P.y / 0.5, 1));
       col.push(c.r, c.g, c.b);
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     return g;
-  })();
+  };
+  const pitGeo = makePit(true), pitGeoPlain = makePit(false);
+  const pits = [];
   const pitMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, toneMapped: false });
 
   // ---- personaggi ----
@@ -125,11 +153,14 @@ export function mount(canvas, ui) {
   const DOWN = -(2.75 + PIVOT) * S - 0.05; // lungo l'asse: cima del beanie sotto il piano
   const chars = holes.map((h, i) => {
     const ring = new THREE.Mesh(ringGeo, ringMat); ring.position.copy(h); scene.add(ring); rings.push(ring);
-    const ao = flat(aoTex, (RING.outer + 0.07) * 2, 0.28); ao.position.copy(h).setY(0.001); scene.add(ao); fxObjects.push(ao);
+    // ombra dell'anello: spostata dalla parte opposta alla luce (mezzaluna), non un alone uguale tutto intorno
+    const ao = flat(aoTex, (RING.outer + 0.07) * 2, 0.3);
+    ao.position.copy(h).add(new THREE.Vector3(-keyDir.x / keyDir.y, 0, -keyDir.z / keyDir.y).multiplyScalar(RING.h * 1.6)).setY(0.001);
+    scene.add(ao); fxObjects.push(ao);
     // ombra del personaggio: cade a destra e verso il fondo, lontano dalla luce
     const blob = flat(blobTex, 0.5, 0); blob.position.copy(h).add(new THREE.Vector3(0.16, RING.h + 0.002, -0.1)); blob.scale.set(1, 0.7, 1);
     blob.renderOrder = 1; scene.add(blob); fxObjects.push(blob);
-    const pit = new THREE.Mesh(pitGeo, pitMat); pit.position.copy(h); scene.add(pit);
+    const pit = new THREE.Mesh(pitGeo, pitMat); pit.position.copy(h); scene.add(pit); pits.push(pit);
 
     const root = new THREE.Group(); root.position.copy(h); scene.add(root);
     // sale lungo il proprio asse inclinato: l'asse passa sempre per il centro del buco
@@ -175,6 +206,7 @@ export function mount(canvas, ui) {
   function setMode(m) {
     if (mode === 'studio' && m === 'hero') for (const c of chars) Object.assign(c, { phase: 'fall', t: 0, from: c.pop.position.y });
     mode = m;
+    if (m !== 'hero') { hammer.show(false); canvas.classList.remove('hammer-on'); }
     if (m === 'hero') {
       camera.position.copy(heroCam.pos); camera.quaternion.copy(heroCam.quat);
       camera.fov = HERO.fovYDeg;
@@ -200,6 +232,7 @@ export function mount(canvas, ui) {
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     renderer.setSize(w, h, false);
+    hammer.resize(w, h);
     camera.aspect = w / h;
     if (mode === 'hero') {
       // il centro ottico sta HERO.viewShiftPx sotto il centro del frame
@@ -266,6 +299,13 @@ export function mount(canvas, ui) {
   }
 
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  // martello 3D al posto del cursore, solo col mouse (sul touch non c'è un cursore da sostituire)
+  const local = (ev) => { const r = canvas.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; };
+  const hammerOn = (ev) => ev.pointerType === 'mouse' && mode === 'hero';
+  canvas.addEventListener('pointerenter', (ev) => { if (!hammerOn(ev)) return; hammer.move(...local(ev)); hammer.show(true); canvas.classList.add('hammer-on'); });
+  canvas.addEventListener('pointermove', (ev) => { if (!hammerOn(ev)) return; hammer.move(...local(ev)); if (!hammer.visible) { hammer.show(true); canvas.classList.add('hammer-on'); } });
+  canvas.addEventListener('pointerleave', () => { hammer.show(false); canvas.classList.remove('hammer-on'); });
+  canvas.addEventListener('pointerdown', (ev) => { if (hammerOn(ev)) hammer.hit(); });
   canvas.addEventListener('pointerdown', (ev) => {
     const r = canvas.getBoundingClientRect();
     ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
@@ -353,6 +393,8 @@ export function mount(canvas, ui) {
       for (const c of chars) step(c, dt);
     }
     renderer.render(scene, camera);
+    hammer.update(dt);
+    hammer.render();
     requestAnimationFrame(frame);
   }
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
@@ -364,6 +406,7 @@ export function mount(canvas, ui) {
     FX.grain.value = on ? 1 : 0;
     for (const o of fxObjects) o.visible = on;
     for (const r of rings) r.geometry = on ? ringGeo : ringGeoPlain;
+    for (const q of pits) q.geometry = on ? pitGeo : pitGeoPlain;
     ui.fx?.setAttribute('aria-pressed', String(on));
   }
   ui.fx?.addEventListener('click', () => setFx(!fxOn));

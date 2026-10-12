@@ -1,4 +1,5 @@
 <title>Rookiess Clay Test</title>
+<style>/*__CURSOR_CSS__*/</style>
 <style>
   :root { color-scheme:dark; --top:#0f1c93; --mid:#192ac1; --bot:#2135e7; --ink:#fff; --chip:rgba(255,255,255,.14); --chip-on:#fff; --chip-on-ink:#1530d8; }
   * { box-sizing:border-box; margin:0; }
@@ -9,7 +10,8 @@
   .frame { position:relative; width:min(100%, calc((100vh - 80px) * 1280 / 832)); aspect-ratio:1280 / 832; max-width:100%; }
   .frame canvas, .frame img { position:absolute; inset:0; width:100%; height:100%; display:block; }
   .frame img { pointer-events:none; opacity:0; }
-  canvas { touch-action:pan-y; cursor:pointer; }
+  canvas { touch-action:pan-y; }
+  body .frame canvas.hammer-on { cursor:none; }
   body[data-mode="studio"] .frame img, body[data-mode="studio"] .score { display:none; }
   header { position:fixed; top:calc(12px + env(safe-area-inset-top, 0px)); left:16px; right:16px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; z-index:2; }
   h1 { font-size:14px; font-weight:600; margin-right:auto; }

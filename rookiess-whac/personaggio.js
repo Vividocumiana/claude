@@ -18,7 +18,7 @@ export const FX = { grain: { value: 1 } }; // effetti leggeri attivabili (per il
 const PIT = 0x07116c, MOUTH = 0x5a1a22;
 const ALL = new Set(); // tutti i materiali, per le viste di debug
 
-function clay(color, o = {}) {
+export function clay(color, o = {}) {
   const m = new THREE.MeshPhysicalMaterial({
     color, roughness: o.roughness ?? 0.62, metalness: o.metalness ?? 0,
     sheen: o.sheen ?? 0.35, sheenRoughness: 0.8,
@@ -33,6 +33,7 @@ function clay(color, o = {}) {
     uDebug: DEBUG, uPart: { value: new THREE.Color().setHSL(Math.random(), 0.7, 0.55) },
     uGrain: FX.grain,
   };
+  m.userData.u = u;
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
@@ -182,7 +183,7 @@ export function loadKits(types, L, onKit, { quality = 1, workerSrc } = {}) {
 }
 
 // ---------- parti rigide ----------
-function constBake(geo, ao, sh) {
+export function constBake(geo, ao, sh) {
   const a = new Float32Array(geo.attributes.position.count * 2);
   for (let i = 0; i < a.length; i += 2) { a[i] = ao; a[i + 1] = sh; }
   geo.setAttribute('bake', new THREE.BufferAttribute(a, 2));

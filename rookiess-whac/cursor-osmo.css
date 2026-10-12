@@ -1,0 +1,28 @@
+/* Cursor "default" */
+body,
+body :is([data-cursor="default"], [data-cursor="default"] *),
+body * {
+  cursor: url("https://cdn.prod.website-files.com/684fd3662bf373c304f927ef/684fd3faf1928131d9db6e0d_936bd88147511144743f09f4477f4c1a_cursor-default.svg") 2 0, auto;
+}
+
+/* Cursor "text" */
+body :is([data-cursor="text"], [data-cursor="text"] *),
+body :is(p, h1, h2, h3, h4, h5, h6, input[type="text"], textarea) {
+  cursor: url("https://cdn.prod.website-files.com/684fd3662bf373c304f927ef/684fd3fa187280f5367673ab_a5441e26d72d35676d51172bd3a38038_cursor-text.svg") 9 19, text;
+}
+
+/* Cursor "pointer" (Hover) */
+body :is([data-cursor="pointer"], [data-cursor="pointer"] *),
+body :is(a, a *, a p, button, button *, select, input[type="submit"], input[type="button"], input[type="radio"], input[type="checkbox"]) {
+  cursor: url("https://cdn.prod.website-files.com/684fd3662bf373c304f927ef/684fd3fa2e5a792140becaff_2b1e000c885a11daa778a26530dd8999_cursor-pointer.svg") 12 0, pointer;
+}
+
+/* Cursor "grab" */
+body :is([data-cursor="grab"], [data-cursor="grab"] *) {
+  cursor: url("https://cdn.prod.website-files.com/684fd3662bf373c304f927ef/684fd3fadd3e56db88677898_e4c3ca1346ce8749e9ebc404b2c38a67_cursor-grab.svg") 12 4, grab;
+}
+
+/* Cursor "grabbing" */
+body :is([data-cursor="grabbing"], [data-cursor="grabbing"] *) {
+  cursor: url("https://cdn.prod.website-files.com/684fd3662bf373c304f927ef/684fd3faadaedb1825819d22_93f8d20982e98baea5d26f613bf60af6_cursor-grabbing.svg") 12 0, grabbing;
+}
