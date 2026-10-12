@@ -1,7 +1,6 @@
 <title>Rookiess Clay Test</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root { --blue-1:#1530d8; --blue-2:#0b1a9e; --green:#6a9a76; --ink:#fff; --chip:rgba(255,255,255,.14); }
+  :root { color-scheme:dark; --blue-1:#1530d8; --blue-2:#0b1a9e; --green:#6a9a76; --ink:#fff; --chip:rgba(255,255,255,.14); }
   * { box-sizing:border-box; margin:0; }
   html, body { height:100%; }
   body { background:radial-gradient(120% 90% at 50% 20%, var(--blue-1), var(--blue-2)); color:var(--ink);
@@ -10,7 +9,7 @@
   body[data-bg="cream"] { background:#ece7df; --ink:#222; --chip:rgba(0,0,0,.08); }
   canvas { position:fixed; inset:0; width:100%; height:100%; touch-action:pan-y; cursor:grab; display:block; }
   canvas:active { cursor:grabbing; }
-  header { position:fixed; top:16px; left:16px; right:16px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; pointer-events:none; }
+  header { position:fixed; top:calc(16px + env(safe-area-inset-top, 0px)); left:16px; right:16px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; pointer-events:none; }
   header > * { pointer-events:auto; }
   h1 { font-size:15px; font-weight:600; letter-spacing:.01em; }
   h1 small { display:block; font-weight:400; opacity:.7; font-size:12px; margin-top:2px; }
