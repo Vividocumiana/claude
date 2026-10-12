@@ -11,10 +11,10 @@ requestAnimationFrame(() => {
     mode: modes, debug: dbg,
     labels: document.getElementById('labels'),
     onScore: (v) => { document.getElementById('score').textContent = v; },
-    onStats: (s) => {
-      const t = Object.values(s.tris).reduce((a, b) => a + b, 0);
-      document.getElementById('stats').textContent =
-        `mesh ${s.meshMs} ms · luce ${s.bakeMs} ms · ${Math.round(t / 1000)}k triangoli · bordi aperti: pelle ${s.open.skin}, beanie ${s.open.beanie}, maglia ${s.open.tee}`;
+    blur: document.getElementById('blur'),
+    onStats: (all) => {
+      document.getElementById('stats').textContent = Object.entries(all).map(([k, s]) =>
+        `${k}: mesh ${s.meshMs} ms · luce ${s.bakeMs} ms · ${Math.round(s.tris / 1000)}k tri · bordi aperti ${Object.entries(s.open).map(([n, v]) => n + ' ' + v).join(', ')}`).join('\n');
     },
   });
 });

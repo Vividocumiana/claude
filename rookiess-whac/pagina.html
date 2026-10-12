@@ -10,7 +10,7 @@
   .frame canvas, .frame img { position:absolute; inset:0; width:100%; height:100%; display:block; }
   .frame img { pointer-events:none; opacity:0; }
   canvas { touch-action:pan-y; cursor:pointer; }
-  body[data-mode="studio"] .frame img { display:none; }
+  body[data-mode="studio"] .frame img, body[data-mode="studio"] .score { display:none; }
   header { position:fixed; top:calc(12px + env(safe-area-inset-top, 0px)); left:16px; right:16px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; z-index:2; }
   h1 { font-size:14px; font-weight:600; margin-right:auto; }
   h1 small { display:block; font-weight:400; opacity:.7; font-size:11px; margin-top:2px; }
@@ -28,12 +28,15 @@
   .score { position:absolute; left:74%; top:63%; display:grid; gap:2px; pointer-events:none; transform:rotate(8deg); }
   .score span { font-size:clamp(11px, 1.4vw, 16px); opacity:.7; }
   .score b { font:800 clamp(28px, 4.4vw, 56px)/1 ui-sans-serif, system-ui, sans-serif; font-variant-numeric:tabular-nums; }
-  #stats { position:fixed; left:16px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); font:11px/1.4 ui-monospace, Menlo, monospace; opacity:.75; font-variant-numeric:tabular-nums; }
+  .pop-label.bad { color:#ffd2d2; text-shadow:0 2px 0 #9a1222; }
+  canvas.squint { filter:blur(2.5px); }
+  #stats { white-space:pre-line;  position:fixed; left:16px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); font:11px/1.4 ui-monospace, Menlo, monospace; opacity:.75; font-variant-numeric:tabular-nums; }
 </style>
 <header>
-  <h1>Rookiess · personaggio SDF<small>Clic su un personaggio per colpirlo</small></h1>
-  <div class="grp" id="modes"><span>Vista</span><button data-mode="hero" aria-pressed="true">Hero</button><button data-mode="studio" aria-pressed="false">Studio</button></div>
+  <h1>Rookiess · guru e rookie<small>Colpisci i guru (+10), risparmia i rookie (−20)</small></h1>
+  <div class="grp" id="modes"><span>Vista</span><button data-mode="hero" aria-pressed="true">Hero</button><button data-mode="studio" aria-pressed="false">Confronto</button></div>
   <div class="grp" id="debug"><span>Debug</span><button data-debug="final" aria-pressed="true">Finale</button><button data-debug="bake">Luce</button><button data-debug="normals">Normali</button><button data-debug="parts">Parti</button><button data-debug="wire">Wireframe</button></div>
+  <div class="grp"><button id="blur" aria-pressed="false" title="Sfoca come visto di sfuggita: si distinguono ancora?">Test sfocato</button></div>
   <label class="grp" id="ovl"><span>Figma</span><input id="ovr" type="range" min="0" max="100" value="0" aria-label="Opacità del design Figma sovrapposto"></label>
 </header>
 <div class="stage"><div class="frame">

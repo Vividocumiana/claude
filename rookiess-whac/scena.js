@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { HERO } from './hero-camera.js';
-import { buildKit, buildRookie, M, DEBUG, KEY_VIEW } from './personaggio.js';
+import { buildKit, buildCharacter, M, DEBUG, KEY_VIEW } from './personaggio.js';
 
 const DEG = Math.PI / 180;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -43,8 +43,8 @@ export function mount(canvas, ui) {
   // luce chiave nello spazio del personaggio (inclinato, rivolto alla camera)
   const leanQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(LEAN, 0, 0));
   const Lchar = keyDir.clone().applyQuaternion(leanQ.clone().invert());
-  const kit = buildKit(Lchar, ui.quality ?? 1);
-  ui.onStats?.(kit.stats);
+  const kits = { rookie: buildKit('rookie', Lchar, ui.quality ?? 1), guru: buildKit('guru', Lchar, ui.quality ?? 1) };
+  ui.onStats?.(Object.fromEntries(Object.entries(kits).map(([k, v]) => [k, v.stats])));
 
   // ---- tavolo: occlusore invisibile con i buchi, anelli, pozzi scuri ----
   const holes = [];
@@ -103,32 +103,47 @@ export function mount(canvas, ui) {
     orient.rotation.order = 'YXZ';
     orient.rotation.set(LEAN, Math.atan2(camera.position.x - h.x, camera.position.z - h.z), 0);
     const squash = new THREE.Group(); orient.add(squash);
-    const rk = buildRookie(kit);
-    rk.char.scale.setScalar(S);
-    rk.char.position.y = PIVOT * S;
-    squash.add(rk.char);
-    rk.char.traverse((o) => { if (o.isMesh) o.userData.slot = i; });
+    // in ogni buco ci sono entrambi; a ogni uscita se ne mostra uno
+    const actors = {};
+    for (const type of ['rookie', 'guru']) {
+      const a = buildCharacter(kits[type]);
+      a.char.scale.setScalar(S);
+      a.char.position.y = PIVOT * S;
+      a.char.visible = false;
+      a.char.traverse((o) => { if (o.isMesh) o.userData.slot = i; });
+      squash.add(a.char);
+      actors[type] = a;
+    }
     pop.position.y = DOWN;
     root.visible = false;
-    return { i, h, root, pop, squash, rk, phase: 'down', t: 0, stay: 0, peak: 1, from: DOWN, cool: 0,
+    const c = { i, h, root, pop, squash, actors, rk: actors.rookie, phase: 'down', t: 0, stay: 0, peak: 1, from: DOWN, cool: 0,
       blinkT: -1, nextBlink: 800 + Math.random() * 4000 };
+    return c;
   });
 
   // ---- vista: hero (camera Figma, con spostamento ottico) o studio (ravvicinata) ----
   let mode = 'hero';
+  function setActor(c, type) {
+    for (const [k, a] of Object.entries(c.actors)) a.char.visible = k === type;
+    c.rk = c.actors[type];
+    c.rk.face.fly = 0; c.rk.face.scared = 0;
+  }
   function setMode(m) {
+    if (mode === 'studio' && m === 'hero') for (const c of chars) Object.assign(c, { phase: 'fall', t: 0, from: c.pop.position.y });
     mode = m;
     if (m === 'hero') {
       camera.position.copy(heroCam.pos); camera.quaternion.copy(heroCam.quat);
       camera.fov = HERO.fovYDeg;
     } else {
-      // stessa direzione della hero, vicino al buco centrale della fila davanti (personaggio su)
-      const c = chars[8], y0 = c.pop.position.y;
-      c.pop.position.y = 0; c.root.updateMatrixWorld(true);
-      const head = new THREE.Vector3(0, 1.2, 0).applyMatrix4(c.rk.char.matrixWorld);
-      c.pop.position.y = y0; c.root.updateMatrixWorld(true);
-      const dir = heroCam.pos.clone().sub(holes[8]).normalize();
-      camera.position.copy(head).addScaledVector(dir, 2.6);
+      // confronto: rookie e guru fuori dai due buchi centrali della fila di mezzo, stessa angolazione della hero
+      for (const c of chars) { c.phase = 'down'; c.pop.position.y = DOWN; c.root.visible = false; }
+      [[4, 'rookie'], [5, 'guru']].forEach(([i, type]) => { setActor(chars[i], type); Object.assign(chars[i], { phase: 'up', t: 0, stay: 1e12, peak: 1 }); chars[i].pop.position.y = 0; chars[i].root.visible = true; });
+      scene.updateMatrixWorld(true);
+      const head = new THREE.Vector3(0, 1.2, 0).applyMatrix4(chars[4].rk.char.matrixWorld)
+        .add(new THREE.Vector3(0, 1.2, 0).applyMatrix4(chars[5].rk.char.matrixWorld)).multiplyScalar(0.5);
+      const mid = holes[4].clone().add(holes[5]).multiplyScalar(0.5);
+      const dir = heroCam.pos.clone().sub(mid).normalize();
+      camera.position.copy(head).addScaledVector(dir, 3.2);
       camera.lookAt(head);
       camera.fov = 26;
     }
@@ -153,27 +168,33 @@ export function mount(canvas, ui) {
   // ---- gioco ----
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TIME = { rise: reduce ? 1 : 240, fall: reduce ? 1 : 200, sink: reduce ? 1 : 240, hold: 380, cool: 450 };
-  const POINTS = 10; // provvisorio: col guru sarà +10, col rookie −20
+  const POINTS = { guru: 10, rookie: -20 };
+  const GURU_SHARE = 0.62;
   let score = 0, elapsed = 0, nextSpawn = 700;
   const easeOutBack = (t) => { const c = 1.6; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2; };
   const easeIn = (t) => t * t * t;
 
   function spawn() {
+    if (mode !== 'hero') return;
     const free = chars.filter((c) => c.phase === 'down' && c.cool <= 0);
     const busy = chars.length - free.length;
     if (!free.length || busy >= 3) return;
     const c = free[Math.floor(Math.random() * free.length)];
+    const type = Math.random() < GURU_SHARE ? 'guru' : 'rookie';
+    setActor(c, type);
     const peek = Math.random() < 0.2;
+    // il guru esce e rientra più in fretta; il rookie si trattiene (ed è la tentazione)
+    const base = type === 'guru' ? 600 + Math.random() * 450 : 900 + Math.random() * 700;
     Object.assign(c, { phase: 'rise', t: 0, from: DOWN, peak: peek ? 0.6 : 1,
-      stay: (peek ? 450 : 750 + Math.random() * 650) * Math.max(0.6, 1 - elapsed / 120000) });
+      stay: (peek ? 450 : base) * Math.max(0.6, 1 - elapsed / 120000) });
     c.root.visible = true;
   }
 
-  function popLabel(c, text) {
+  function popLabel(c, text, bad) {
     if (!ui.labels) return;
     const p = new THREE.Vector3(0, 2.2, 0).applyMatrix4(c.rk.char.matrixWorld).project(camera);
     const el = document.createElement('span');
-    el.className = 'pop-label';
+    el.className = 'pop-label' + (bad ? ' bad' : '');
     el.textContent = text;
     el.style.left = ((p.x + 1) / 2) * 100 + '%';
     el.style.top = ((1 - p.y) / 2) * 100 + '%';
@@ -191,9 +212,10 @@ export function mount(canvas, ui) {
     if (!hit) return;
     const c = chars[hit.object.userData.slot];
     Object.assign(c, { phase: 'hit', t: 0, from: c.pop.position.y });
-    score += POINTS;
-    ui.onScore?.(score);
-    popLabel(c, `+${POINTS}`);
+    const pts = POINTS[c.rk.type];
+    score += pts;
+    ui.onScore?.(score, pts);
+    popLabel(c, pts > 0 ? `+${pts}` : `−${-pts}`, pts < 0);
   });
 
   ui.mode?.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
@@ -225,9 +247,10 @@ export function mount(canvas, ui) {
       const t = c.t / 1000;
       sq = reduce ? 0.6 * Math.max(1 - t * 3, 0) : Math.exp(-t * 7) * Math.cos(t * 24) * (t < 0.04 ? t / 0.04 : 1);
       scared = 1;
+      c.rk.face.fly = reduce ? 1 : Math.min(c.t / 520, 1);
       const k = Math.min(Math.max(c.t - TIME.hold, 0) / TIME.sink, 1);
       y = lerp(c.from, DOWN, easeIn(k));
-      if (k >= 1) Object.assign(c, { phase: 'down', t: 0, cool: TIME.cool });
+      if (k >= 1) { Object.assign(c, { phase: 'down', t: 0, cool: TIME.cool }); c.rk.face.fly = 0; }
     }
     c.pop.position.y = y;
     c.root.visible = c.phase !== 'down';
@@ -259,8 +282,12 @@ export function mount(canvas, ui) {
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
   setMode(ui.startMode || 'hero');
   requestAnimationFrame(frame);
+  ui.blur?.addEventListener('click', () => {
+    const on = canvas.classList.toggle('squint');
+    ui.blur.setAttribute('aria-pressed', String(on));
+  });
   return {
-    renderer, scene, camera, chars, kit, setMode, DEBUG,
+    renderer, scene, camera, chars, kits, setMode, setActor, DEBUG,
     pause: (v) => { paused = v; },
     // per i test: fa salire subito un personaggio
     show: (i, peak = 1) => Object.assign(chars[i], { phase: 'up', t: -1e9, peak, stay: 1e9 }),
