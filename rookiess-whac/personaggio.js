@@ -148,22 +148,24 @@ function buildEye(parent, side) {
   add(new THREE.SphereGeometry(R, 48, 32), M.eye);
   const pupil = add(new THREE.SphereGeometry(0.088, 32, 16), M.pupil);
   const glint = add(new THREE.SphereGeometry(0.024, 16, 8), M.catch);
+  pupil.userData.moving = glint.userData.moving = true;
   const dir = (el, az) => new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
   const Z = new THREE.Vector3(0, 0, 1);
   const setPupil = (el, az) => {
     pupil.position.copy(dir(el, az)).multiplyScalar(R * 0.975);
     pupil.quaternion.setFromUnitVectors(Z, dir(el, az));
     pupil.scale.set(1, 1, 0.35);
-    glint.position.copy(dir(el + 0.07, az - 0.1)).multiplyScalar(R + 0.03);
+    glint.position.copy(dir(el + 0.07, az - 0.1)).multiplyScalar(R * 1.075);
     glint.scale.set(1, 1, 0.4);
   };
 
-  const COVER = 95 * DEG, RL = R * 1.05;
+  const COVER = 95 * DEG, RL = R * 1.14; // più larga di pupilla e riflesso: chiusa li copre
   const upper = new THREE.Group(); g.add(upper);
   upper.add(new THREE.Mesh(new THREE.SphereGeometry(RL, 48, 24, 0, Math.PI * 2, 0, COVER), M.skin));
   const rimU = new THREE.Mesh(new THREE.TorusGeometry(RL * Math.sin(COVER), 0.04, 12, 64), M.skin);
   rimU.rotation.x = Math.PI / 2; rimU.position.y = RL * Math.cos(COVER);
   upper.add(rimU);
+  upper.children.forEach((m) => { m.userData.moving = true; });
 
   const LC = 55 * DEG;
   const lower = new THREE.Group(); g.add(lower);
@@ -208,6 +210,13 @@ export function buildKit(L, quality = 1) {
   return { parts, L, stats };
 }
 
+function constBake(geo, ao, sh) {
+  const a = new Float32Array(geo.attributes.position.count * 2);
+  for (let i = 0; i < a.length; i += 2) { a[i] = ao; a[i + 1] = sh; }
+  geo.setAttribute('bake', new THREE.BufferAttribute(a, 2));
+  return geo;
+}
+
 export function buildRookie(kit) {
   const char = new THREE.Group();
   const add = (geo, mat) => { const m = new THREE.Mesh(geo, mat); char.add(m); return m; };
@@ -235,7 +244,9 @@ export function buildRookie(kit) {
   let n = 0;
   char.traverse((o) => {
     if (!o.isMesh || o.geometry.attributes.bake) return;
-    if (first) kit.rigid.push(bake(o.geometry, staticSDF, kit.L, o.matrixWorld));
+    // le parti che si muovono (palpebra, pupilla) non possono avere luce cotta in una posa:
+    // prendono un valore costante
+    if (first) kit.rigid.push(o.userData.moving ? constBake(o.geometry, 0.92, 1) : bake(o.geometry, staticSDF, kit.L, o.matrixWorld));
     else o.geometry = kit.rigid[n];
     n++;
   });

@@ -20,6 +20,14 @@
   button[aria-pressed="true"] { background:var(--chip-on); color:var(--chip-on-ink); }
   button:focus-visible, input:focus-visible { outline:2px solid #fff; outline-offset:2px; }
   input[type=range] { width:110px; accent-color:#fff; }
+  .labels { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .pop-label { position:absolute; transform:translate(-50%, -100%); font:800 clamp(16px, 2.2vw, 26px)/1 ui-sans-serif, system-ui, sans-serif;
+               color:#fff; text-shadow:0 2px 0 #0b1680; animation:rise .9s cubic-bezier(.2,.8,.2,1) forwards; }
+  @keyframes rise { from { opacity:0; transform:translate(-50%, -60%) scale(.6); } 20% { opacity:1; transform:translate(-50%, -110%) scale(1.15); } to { opacity:0; transform:translate(-50%, -260%) scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .pop-label { animation-duration:.01s; animation-fill-mode:none; opacity:1; } }
+  .score { position:absolute; left:74%; top:63%; display:grid; gap:2px; pointer-events:none; transform:rotate(8deg); }
+  .score span { font-size:clamp(11px, 1.4vw, 16px); opacity:.7; }
+  .score b { font:800 clamp(28px, 4.4vw, 56px)/1 ui-sans-serif, system-ui, sans-serif; font-variant-numeric:tabular-nums; }
   #stats { position:fixed; left:16px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); font:11px/1.4 ui-monospace, Menlo, monospace; opacity:.75; font-variant-numeric:tabular-nums; }
 </style>
 <header>
@@ -31,6 +39,8 @@
 <div class="stage"><div class="frame">
   <canvas id="c" aria-label="Tavolo del gioco con i personaggi"></canvas>
   <img id="ref" alt="" src="data:image/png;base64,__HERO__">
+  <div class="labels" id="labels"></div>
+  <div class="score" aria-live="polite"><span>Your Points</span><b id="score">0</b></div>
 </div></div>
 <div id="stats">Preparo i personaggi…</div>
 <script>/*__BUNDLE__*/</script>

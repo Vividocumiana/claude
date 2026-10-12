@@ -9,6 +9,8 @@ document.getElementById('ovr').addEventListener('input', (e) => { ref.style.opac
 requestAnimationFrame(() => {
   window.__app = mount(document.getElementById('c'), {
     mode: modes, debug: dbg,
+    labels: document.getElementById('labels'),
+    onScore: (v) => { document.getElementById('score').textContent = v; },
     onStats: (s) => {
       const t = Object.values(s.tris).reduce((a, b) => a + b, 0);
       document.getElementById('stats').textContent =

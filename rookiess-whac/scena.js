@@ -6,6 +6,7 @@ import { HERO } from './hero-camera.js';
 import { buildKit, buildRookie, M, DEBUG, KEY_VIEW } from './personaggio.js';
 
 const DEG = Math.PI / 180;
+const lerp = (a, b, t) => a + (b - a) * t;
 const S = 0.225;          // scala personaggio: testa larga ~ quanto il buco
 const LEAN = -25 * DEG;   // inclinato all'indietro, verso la camera
 const PIVOT = 0.6;        // punto del personaggio (sotto il mento) che sta al livello del tavolo
@@ -90,6 +91,8 @@ export function mount(canvas, ui) {
   const pitMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, toneMapped: false });
 
   // ---- personaggi ----
+  // ---- personaggi: uno per buco, nascosti sotto il tavolo finché non salgono ----
+  const DOWN = -(2.7 + PIVOT) * S - 0.04; // cima del beanie sotto il piano
   const chars = holes.map((h, i) => {
     const ring = new THREE.Mesh(ringGeo, ringMat); ring.position.copy(h); scene.add(ring);
     const pit = new THREE.Mesh(pitGeo, pitMat); pit.position.copy(h); scene.add(pit);
@@ -105,7 +108,10 @@ export function mount(canvas, ui) {
     rk.char.position.y = PIVOT * S;
     squash.add(rk.char);
     rk.char.traverse((o) => { if (o.isMesh) o.userData.slot = i; });
-    return { h, root, pop, squash, rk, up: 1, hitT: -1, blinkT: -1, nextBlink: 800 + Math.random() * 4000 };
+    pop.position.y = DOWN;
+    root.visible = false;
+    return { i, h, root, pop, squash, rk, phase: 'down', t: 0, stay: 0, peak: 1, from: DOWN, cool: 0,
+      blinkT: -1, nextBlink: 800 + Math.random() * 4000 };
   });
 
   // ---- vista: hero (camera Figma, con spostamento ottico) o studio (ravvicinata) ----
@@ -116,11 +122,13 @@ export function mount(canvas, ui) {
       camera.position.copy(heroCam.pos); camera.quaternion.copy(heroCam.quat);
       camera.fov = HERO.fovYDeg;
     } else {
-      // stessa direzione della hero, vicino al personaggio centrale della fila davanti
-      const c = chars[8].rk.char;
-      const head = new THREE.Vector3(0, 1.2, 0).applyMatrix4(c.matrixWorld);
+      // stessa direzione della hero, vicino al buco centrale della fila davanti (personaggio su)
+      const c = chars[8], y0 = c.pop.position.y;
+      c.pop.position.y = 0; c.root.updateMatrixWorld(true);
+      const head = new THREE.Vector3(0, 1.2, 0).applyMatrix4(c.rk.char.matrixWorld);
+      c.pop.position.y = y0; c.root.updateMatrixWorld(true);
       const dir = heroCam.pos.clone().sub(holes[8]).normalize();
-      camera.position.copy(head).addScaledVector(dir, 2.2);
+      camera.position.copy(head).addScaledVector(dir, 2.6);
       camera.lookAt(head);
       camera.fov = 26;
     }
@@ -142,53 +150,119 @@ export function mount(canvas, ui) {
   }
   addEventListener('resize', resize);
 
-  // ---- colpo: clic su un personaggio ----
+  // ---- gioco ----
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TIME = { rise: reduce ? 1 : 240, fall: reduce ? 1 : 200, sink: reduce ? 1 : 240, hold: 380, cool: 450 };
+  const POINTS = 10; // provvisorio: col guru sarà +10, col rookie −20
+  let score = 0, elapsed = 0, nextSpawn = 700;
+  const easeOutBack = (t) => { const c = 1.6; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2; };
+  const easeIn = (t) => t * t * t;
+
+  function spawn() {
+    const free = chars.filter((c) => c.phase === 'down' && c.cool <= 0);
+    const busy = chars.length - free.length;
+    if (!free.length || busy >= 3) return;
+    const c = free[Math.floor(Math.random() * free.length)];
+    const peek = Math.random() < 0.2;
+    Object.assign(c, { phase: 'rise', t: 0, from: DOWN, peak: peek ? 0.6 : 1,
+      stay: (peek ? 450 : 750 + Math.random() * 650) * Math.max(0.6, 1 - elapsed / 120000) });
+    c.root.visible = true;
+  }
+
+  function popLabel(c, text) {
+    if (!ui.labels) return;
+    const p = new THREE.Vector3(0, 2.2, 0).applyMatrix4(c.rk.char.matrixWorld).project(camera);
+    const el = document.createElement('span');
+    el.className = 'pop-label';
+    el.textContent = text;
+    el.style.left = ((p.x + 1) / 2) * 100 + '%';
+    el.style.top = ((1 - p.y) / 2) * 100 + '%';
+    ui.labels.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   canvas.addEventListener('pointerdown', (ev) => {
     const r = canvas.getBoundingClientRect();
     ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    const hit = ray.intersectObjects(chars.map((c) => c.rk.char), true)[0];
-    if (hit) chars[hit.object.userData.slot].hitT = 0;
+    const live = chars.filter((c) => c.phase === 'rise' || c.phase === 'up');
+    const hit = ray.intersectObjects(live.map((c) => c.rk.char), true)[0];
+    if (!hit) return;
+    const c = chars[hit.object.userData.slot];
+    Object.assign(c, { phase: 'hit', t: 0, from: c.pop.position.y });
+    score += POINTS;
+    ui.onScore?.(score);
+    popLabel(c, `+${POINTS}`);
   });
 
   ui.mode?.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
   ui.debug?.forEach((b) => b.addEventListener('click', () => {
     const d = b.dataset.debug;
-    const wire = d === 'wire';
     DEBUG.value = { final: 0, bake: 1, normals: 2, parts: 3, wire: 3 }[d] ?? 0;
-    for (const m of Object.values(M)) m.wireframe = wire;
+    for (const m of Object.values(M)) m.wireframe = d === 'wire';
   }));
 
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let last = performance.now(), clock = 0;
+  let last = performance.now(), clock = 0, paused = false;
+  function step(c, dt) {
+    c.t += dt;
+    let y = c.pop.position.y, sq = 0, scared = 0;
+    const top = lerp(DOWN, 0, c.peak);
+    if (c.phase === 'down') { c.cool -= dt; y = DOWN; }
+    else if (c.phase === 'rise') {
+      const k = Math.min(c.t / TIME.rise, 1);
+      y = lerp(c.from, top, easeOutBack(k));
+      if (k >= 1) Object.assign(c, { phase: 'up', t: 0 });
+    } else if (c.phase === 'up') {
+      y = top;
+      if (c.t > c.stay) Object.assign(c, { phase: 'fall', t: 0, from: y });
+    } else if (c.phase === 'fall') {
+      const k = Math.min(c.t / TIME.fall, 1);
+      y = lerp(c.from, DOWN, easeIn(k));
+      if (k >= 1) Object.assign(c, { phase: 'down', t: 0, cool: TIME.cool });
+    } else if (c.phase === 'hit') {
+      // schiacciato sul posto, faccia spaventata, poi giù di corsa
+      const t = c.t / 1000;
+      sq = reduce ? 0.6 * Math.max(1 - t * 3, 0) : Math.exp(-t * 7) * Math.cos(t * 24) * (t < 0.04 ? t / 0.04 : 1);
+      scared = 1;
+      const k = Math.min(Math.max(c.t - TIME.hold, 0) / TIME.sink, 1);
+      y = lerp(c.from, DOWN, easeIn(k));
+      if (k >= 1) Object.assign(c, { phase: 'down', t: 0, cool: TIME.cool });
+    }
+    c.pop.position.y = y;
+    c.root.visible = c.phase !== 'down';
+    c.squash.scale.set(1 + sq * 0.2, 1 - sq * 0.32, 1 + sq * 0.2);
+
+    if (!reduce && c.blinkT < 0 && clock > c.nextBlink) c.blinkT = 0;
+    let blink = 0;
+    if (c.blinkT >= 0) {
+      c.blinkT += dt;
+      blink = Math.sin(Math.min(c.blinkT / 160, 1) * Math.PI);
+      if (c.blinkT > 160) { c.blinkT = -1; c.nextBlink = clock + 2200 + Math.random() * 3500; }
+    }
+    c.rk.face.scared = scared;
+    c.rk.face.blink = blink;
+    c.rk.applyFace();
+  }
+
   function frame(now) {
-    const dt = Math.min(now - last, 50); last = now; clock += dt;
-    for (const c of chars) {
-      if (!reduce && c.blinkT < 0 && clock > c.nextBlink) c.blinkT = 0;
-      let blink = 0;
-      if (c.blinkT >= 0) {
-        c.blinkT += dt;
-        blink = Math.sin(Math.min(c.blinkT / 160, 1) * Math.PI);
-        if (c.blinkT > 160) { c.blinkT = -1; c.nextBlink = clock + 2200 + Math.random() * 3500; }
-      }
-      let sq = 0, scared = 0;
-      if (c.hitT >= 0) {
-        c.hitT += dt;
-        const t = c.hitT / 1000;
-        sq = Math.exp(-t * 6) * Math.cos(t * 22);
-        scared = t < 0.9 ? 1 : Math.max(1 - (t - 0.9) / 0.3, 0);
-        if (t > 1.6) c.hitT = -1;
-      }
-      c.squash.scale.set(1 + sq * 0.18, 1 - sq * 0.28, 1 + sq * 0.18);
-      c.rk.face.scared = scared;
-      c.rk.face.blink = blink;
-      c.rk.applyFace();
+    const dt = Math.min(now - last, 50); last = now;
+    if (!paused) {
+      clock += dt; elapsed += dt;
+      nextSpawn -= dt;
+      if (nextSpawn <= 0) { spawn(); nextSpawn = Math.max(380, 850 - elapsed / 150) * (reduce ? 2 : 1) * (0.7 + Math.random() * 0.6); }
+      for (const c of chars) step(c, dt);
     }
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
+  document.addEventListener('visibilitychange', () => { last = performance.now(); });
   setMode(ui.startMode || 'hero');
   requestAnimationFrame(frame);
-  return { renderer, scene, camera, chars, kit, setMode, DEBUG, hit: (i) => (chars[i].hitT = 0) };
+  return {
+    renderer, scene, camera, chars, kit, setMode, DEBUG,
+    pause: (v) => { paused = v; },
+    // per i test: fa salire subito un personaggio
+    show: (i, peak = 1) => Object.assign(chars[i], { phase: 'up', t: -1e9, peak, stay: 1e9 }),
+  };
 }
