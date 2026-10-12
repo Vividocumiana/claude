@@ -1,32 +1,20 @@
-// Rookiess — personaggi clay costruiti in SDF: un kit comune (testa, orecchie, naso, occhi)
-// e due archetipi che si distinguono soprattutto in cima alla testa, la parte che dall'alto si vede di più:
-//   rookie = beanie crema, materiali opachi e chiari, occhi aperti, sorriso   → non colpire
-//   guru   = capelli col gel lucidi, occhiali da sole, oro, sorrisetto        → colpisci
-// Le superfici morbide sono SDF messe in mesh al caricamento; occhi, palpebre, bocca e accessori
-// sono pezzi rigidi perché si animano. Luce precalcolata per vertice: la vista della hero è fissa.
+// Rookiess — materiali clay, caricamento dei personaggi (worker) e parti rigide animate.
+// Le forme stanno in shapes.js; il worker le mette in mesh e precalcola la luce.
 import * as THREE from 'three';
-import { smin, smax, ellipsoid, capsule, roundRect2, meshSDF, bake, openEdges } from './sdf.js';
+import { bake } from './sdf.js';
+import { ARCH, EYE, EYE_Z, EYE_FRONT, DEG, lerp, frontZ, torso, eyesSDF } from './shapes.js';
+import { buildArrays } from './worker-core.js';
 
-const DEG = Math.PI / 180;
-const lerp = (a, b, t) => a + (b - a) * t;
-const sstep = (a, b, x) => { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
-
-// ---------- palette ----------
-export const C = {
-  skinRookie: 0xeea397, skinGuru: 0xec9466, lip: 0xb8655c, lipGuru: 0xa9553f,
-  pupil: 0x141414, beanie: 0xece4d2, hoodie: 0xdde1e8, string: 0xf6f6f4,
-  tee: 0x26262a, hair: 0x2b1d16, gold: 0xe2a93b, lens: 0x0d0e14,
-  blush: 0xff7f7a, mouth: 0x5a1a22, teeth: 0xfbf8f2, tongue: 0xe2737a,
-  pit: 0x07116c,
-};
 
 // ---------- materiale clay con luce precalcolata ----------
 // bake.x = AO (moltiplica la luce ambiente), bake.y = ombra (moltiplica la luce chiave).
-// tint.x = guance rosate, tint.y = interno della bocca (solo dove la geometria lo prevede).
+// tint.x = colore "blush" del materiale (guance, labbra, barba, camicia), tint.y = interno della bocca.
 // Sotto il livello del tavolo il personaggio sfuma nel colore del buco.
 export const DEBUG = { value: 0 }; // 0 finale · 1 luce precalcolata · 2 normali · 3 parti
 export const KEY_VIEW = new THREE.Vector3(-0.42, 0.42, 0.8).normalize(); // luce chiave, spazio camera
+const PIT = 0x07116c, MOUTH = 0x5a1a22;
+const ALL = new Set(); // tutti i materiali, per le viste di debug
 
 function clay(color, o = {}) {
   const m = new THREE.MeshPhysicalMaterial({
@@ -38,11 +26,10 @@ function clay(color, o = {}) {
   const u = {
     uSSS: { value: new THREE.Color(o.sss ?? 0x000000) }, uKey: { value: KEY_VIEW },
     uRim: { value: new THREE.Color(o.rim ?? 0xbfd0ff) }, uRimK: { value: o.rimK ?? 0.1 },
-    uPit: { value: new THREE.Color(C.pit) }, uBoardY: { value: 0 },
-    uBlush: { value: new THREE.Color(C.blush) }, uMouth: { value: new THREE.Color(C.mouth) },
+    uPit: { value: new THREE.Color(PIT) }, uBoardY: { value: 0 },
+    uBlush: { value: new THREE.Color(o.blush ?? 0xff7f7a) }, uMouth: { value: new THREE.Color(MOUTH) },
     uDebug: DEBUG, uPart: { value: new THREE.Color().setHSL(Math.random(), 0.7, 0.55) },
   };
-  m.userData.u = u;
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
@@ -73,164 +60,114 @@ function clay(color, o = {}) {
         #include <opaque_fragment>`);
   };
   m.customProgramCacheKey = () => 'clay-baked';
+  ALL.add(m);
   return m;
 }
+export const setWireframe = (on) => { for (const m of ALL) m.wireframe = on; };
 
-const skinOpts = { roughness: 0.55, sheen: 0.5, sheenColor: 0xffd6cc, sss: 0xff6a3d };
-export const M = {
-  skinRookie: clay(C.skinRookie, skinOpts),
-  skinGuru: clay(C.skinGuru, { ...skinOpts, roughness: 0.45, clearcoat: 0.15 }), // abbronzatura da yacht, un po' lucida
-  lip: clay(C.lip, { roughness: 0.5 }),
-  lipGuru: clay(C.lipGuru, { roughness: 0.45 }),
+// materiali comuni
+const SHARED = {
   eye: clay(0xffffff, { roughness: 0.2, sheen: 0, clearcoat: 1, coatRough: 0.05, rimK: 0.04 }),
-  pupil: clay(C.pupil, { roughness: 0.1, sheen: 0, clearcoat: 1, coatRough: 0.02, rimK: 0 }),
-  mouthIn: clay(C.mouth, { roughness: 0.7, sheen: 0, rimK: 0 }),
+  pupil: clay(0x141414, { roughness: 0.1, sheen: 0, clearcoat: 1, coatRough: 0.02, rimK: 0 }),
   catch: new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
-  teeth: clay(C.teeth, { roughness: 0.3, sheen: 0, clearcoat: 0.6 }),
-  tongue: clay(C.tongue, { roughness: 0.5 }),
-  beanie: clay(C.beanie, { roughness: 0.92, sheen: 1, sheenColor: 0xfff8ec, rimK: 0.08 }),
-  hoodie: clay(C.hoodie, { roughness: 0.9, sheen: 1, sheenColor: 0xffffff, rimK: 0.08 }),
-  string: clay(C.string, { roughness: 0.8, sheen: 0.5 }),
-  tee: clay(C.tee, { roughness: 0.85, sheen: 0.7, sheenColor: 0x6a6a78, rimK: 0.08 }),
-  hair: clay(C.hair, { roughness: 0.4, sheen: 0, clearcoat: 1, coatRough: 0.3, rimK: 0.12 }), // gel
-  brow: clay(C.hair, { roughness: 0.75, sheen: 0.2, rimK: 0 }),
-  gold: clay(C.gold, { roughness: 0.25, metalness: 1, sheen: 0, rimK: 0 }),
-  lens: clay(C.lens, { roughness: 0.06, metalness: 0.5, sheen: 0, clearcoat: 1, coatRough: 0.02, rimK: 0.25 }),
+  mouthIn: clay(MOUTH, { roughness: 0.7, sheen: 0, rimK: 0 }),
+  teeth: clay(0xfbf8f2, { roughness: 0.3, sheen: 0, clearcoat: 0.6 }),
+  veneers: clay(0xffffff, { roughness: 0.12, sheen: 0, clearcoat: 1, coatRough: 0.05 }),
+  tongue: clay(0xe2737a, { roughness: 0.5 }),
+  beanie: clay(0xece4d2, { roughness: 0.92, sheen: 1, sheenColor: 0xfff8ec, rimK: 0.08 }),
+  gold: clay(0xe2a93b, { roughness: 0.25, metalness: 1, sheen: 0, rimK: 0 }),
+  lens: clay(0x0d0e14, { roughness: 0.06, metalness: 0.5, sheen: 0, clearcoat: 1, coatRough: 0.02, rimK: 0.25 }),
+  plastic: clay(0x1a1a1e, { roughness: 0.3, sheen: 0, clearcoat: 0.8, rimK: 0.1 }),
+  lash: clay(0x17110f, { roughness: 0.6, sheen: 0, rimK: 0 }),
 };
 
-// ---------- forme comuni (spazio personaggio: mento a y=0, faccia verso +z) ----------
-const EAR = { x: 0.9, y: 1.0, z: -0.05, yaw: 0.3 };
-
-function headCore(x, y, z) {
-  let d = ellipsoid(x, y - 1.25, z, 0.93, 1.0, 0.85);                     // cranio
-  d = smin(d, ellipsoid(x, y - 0.55, z - 0.04, 0.95, 0.62, 0.82), 0.35);   // guance e mascella
-  return d;
-}
-// punto della faccia davanti a (x, y): bisezione lungo z
-function frontZ(f, x, y) {
-  let a = 0, b = 2;
-  for (let i = 0; i < 40; i++) { const m = (a + b) / 2; f(x, y, m) < 0 ? (a = m) : (b = m); }
-  return a;
-}
-const NOSE = { y: 0.9, z: frontZ(headCore, 0, 0.9) + 0.03 };
-
-function ear(x, y, z, side) {
-  const a = -side * EAR.yaw, c = Math.cos(a), s = Math.sin(a);
-  const dx = x - side * EAR.x, dy = y - EAR.y, dz = z - EAR.z;
-  const lx = c * dx + s * dz, lz = -s * dx + c * dz;
-  let d = ellipsoid(lx - side * 0.13, dy, lz, 0.13, 0.42, 0.3);                          // padiglione
-  d = smax(d, -ellipsoid(lx - side * 0.26, dy + 0.03, lz - 0.03, 0.09, 0.28, 0.19), 0.04); // conca
-  return d;
+function materialsFor(A) {
+  const c = A.colors;
+  const skinOpts = { roughness: A.skinGloss ? 0.45 : 0.55, clearcoat: A.skinGloss ? 0.15 : 0, sheen: 0.5, sheenColor: 0xffd6cc, sss: 0xff6a3d, blush: c.blush };
+  const dark = A.group === 'guru';
+  return {
+    ...SHARED,
+    skin: clay(c.skin, skinOpts),
+    lip: clay(c.lip, { roughness: 0.45 }),
+    clothes: clay(c.clothes, dark
+      ? { roughness: 0.85, sheen: 0.7, sheenColor: 0x6a6a78, rimK: 0.08, blush: c.shirt ?? c.clothes }
+      : { roughness: 0.9, sheen: 1, sheenColor: 0xffffff, rimK: 0.08 }),
+    string: clay(c.string ?? 0xffffff, { roughness: 0.8, sheen: 0.5 }),
+    hairMatte: clay(c.hair ?? 0x222222, { roughness: 0.85, sheen: 0.6, sheenColor: 0x6b5a50, rimK: 0.1 }),
+    hairGloss: clay(c.hair ?? 0x222222, { roughness: 0.4, sheen: 0, clearcoat: 1, coatRough: 0.3, rimK: 0.12 }),
+    brow: clay(c.hair ?? 0x2b1d16, { roughness: 0.75, sheen: 0.2, rimK: 0 }),
+  };
 }
 
-export function skinBase(x, y, z) {
-  let d = headCore(x, y, z);
-  d = smin(d, capsule(x, y, z, 0, -1.6, -0.05, 0, 0.4, -0.1, 0.47), 0.22);  // collo raccordato al mento
-  d = smin(d, ellipsoid(x, y - NOSE.y, z - NOSE.z, 0.22, 0.21, 0.2), 0.06);  // naso
-  d = smin(d, ear(x, y, z, 1), 0.1);
-  d = smin(d, ear(x, y, z, -1), 0.1);
-  return d;
-}
+// ---------- caricamento: worker in parallelo, uno per personaggio alla volta ----------
+// onKit(kit) viene chiamata appena un personaggio è pronto.
+export function loadKits(types, L, onKit, { quality = 1, workerSrc } = {}) {
+  const Larr = [L.x, L.y, L.z];
+  const toKit = (data) => {
+    const A = ARCH[data.type];
+    const parts = {};
+    for (const p of A.parts) {
+      const d = data.parts[p.name], g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(d.position, 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(d.normal, 3));
+      g.setAttribute('bake', new THREE.BufferAttribute(d.bake, 2));
+      if (d.tint) g.setAttribute('tint', new THREE.BufferAttribute(d.tint, 2));
+      g.setIndex(new THREE.BufferAttribute(d.index, 1));
+      parts[p.name] = g;
+    }
+    const staticSDF = (x, y, z) => { let d = Infinity; for (const p of A.parts) d = Math.min(d, p.f(x, y, z)); return d; };
+    const stats = { ...data.stats, tris: A.parts.reduce((n, p) => n + data.parts[p.name].index.length / 3, 0),
+      open: Object.fromEntries(A.parts.map((p) => [p.name, data.parts[p.name].open])) };
+    return { type: data.type, A, M: materialsFor(A), parts, L, staticSDF, stats };
+  };
 
-// busto a pillola con collo e colletto; base di t-shirt e felpa
-function torso(x, y, z) {
-  let d = capsule(x, y, z / 0.8, 0, -1.15, 0, 0, -5, 0, 0.98) * 0.8;
-  const neckHole = Math.max(Math.hypot(x, z + 0.06) - 0.5, -0.65 - y);
-  d = smax(d, -neckHole, 0.05);
-  const rr = Math.hypot(x, (z + 0.06) / 0.94);
-  return smin(d, Math.hypot(rr - 0.55, y + 0.31) - 0.085, 0.06);            // colletto
-}
-
-const EYE = { x: 0.34, y: 1.24, R: 0.31, scale: [1.0, 0.82, 0.78] };
-const EYE_Z = frontZ(skinBase, EYE.x, EYE.y) - 0.1;
-const EYE_FRONT = EYE_Z + EYE.R * EYE.scale[2];
-const eyesSDF = (x, y, z) => Math.min(
-  ellipsoid(x - EYE.x, y - EYE.y, z - EYE_Z, EYE.R * 1.05, EYE.R * 0.86, EYE.R * 0.82),
-  ellipsoid(x + EYE.x, y - EYE.y, z - EYE_Z, EYE.R * 1.05, EYE.R * 0.86, EYE.R * 0.82));
-
-// ---------- rookie ----------
-const MOUTH_Z = frontZ(headCore, 0, 0.5);
-// sorriso a "D": cavità scavata nella pelle, bordo dritto in alto
-const smileCavity = (x, y, z) => Math.max(ellipsoid(x, y - 0.53, z - (MOUTH_Z - 0.02), 0.27, 0.19, 0.15), y - 0.54);
-
-function rookieSkin(x, y, z) { return smax(skinBase(x, y, z), -smileCavity(x, y, z), 0.03); }
-
-function beanieSDF(x, y, z) {
-  let crown = ellipsoid(x, y - 1.6, z + 0.03, 1.0, 1.0, 0.94);
-  crown = smax(crown, 1.58 - y, 0.05);
-  const rr = Math.hypot(x, (z + 0.03) / 0.93);
-  const cuff = roundRect2(rr - 1.0, y - 1.7, 0.095, 0.19, 0.085) * 0.93;     // risvolto
-  const d = smin(crown, cuff, 0.035);
-  const ang = Math.atan2(x, z + 0.03);                                         // coste verticali
-  const amp = (y < 1.9 ? 0.016 : 0.009) * sstep(0.25, 0.7, rr);
-  return d + amp * Math.cos(ang * 44);
-}
-
-function hoodieSDF(x, y, z) {
-  // cappuccio arrotolato dietro al collo
-  return smin(torso(x, y, z), ellipsoid(x, y + 0.36, z + 0.5, 0.8, 0.3, 0.38), 0.14);
-}
-
-// guance rosate + interno della bocca, scritti per vertice
-function rookieTint(geo) {
-  const p = geo.attributes.position, t = new Float32Array(p.count * 2);
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    let blush = 0;
-    for (const s of [-1, 1]) blush += Math.exp(-(((x - s * 0.56) / 0.2) ** 2 + ((y - 0.72) / 0.15) ** 2)) * (z > 0.3 ? 1 : 0);
-    t[i * 2] = Math.min(blush, 1) * 0.45;
-    t[i * 2 + 1] = sstep(-0.004, -0.03, headCore(x, y, z)) * (y < 0.6 ? 1 : 0); // dentro la testa = cavità
+  let url = null;
+  try { if (workerSrc && typeof Worker !== 'undefined') url = URL.createObjectURL(new Blob([workerSrc], { type: 'text/javascript' })); } catch { url = null; }
+  if (!url) { // ripiego: nel thread principale, un personaggio per frame
+    const queue = [...types];
+    const step = () => { const t = queue.shift(); if (!t) return; onKit(toKit(buildArrays(t, Larr, quality).msg)); setTimeout(step, 0); };
+    setTimeout(step, 0);
+    return;
   }
-  geo.setAttribute('tint', new THREE.BufferAttribute(t, 2));
+  const n = Math.max(1, Math.min(types.length, (navigator.hardwareConcurrency || 4) - 1));
+  const queue = [...types];
+  for (let i = 0; i < n; i++) {
+    const w = new Worker(url);
+    const next = () => {
+      const t = queue.shift();
+      if (!t) { w.terminate(); return; }
+      w.postMessage({ type: t, L: Larr, quality });
+    };
+    w.onmessage = (e) => { onKit(toKit(e.data)); next(); };
+    w.onerror = (e) => { console.error('worker', e.message); };
+    next();
+  }
 }
 
-// ---------- guru ----------
-function hairSDF(x, y, z) {
-  // calotta un filo più grande del cranio, attaccatura alta davanti e bassa dietro
-  let d = ellipsoid(x, y - 1.27, z + 0.01, 0.99, 1.07, 0.92);
-  d = smax(d, 1.56 + 0.3 * z - y, 0.05);
-  // ciuffo col gel davanti, un po' spostato di lato
-  d = smin(d, ellipsoid(x - 0.12, y - 2.17, z - 0.46, 0.62, 0.36, 0.5), 0.24);
-  // solchi del pettine, da davanti a dietro
-  return d + 0.006 * Math.cos(x * 18 + z * 3) * sstep(1.8, 2.05, y);
+// ---------- parti rigide ----------
+function constBake(geo, ao, sh) {
+  const a = new Float32Array(geo.attributes.position.count * 2);
+  for (let i = 0; i < a.length; i += 2) { a[i] = ao; a[i + 1] = sh; }
+  geo.setAttribute('bake', new THREE.BufferAttribute(a, 2));
+  return geo;
 }
+const range = (a, b, n) => Array.from({ length: n + 1 }, (_, i) => lerp(a, b, i / n));
+const tubeOn = (f, xs, yOf, r, lift = 0.004) =>
+  new THREE.TubeGeometry(new THREE.CatmullRomCurve3(xs.map((x) => { const y = yOf(x); return V(x, y, frontZ(f, x, y) + lift); })), 40, r, 8);
+const tube = (pts, r, seg = 24) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => V(...p))), seg, r, 8);
 
-// ---------- archetipi ----------
-const box = (a, b) => [V(...a), V(...b)];
-const ARCH = {
-  rookie: {
-    skinMat: 'skinRookie',
-    sdf: [
-      { name: 'skin', f: rookieSkin, box: box([-1.35, -1.25, -1.0], [1.35, 2.35, 1.15]), h: 0.026, mat: 'skinRookie', clip: -1.2, tint: rookieTint },
-      { name: 'beanie', f: beanieSDF, box: box([-1.2, 1.35, -1.15], [1.2, 2.7, 1.1]), h: 0.022, mat: 'beanie' },
-      { name: 'hoodie', f: hoodieSDF, box: box([-1.15, -2.7, -1.05], [1.15, 0.0, 0.95]), h: 0.035, mat: 'hoodie', clip: -2.65 },
-    ],
-    face: { lid: 0.2, look: 0, elev: 7 * DEG, pupil: 1.12 },
-  },
-  guru: {
-    skinMat: 'skinGuru',
-    sdf: [
-      { name: 'skin', f: skinBase, box: box([-1.35, -1.25, -1.0], [1.35, 2.35, 1.15]), h: 0.026, mat: 'skinGuru', clip: -1.2 },
-      { name: 'hair', f: hairSDF, box: box([-1.15, 1.15, -1.05], [1.15, 2.55, 1.1]), h: 0.022, mat: 'hair' },
-      { name: 'tee', f: torso, box: box([-1.15, -2.7, -0.95], [1.15, 0.0, 0.95]), h: 0.035, mat: 'tee', clip: -2.65 },
-    ],
-    face: { lid: 0.32, look: 8 * DEG, elev: 4 * DEG, pupil: 1 },
-  },
-};
-
-// ---------- occhio con palpebre ----------
-function buildEye(parent, side, skin) {
+function buildEye(parent, side, M, lashes) {
   const { R } = EYE;
   const g = new THREE.Group();
   g.position.set(side * EYE.x, EYE.y, EYE_Z);
   g.rotation.y = side * 0.2;
   g.scale.set(...EYE.scale);
   parent.add(g);
-  const add = (geo, mat) => { const m = new THREE.Mesh(geo, mat); g.add(m); return m; };
+  const add = (geo, mat, p = g) => { const m = new THREE.Mesh(geo, mat); p.add(m); return m; };
 
-  add(new THREE.SphereGeometry(R, 48, 32), M.eye);
-  const pupil = add(new THREE.SphereGeometry(0.088, 32, 16), M.pupil);
-  const glint = add(new THREE.SphereGeometry(0.024, 16, 8), M.catch);
+  add(new THREE.SphereGeometry(R, 40, 28), M.eye);
+  const pupil = add(new THREE.SphereGeometry(0.088, 24, 12), M.pupil);
+  const glint = add(new THREE.SphereGeometry(0.024, 12, 8), M.catch);
   pupil.userData.moving = glint.userData.moving = true;
   const dir = (el, az) => V(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
   const Z = V(0, 0, 1);
@@ -244,108 +181,81 @@ function buildEye(parent, side, skin) {
 
   const COVER = 95 * DEG, RL = R * 1.16; // più larga di pupilla e riflesso: chiusa li copre
   const upper = new THREE.Group(); g.add(upper);
-  upper.add(new THREE.Mesh(new THREE.SphereGeometry(RL, 48, 24, 0, Math.PI * 2, 0, COVER), skin));
-  const rimU = new THREE.Mesh(new THREE.TorusGeometry(RL * Math.sin(COVER), 0.04, 12, 64), skin);
+  add(new THREE.SphereGeometry(RL, 40, 20, 0, Math.PI * 2, 0, COVER), M.skin, upper);
+  // bordo della palpebra; le ciglia sono una linea sottile solo sul davanti (un anello intero sembrerebbe un paio d'occhiali)
+  const rimU = add(new THREE.TorusGeometry(RL * Math.sin(COVER), 0.04, 12, 48), M.skin, upper);
   rimU.rotation.x = Math.PI / 2; rimU.position.y = RL * Math.cos(COVER);
-  upper.add(rimU);
+  if (lashes) {
+    const line = add(new THREE.TorusGeometry(RL * Math.sin(COVER) + 0.012, 0.03, 8, 32, Math.PI * 0.8), M.lash, upper);
+    line.rotation.set(Math.PI / 2, 0, Math.PI * 0.1); line.position.y = RL * Math.cos(COVER) + 0.01;
+  }
+  if (lashes) {
+    const wing = add(new THREE.CapsuleGeometry(0.03, 0.12, 4, 8), M.lash, upper);
+    wing.position.set(side * RL * 0.98, RL * Math.cos(COVER) + 0.03, 0.06);
+    wing.rotation.set(0.3, 0, side * -0.9);
+  }
   upper.children.forEach((m) => { m.userData.moving = true; });
 
   const LC = 55 * DEG;
   const lower = new THREE.Group(); g.add(lower);
-  lower.add(new THREE.Mesh(new THREE.SphereGeometry(RL * 0.99, 48, 16, 0, Math.PI * 2, Math.PI - LC, LC), skin));
-  const rimL = new THREE.Mesh(new THREE.TorusGeometry(RL * 0.99 * Math.sin(LC), 0.022, 12, 64), skin);
+  add(new THREE.SphereGeometry(RL * 0.99, 40, 12, 0, Math.PI * 2, Math.PI - LC, LC), M.skin, lower);
+  const rimL = add(new THREE.TorusGeometry(RL * 0.99 * Math.sin(LC), 0.022, 10, 48), M.skin, lower);
   rimL.rotation.x = Math.PI / 2; rimL.position.y = -RL * 0.99 * Math.cos(LC);
-  lower.add(rimL);
   lower.rotation.x = 8 * DEG;
 
   const setLid = (closed) => { upper.rotation.x = lerp(-70, 78, closed) * DEG; };
-  return { setLid, setPupil, group: g };
+  return { setLid, setPupil };
 }
-
-// ---------- costruzione: mesh SDF una volta per archetipo, poi istanze ----------
-// L = direzione verso la luce chiave nello spazio del personaggio.
-export function buildKit(type, L, quality = 1) {
-  const A = ARCH[type];
-  const t0 = performance.now();
-  const parts = {};
-  for (const s of A.sdf) {
-    parts[s.name] = meshSDF(s.f, s.box, s.h / quality);
-    s.tint?.(parts[s.name]);
-  }
-  const staticSDF = (x, y, z) => Math.min(...A.sdf.map((s) => s.f(x, y, z)));
-  const sceneSDF = (x, y, z) => Math.min(staticSDF(x, y, z), eyesSDF(x, y, z));
-  const tMesh = performance.now();
-  for (const g of Object.values(parts)) bake(g, sceneSDF, L);
-  const stats = {
-    meshMs: Math.round(tMesh - t0), bakeMs: Math.round(performance.now() - tMesh),
-    tris: A.sdf.reduce((n, s) => n + parts[s.name].index.count / 3, 0),
-    // bordi aperti sopra i tagli voluti (collo dentro la maglia, busto dentro il buco): devono essere 0
-    open: Object.fromEntries(A.sdf.map((s) => [s.name, openEdges(parts[s.name], s.clip ?? -Infinity)])),
-  };
-  return { type, A, parts, L, staticSDF, stats };
-}
-
-function constBake(geo, ao, sh) {
-  const a = new Float32Array(geo.attributes.position.count * 2);
-  for (let i = 0; i < a.length; i += 2) { a[i] = ao; a[i + 1] = sh; }
-  geo.setAttribute('bake', new THREE.BufferAttribute(a, 2));
-  return geo;
-}
-
-// tubo che segue la faccia
-function faceCurve(f, xs, yOf, lift = 0.004) {
-  return new THREE.CatmullRomCurve3(xs.map((x) => { const y = yOf(x); return V(x, y, frontZ(f, x, y) + lift); }));
-}
-const range = (a, b, n) => Array.from({ length: n + 1 }, (_, i) => lerp(a, b, i / n));
 
 export function buildCharacter(kit) {
-  const { A, type } = kit;
+  const { A, M, type } = kit;
+  const head = A.headShape, ex = new Set(A.extras ?? []);
   const char = new THREE.Group();
   const add = (geo, mat, parent = char) => { const m = new THREE.Mesh(geo, mat); parent.add(m); return m; };
-  for (const s of A.sdf) add(kit.parts[s.name], M[s.mat]);
-  const skin = M[A.skinMat];
+  for (const p of A.parts) add(kit.parts[p.name], M[p.mat]);
+  const extra = { fly: [] };
 
-  // "O" dello spavento, comune a tutti
-  const O_Y = 0.46, O_Z = frontZ(skinBase, 0, O_Y);
+  const eyes = [buildEye(char, -1, M, ex.has('lashes')), buildEye(char, 1, M, ex.has('lashes'))];
+
+  // "O" di spavento (guru): interno rosso scuro a filo della faccia + labbro ad anello
+  const O_Y = 0.46, O_Z = frontZ(head.base, 0, O_Y);
   const mouthO = new THREE.Group(); char.add(mouthO);
-  mouthO.position.set(0, O_Y, O_Z);
-  mouthO.rotation.x = -0.12;
-  const oIn = add(new THREE.SphereGeometry(1, 24, 12), M.mouthIn, mouthO);
-  oIn.scale.set(0.085, 0.11, 0.025);
-  const oLip = add(new THREE.TorusGeometry(0.095, 0.03, 12, 32), M[type === 'guru' ? 'lipGuru' : 'lip'], mouthO);
-  oLip.scale.set(1, 1.25, 0.8);
+  mouthO.position.set(0, O_Y, O_Z); mouthO.rotation.x = -0.12;
+  add(new THREE.SphereGeometry(1, 20, 10), M.mouthIn, mouthO).scale.set(0.085, 0.11, 0.025);
+  add(new THREE.TorusGeometry(0.095, 0.03, 10, 28), M.lip, mouthO).scale.set(1, 1.25, 0.8);
   mouthO.traverse((o) => { if (o.isMesh) o.userData.moving = true; });
 
-  const eyes = [buildEye(char, -1, skin), buildEye(char, 1, skin)];
-  const extra = {};
-
-  if (type === 'rookie') {
-    // denti in alto e lingua in fondo alla cavità del sorriso
-    const teeth = add(new THREE.CapsuleGeometry(0.05, 0.3, 6, 16), M.teeth);
+  if (ex.has('smile')) { // denti in alto e lingua in fondo alla cavità del sorriso
+    const { w, h } = A.head.smile;
+    const teeth = add(new THREE.CapsuleGeometry(0.05, w * 1.1, 6, 12), M.teeth);
     teeth.rotation.z = Math.PI / 2; teeth.scale.set(1, 1, 0.55);
-    teeth.position.set(0, 0.5, MOUTH_Z - 0.05);
-    const tongue = add(new THREE.SphereGeometry(1, 24, 12), M.tongue);
-    tongue.scale.set(0.15, 0.07, 0.09); tongue.position.set(0, 0.39, MOUTH_Z - 0.09);
-    extra.smile = [teeth, tongue];
-    // cordini della felpa
-    for (const s of [-1, 1]) {
-      const c = new THREE.CatmullRomCurve3([V(s * 0.2, -0.36, 0.5), V(s * 0.22, -0.55, 0.62), V(s * 0.24, -0.85, 0.66)]);
-      add(new THREE.TubeGeometry(c, 16, 0.032, 8), M.string);
-      const tip = add(new THREE.CapsuleGeometry(0.04, 0.08, 4, 8), M.string);
-      tip.position.set(s * 0.24, -0.9, 0.66);
-    }
-  } else {
-    // sorrisetto storto: un angolo su
-    extra.smirk = add(new THREE.TubeGeometry(faceCurve(skinBase, range(-0.2, 0.25, 20), (x) => 0.45 + 0.08 * sstep(-0.02, 0.25, x) - 0.012 * (x < 0 ? (x / 0.2) ** 2 : 0)), 40, 0.024, 8), M.lipGuru);
-    // sopracciglio alzato sopra gli occhiali, l'altro piatto
-    for (const s of [-1, 1]) {
-      const b = add(new THREE.CapsuleGeometry(0.055, 0.28, 6, 12), M.brow);
-      b.rotation.z = Math.PI / 2 + (s > 0 ? 0.28 : -0.05);
-      b.position.set(s * 0.36, s > 0 ? 1.68 : 1.6, frontZ(skinBase, s * 0.36, 1.62) + 0.02);
-    }
-    // occhiali da sole: due lenti stondate, ponte e aste d'oro
+    teeth.position.set(0, 0.5, head.mouthZ - 0.05);
+    const tongue = add(new THREE.SphereGeometry(1, 20, 10), M.tongue);
+    tongue.scale.set(w * 0.55, 0.07, 0.09); tongue.position.set(0, 0.53 - h * 0.75, head.mouthZ - 0.09);
+    extra.tongue = tongue;
+  }
+  if (ex.has('veneers')) { // sorriso a 32 denti, bianchissimi
+    const { w } = A.head.smile;
+    const top = add(new THREE.CapsuleGeometry(0.065, w * 1.3, 6, 12), M.veneers);
+    top.rotation.z = Math.PI / 2; top.scale.set(1, 1, 0.5); top.position.set(0, 0.49, head.mouthZ - 0.045);
+    const bot = add(new THREE.CapsuleGeometry(0.05, w * 1.05, 6, 12), M.veneers);
+    bot.rotation.z = Math.PI / 2; bot.scale.set(1, 1, 0.5); bot.position.set(0, 0.41, head.mouthZ - 0.07);
+    extra.teeth = [top, bot];
+  }
+  if (ex.has('strings')) for (const s of [-1, 1]) { // cordini della felpa
+    add(tube([[s * 0.2, -0.36, 0.5], [s * 0.22, -0.55, 0.62], [s * 0.24, -0.85, 0.66]], 0.032, 16), M.string);
+    add(new THREE.CapsuleGeometry(0.04, 0.08, 4, 8), M.string).position.set(s * 0.24, -0.9, 0.66);
+  }
+  if (A.smirk) extra.smirk = add(tubeOn(head.base, range(-0.2, 0.25, 20), A.smirk, 0.024), M.lip);
+  for (const [i, b] of (A.brows ?? []).entries()) { // sopracciglia
+    const s = i ? 1 : -1;
+    const m = add(new THREE.CapsuleGeometry(b.thin ? 0.035 : 0.055, 0.28, 6, 10), M.brow);
+    m.rotation.z = Math.PI / 2 + b.rot * s;
+    m.position.set(s * 0.36, b.y, frontZ(head.base, s * 0.36, b.y) + 0.02);
+  }
+  if (ex.has('sunglasses')) {
     const glasses = new THREE.Group(); char.add(glasses);
-    const lensShape = (() => {
+    const sh = (() => {
       const w = 0.34, h = 0.24, r = 0.14, s = new THREE.Shape();
       s.moveTo(-w + r, -h); s.lineTo(w - r, -h); s.quadraticCurveTo(w, -h, w, -h + r);
       s.lineTo(w, h - r); s.quadraticCurveTo(w, h, w - r, h); s.lineTo(-w + r, h);
@@ -353,71 +263,89 @@ export function buildCharacter(kit) {
       return s;
     })();
     for (const s of [-1, 1]) {
-      const g = new THREE.ExtrudeGeometry(lensShape, { depth: 0.03, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.035, bevelSegments: 4, curveSegments: 24 });
+      const g = new THREE.ExtrudeGeometry(sh, { depth: 0.03, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.035, bevelSegments: 4, curveSegments: 20 });
       g.translate(0, 0, -0.015);
       const lens = add(g, M.lens, glasses);
-      lens.position.set(s * 0.37, 1.26, EYE_FRONT + 0.06);
-      lens.rotation.set(-0.06, s * 0.2, 0);
-      const temple = add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-        V(s * 0.7, 1.33, EYE_FRONT - 0.02), V(s * 0.9, 1.33, 0.35), V(s * 0.97, 1.3, -0.05)]), 16, 0.025, 8), M.gold, glasses);
-      temple.userData.gold = true;
+      lens.position.set(s * 0.37, 1.26, EYE_FRONT + 0.06); lens.rotation.set(-0.06, s * 0.2, 0);
+      add(tube([[s * 0.7, 1.33, EYE_FRONT - 0.02], [s * 0.9, 1.33, 0.35], [s * 0.97, 1.3, -0.05]], 0.025, 16), M.gold, glasses);
     }
-    const bridge = add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-      V(-0.66, 1.42, EYE_FRONT + 0.04), V(0, 1.47, EYE_FRONT + 0.16), V(0.66, 1.42, EYE_FRONT + 0.04)]), 32, 0.03, 8), M.gold, glasses);
-    bridge.userData.gold = true;
-    glasses.traverse((o) => { if (o.isMesh) o.userData.moving = true; });
-    extra.glasses = glasses;
-    // catena d'oro a grani, appoggiata sulla maglia
+    add(tube([[-0.66, 1.42, EYE_FRONT + 0.04], [0, 1.47, EYE_FRONT + 0.16], [0.66, 1.42, EYE_FRONT + 0.04]], 0.03, 32), M.gold, glasses);
+    extra.fly.push(glasses);
+  }
+  if (ex.has('roundGlasses')) { // occhialini tondi d'oro, sottili: gli occhi socchiusi restano visibili
+    const glasses = new THREE.Group(); char.add(glasses);
+    for (const s of [-1, 1]) {
+      const ring = add(new THREE.TorusGeometry(0.27, 0.022, 10, 40), M.gold, glasses);
+      ring.position.set(s * 0.36, 1.25, EYE_FRONT + 0.05); ring.rotation.y = s * 0.2;
+      add(tube([[s * 0.62, 1.3, EYE_FRONT - 0.02], [s * 0.88, 1.32, 0.35], [s * 0.97, 1.3, -0.05]], 0.018, 16), M.gold, glasses);
+    }
+    add(tube([[-0.1, 1.3, EYE_FRONT + 0.1], [0, 1.34, EYE_FRONT + 0.14], [0.1, 1.3, EYE_FRONT + 0.1]], 0.02, 12), M.gold, glasses);
+    extra.fly.push(glasses);
+  }
+  if (ex.has('chain')) { // catena d'oro a grani appoggiata sulla maglia, chiusa davanti
     const BEADS = 56;
     for (let i = 0; i < BEADS; i++) {
       const th = (i / BEADS) * Math.PI * 2, front = Math.max(Math.cos(th), 0);
-      const y = -0.36 - 0.12 * front ** 2;
-      // da fuori verso l'asse del collo finché non si tocca la maglia
-      const dx = Math.sin(th), dz = Math.cos(th);
+      const y = -0.36 - 0.12 * front ** 2, dx = Math.sin(th), dz = Math.cos(th);
       let r = 1.3;
       while (r > 0.3 && torso(dx * r, y, dz * r - 0.04) > 0) r -= 0.005;
-      const bead = add(new THREE.SphereGeometry(0.05, 12, 8), M.gold);
-      bead.position.set(dx * (r + 0.035), y, dz * (r + 0.035) - 0.04);
+      add(new THREE.SphereGeometry(0.05, 10, 6), M.gold).position.set(dx * (r + 0.035), y, dz * (r + 0.035) - 0.04);
     }
   }
+  if (ex.has('hoops')) for (const s of [-1, 1]) { // cerchi d'oro ai lobi
+    const hoop = add(new THREE.TorusGeometry(0.1, 0.022, 8, 28), M.gold);
+    hoop.position.set(s * 1.0, 0.5, 0.0); hoop.rotation.y = Math.PI / 2;
+  }
+  if (ex.has('headset')) { // microfono ad archetto dall'orecchio destro alla bocca
+    const end = [0.36, 0.5, head.mouthZ + 0.07];
+    const headset = new THREE.Group(); char.add(headset);
+    add(tube([[1.0, 1.45, -0.05], [1.06, 1.05, 0.0], [0.95, 0.62, 0.32], [0.6, 0.48, 0.62], end], 0.022, 40), M.plastic, headset);
+    add(new THREE.SphereGeometry(0.11, 16, 10), M.plastic, headset).position.set(1.0, 1.05, -0.02); // auricolare
+    const mic = add(new THREE.CapsuleGeometry(0.045, 0.07, 4, 10), M.plastic, headset);
+    mic.position.set(...end); mic.rotation.z = Math.PI / 2;
+    extra.fly.push(headset);
+  }
 
-  // luce precalcolata per le parti rigide (una volta per kit; stesso ordine a ogni istanza)
+  // luce precalcolata per le parti rigide (una volta per personaggio; stesso ordine a ogni istanza)
+  for (const f of extra.fly) f.traverse((o) => { if (o.isMesh) o.userData.moving = true; });
   char.updateMatrixWorld(true);
   const first = !kit.rigid;
   kit.rigid ??= [];
   let n = 0;
+  const staticAndEyes = (x, y, z) => Math.min(kit.staticSDF(x, y, z), eyesSDF(x, y, z) + 0.02);
   char.traverse((o) => {
     if (!o.isMesh || o.geometry.attributes.bake) return;
-    if (first) kit.rigid.push(o.userData.moving ? constBake(o.geometry, 0.92, 1) : bake(o.geometry, kit.staticSDF, kit.L, o.matrixWorld));
+    if (first) kit.rigid.push(o.userData.moving ? constBake(o.geometry, 0.92, 1) : bake(o.geometry, staticAndEyes, kit.L, o.matrixWorld));
     else o.geometry = kit.rigid[n];
     n++;
   });
+  for (const f of extra.fly) f.userData.p0 = f.position.clone();
 
   // ---- espressioni ----
-  // scared: rookie = "ahi" (occhi strizzati), guru = occhi sbarrati e gli volano via gli occhiali
+  // hurt: grit = rookie, occhi strizzati e denti stretti · O = bocca a "O" · open = il sorriso finto si apre
   const face = { ...A.face, scared: 0, blink: 0, fly: 0 };
-  const g0 = extra.glasses && { pos: extra.glasses.position.clone() };
   function applyFace() {
-    const s = face.scared;
-    const hurt = type === 'rookie';
+    const s = face.scared, hurt = A.hurt;
     eyes.forEach((e) => {
-      const lid = hurt ? lerp(face.lid, 0.88, s) : lerp(face.lid, 0.0, s);
+      const lid = hurt === 'grit' ? lerp(face.lid, 0.88, s) : lerp(face.lid, 0.0, s);
       e.setLid(lerp(lid, 1, face.blink * (1 - s)));
       e.setPupil(lerp(face.elev, 0, s), lerp(face.look, 0, s), lerp(face.pupil, 0.8, s));
     });
-    // guru: "O" di spavento al posto del sorrisetto; rookie: denti stretti nel sorriso ("ahi")
-    const o = hurt ? 0 : s;
+    const o = hurt === 'O' ? s : 0;
     mouthO.visible = o > 0.02;
     mouthO.scale.setScalar(Math.max(o, 0.001));
     if (extra.smirk) extra.smirk.visible = o < 0.5;
-    if (extra.smile) extra.smile[1].visible = s < 0.5; // la lingua sparisce, i denti restano
-    if (extra.glasses) {
-      const f = face.fly;
-      extra.glasses.visible = f < 1;
-      extra.glasses.position.set(g0.pos.x + 0.6 * f, g0.pos.y + 2.2 * f - 2.6 * f * f, g0.pos.z + 0.8 * f);
-      extra.glasses.rotation.set(-1.4 * f, 0, -2.2 * f);
+    if (extra.tongue) extra.tongue.visible = s < 0.5;
+    if (extra.teeth) extra.teeth.forEach((t) => { t.visible = hurt !== 'open' || s < 0.5; });
+    for (const [i, g] of extra.fly.entries()) {
+      const f = face.fly, dir = i % 2 ? -1 : 1;
+      g.visible = f < 1;
+      g.position.set(g.userData.p0.x + 0.6 * f * dir, g.userData.p0.y + 2.2 * f - 2.6 * f * f, g.userData.p0.z + 0.8 * f);
+      g.rotation.set(-1.4 * f, 0, -2.2 * f * dir);
     }
   }
   applyFace();
-  return { char, face, applyFace, type };
+  return { char, face, applyFace, type, group: A.group };
 }
+
+export { ARCH };

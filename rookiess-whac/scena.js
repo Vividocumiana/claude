@@ -3,7 +3,8 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { HERO } from './hero-camera.js';
-import { buildKit, buildCharacter, M, DEBUG, KEY_VIEW } from './personaggio.js';
+import { loadKits, buildCharacter, setWireframe, DEBUG, KEY_VIEW } from './personaggio.js';
+import { GROUPS } from './shapes.js';
 
 const DEG = Math.PI / 180;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -43,8 +44,7 @@ export function mount(canvas, ui) {
   // luce chiave nello spazio del personaggio (inclinato, rivolto alla camera)
   const leanQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(LEAN, 0, 0));
   const Lchar = keyDir.clone().applyQuaternion(leanQ.clone().invert());
-  const kits = { rookie: buildKit('rookie', Lchar, ui.quality ?? 1), guru: buildKit('guru', Lchar, ui.quality ?? 1) };
-  ui.onStats?.(Object.fromEntries(Object.entries(kits).map(([k, v]) => [k, v.stats])));
+  const kits = {}; // si riempie man mano che i worker consegnano i personaggi
 
   // ---- tavolo: occlusore invisibile con i buchi, anelli, pozzi scuri ----
   const holes = [];
@@ -104,28 +104,37 @@ export function mount(canvas, ui) {
     orient.rotation.set(LEAN, Math.atan2(camera.position.x - h.x, camera.position.z - h.z), 0);
     const pop = new THREE.Group(); orient.add(pop);
     const squash = new THREE.Group(); pop.add(squash);
-    // in ogni buco ci sono entrambi; a ogni uscita se ne mostra uno
-    const actors = {};
-    for (const type of ['rookie', 'guru']) {
-      const a = buildCharacter(kits[type]);
-      a.char.scale.setScalar(S);
-      a.char.position.y = PIVOT * S;
-      a.char.visible = false;
-      a.char.traverse((o) => { if (o.isMesh) o.userData.slot = i; });
-      squash.add(a.char);
-      actors[type] = a;
-    }
+    // in ogni buco c'è un'istanza di ogni personaggio (geometrie condivise); a ogni uscita se ne mostra uno
     pop.position.y = DOWN;
     root.visible = false;
-    const c = { i, h, root, pop, squash, actors, rk: actors.rookie, phase: 'down', t: 0, stay: 0, peak: 1, from: DOWN, cool: 0,
+    return { i, h, root, pop, squash, actors: {}, rk: null, phase: 'down', t: 0, stay: 0, peak: 1, from: DOWN, cool: 0,
       blinkT: -1, nextBlink: 800 + Math.random() * 4000 };
-    return c;
   });
+
+  const ready = { rookie: [], guru: [] };
+  const allStats = {};
+  loadKits([...GROUPS.rookie, ...GROUPS.guru].sort((a, b) => (a === 'leo' || a === 'crypto' ? -1 : 0) - (b === 'leo' || b === 'crypto' ? -1 : 0)), Lchar, (kit) => {
+    kits[kit.type] = kit;
+    buildCharacter(kit); // la prima istanza cuoce la luce delle parti rigide; le altre si creano quando servono
+    ready[kit.A.group].push(kit.type);
+    allStats[kit.type] = kit.stats;
+    ui.onStats?.(allStats, Object.keys(kits).length, GROUPS.rookie.length + GROUPS.guru.length);
+    if (mode === 'studio') setMode('studio');
+  }, { quality: ui.quality ?? 1, workerSrc: ui.workerSrc });
 
   // ---- vista: hero (camera Figma, con spostamento ottico) o studio (ravvicinata) ----
   let mode = 'hero';
   function setActor(c, type) {
+    if (!c.actors[type] && kits[type]) { // istanza creata al primo uso in questo buco
+      const a = buildCharacter(kits[type]);
+      a.char.scale.setScalar(S);
+      a.char.position.y = PIVOT * S;
+      a.char.traverse((o) => { if (o.isMesh) o.userData.slot = c.i; });
+      c.squash.add(a.char);
+      c.actors[type] = a;
+    }
     for (const [k, a] of Object.entries(c.actors)) a.char.visible = k === type;
+    if (!c.actors[type]) return;
     c.rk = c.actors[type];
     c.rk.face.fly = 0; c.rk.face.scared = 0;
   }
@@ -136,17 +145,20 @@ export function mount(canvas, ui) {
       camera.position.copy(heroCam.pos); camera.quaternion.copy(heroCam.quat);
       camera.fov = HERO.fovYDeg;
     } else {
-      // confronto: rookie e guru fuori dai due buchi centrali della fila di mezzo, stessa angolazione della hero
+      // confronto: i 3 rookie nella fila dietro, i 3 guru in quella davanti, stessa angolazione della hero
       for (const c of chars) { c.phase = 'down'; c.pop.position.y = DOWN; c.root.visible = false; }
-      [[4, 'rookie'], [5, 'guru']].forEach(([i, type]) => { setActor(chars[i], type); Object.assign(chars[i], { phase: 'up', t: 0, stay: 1e12, peak: 1 }); chars[i].pop.position.y = 0; chars[i].root.visible = true; });
-      scene.updateMatrixWorld(true);
-      const head = new THREE.Vector3(0, 1.2, 0).applyMatrix4(chars[4].rk.char.matrixWorld)
-        .add(new THREE.Vector3(0, 1.2, 0).applyMatrix4(chars[5].rk.char.matrixWorld)).multiplyScalar(0.5);
-      const mid = holes[4].clone().add(holes[5]).multiplyScalar(0.5);
-      const dir = heroCam.pos.clone().sub(mid).normalize();
-      camera.position.copy(head).addScaledVector(dir, 3.2);
-      camera.lookAt(head);
-      camera.fov = 26;
+      const cast = [[0, 'leo'], [1, 'amara'], [2, 'mei'], [7, 'crypto'], [8, 'thought'], [9, 'coach']];
+      for (const [i, type] of cast) {
+        if (!kits[type]) continue;
+        setActor(chars[i], type);
+        Object.assign(chars[i], { phase: 'up', t: 0, stay: 1e12, peak: 1 });
+        chars[i].pop.position.y = 0; chars[i].root.visible = true;
+      }
+      const center = new THREE.Vector3(0, 0.25, 0);
+      const dir = heroCam.pos.clone().sub(center).normalize();
+      camera.position.copy(center).addScaledVector(dir, 4.6);
+      camera.lookAt(center);
+      camera.fov = 30;
     }
     resize();
   }
@@ -181,11 +193,14 @@ export function mount(canvas, ui) {
     const busy = chars.length - free.length;
     if (!free.length || busy >= 3) return;
     const c = free[Math.floor(Math.random() * free.length)];
-    const type = Math.random() < GURU_SHARE ? 'guru' : 'rookie';
+    let group = Math.random() < GURU_SHARE ? 'guru' : 'rookie';
+    if (!ready[group].length) group = group === 'guru' ? 'rookie' : 'guru';
+    if (!ready[group].length) return;
+    const pool = ready[group], type = pool[Math.floor(Math.random() * pool.length)];
     setActor(c, type);
     const peek = Math.random() < 0.2;
     // il guru esce e rientra più in fretta; il rookie si trattiene (ed è la tentazione)
-    const base = type === 'guru' ? 600 + Math.random() * 450 : 900 + Math.random() * 700;
+    const base = group === 'guru' ? 600 + Math.random() * 450 : 900 + Math.random() * 700;
     Object.assign(c, { phase: 'rise', t: 0, from: DOWN, peak: peek ? 0.6 : 1,
       stay: (peek ? 450 : base) * Math.max(0.6, 1 - elapsed / 120000) });
     c.root.visible = true;
@@ -213,7 +228,7 @@ export function mount(canvas, ui) {
     if (!hit) return;
     const c = chars[hit.object.userData.slot];
     Object.assign(c, { phase: 'hit', t: 0, from: c.pop.position.y });
-    const pts = POINTS[c.rk.type];
+    const pts = POINTS[c.rk.group];
     score += pts;
     ui.onScore?.(score, pts);
     popLabel(c, pts > 0 ? `+${pts}` : `−${-pts}`, pts < 0);
@@ -223,7 +238,7 @@ export function mount(canvas, ui) {
   ui.debug?.forEach((b) => b.addEventListener('click', () => {
     const d = b.dataset.debug;
     DEBUG.value = { final: 0, bake: 1, normals: 2, parts: 3, wire: 3 }[d] ?? 0;
-    for (const m of Object.values(M)) m.wireframe = d === 'wire';
+    setWireframe(d === 'wire');
   }));
 
   let last = performance.now(), clock = 0, paused = false;
@@ -264,6 +279,7 @@ export function mount(canvas, ui) {
       blink = Math.sin(Math.min(c.blinkT / 160, 1) * Math.PI);
       if (c.blinkT > 160) { c.blinkT = -1; c.nextBlink = clock + 2200 + Math.random() * 3500; }
     }
+    if (!c.rk) return;
     c.rk.face.scared = scared;
     c.rk.face.blink = blink;
     c.rk.applyFace();

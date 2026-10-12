@@ -33,7 +33,7 @@
   #stats { white-space:pre-line;  position:fixed; left:16px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); font:11px/1.4 ui-monospace, Menlo, monospace; opacity:.75; font-variant-numeric:tabular-nums; }
 </style>
 <header>
-  <h1>Rookiess · guru e rookie<small>Colpisci i guru (+10), risparmia i rookie (−20)</small></h1>
+  <h1>Rookiess · 3 guru e 3 rookie<small>Colpisci i guru (+10), risparmia i rookie (−20)</small></h1>
   <div class="grp" id="modes"><span>Vista</span><button data-mode="hero" aria-pressed="true">Hero</button><button data-mode="studio" aria-pressed="false">Confronto</button></div>
   <div class="grp" id="debug"><span>Debug</span><button data-debug="final" aria-pressed="true">Finale</button><button data-debug="bake">Luce</button><button data-debug="normals">Normali</button><button data-debug="parts">Parti</button><button data-debug="wire">Wireframe</button></div>
   <div class="grp"><button id="blur" aria-pressed="false" title="Sfoca come visto di sfuggita: si distinguono ancora?">Test sfocato</button></div>
@@ -46,4 +46,5 @@
   <div class="score" aria-live="polite"><span>Your Points</span><b id="score">0</b></div>
 </div></div>
 <div id="stats">Preparo i personaggi…</div>
+<script type="text/plain" id="worker-src">/*__WORKER__*/</script>
 <script>/*__BUNDLE__*/</script>
