@@ -5,7 +5,7 @@ import { put, list } from '@vercel/blob';
 
 const PREFIX = 'scores/';
 const CHARS = ['gabriel', 'nicolas', 'zeeshan'];
-const MAX_SCORE = 250;          // more than a perfect run can collect
+const MAX_SCORE = 1500;         // above a perfect run (~1100 with combo x4 and 2X)
 const TOP = 10;
 
 const cleanName = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
