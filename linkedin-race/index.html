@@ -420,7 +420,7 @@ const SFX = {
 };
 
 // ---------- world constants ----------
-const W = 128, S = 3;
+const W = 128;
 let H = 228;
 const view = document.getElementById('view');
 const out = view.getContext('2d'); out.imageSmoothingEnabled = false;
@@ -627,132 +627,134 @@ function update(dt){
 }
 
 // ---------- render ----------
-const sy = d => Math.round(PLAYER_Y - (d - race.runners[PLAYER].d));
+// Rendering: the world (floor, decor, items, fx) is drawn into a low-res buffer with an integer
+// camera, then blitted at an integer scale K with a sub-pixel offset so scrolling is smooth.
+// Runners are drawn straight onto the device-resolution canvas so the player never jitters.
+let K = 3, OX = 0, HS = 1;        // pixel scale, horizontal offset, HUD scale (HUD is laid out for 384px)
+let cam = 0;
+const sy = d => Math.round(PLAYER_Y + 1 - (d - cam));          // buffer row (row 0 sits one row above the screen)
+const syTrue = d => PLAYER_Y - (d - race.runners[PLAYER].d);    // exact screen row (float)
 function render(){
   const p = race.runners[PLAYER];
-  const sc = ((p.d % FH) + FH) % FH;
-  for (let y = -FH + sc; y < H; y += FH) g.drawImage(floor, 0, Math.floor(y));
-  // start + finish lines
-  for (const [d, kind] of [[0,'start'], [FINISH,'finish']]){
+  cam = Math.floor(p.d); const frac = p.d - cam;
+  const BH = buf.height;
+  const sc = ((cam % FH) + FH) % FH;
+  for (let y = -FH + sc + 1; y < BH; y += FH) g.drawImage(floor, 0, y);
+  for (const d of [0, FINISH]){
     const y = sy(d);
-    if (y < -10 || y > H + 10) continue;
+    if (y < -10 || y > BH + 10) continue;
     for (let x=TRACK_L; x<TRACK_R; x+=4) for (let r=0;r<2;r++){ g.fillStyle = ((x/4+r)%2) ? V.nero : V.bianco; g.fillRect(x, y - 8 + r*4, 4, 4); }
   }
-  // decor
   for (const dc of race.decor){
     const img = SCENERY[dc.k]; const y = sy(dc.d) - img.height;
-    if (y < -30 || y > H + 4) continue;
+    if (y < -30 || y > BH + 4) continue;
     const x = dc.side===0 ? TRACK_L - 5 - img.width : TRACK_R + 5;
     g.fillStyle = 'rgba(29,29,31,.08)'; g.fillRect(x+1, y+img.height-1, img.width, 2);
     g.drawImage(img, x, y);
   }
-  for (const s of race.stars){
-    const y = sy(s.d); if (y < -8 || y > H) continue;
-    if (((race.t*60 + s.ph) % 60) < 44) g.drawImage(STAR[s.c], Math.round(s.x), y);
+  for (const st of race.stars){
+    const y = sy(st.d); if (y < -8 || y > BH) continue;
+    if (((race.t*60 + st.ph) % 60) < 44) g.drawImage(STAR[st.c], Math.round(st.x), y);
   }
-  // items
   const frame = Math.floor(race.t*8);
   for (const it of race.items){
     if (!it.alive) continue;
-    const y = sy(it.d); if (y < -16 || y > H + 16) continue;
+    const y = sy(it.d); if (y < -16 || y > BH + 16) continue;
     const cx = LANES[it.lane];
     if (it.kind === 'imp' || it.kind === 'bulb'){
       const img = it.kind === 'imp' ? IMP[(frame % 14 === 13) ? 3 : frame % 3] : BULB;
-      const bob = Math.round(Math.sin(race.t*6 + it.d*0.1)*1.5);
+      const bob = Math.floor(race.t*4 + it.d*0.05) % 2;                     // calm 1px float
       g.fillStyle = it.kind === 'imp' ? 'rgba(116,219,139,.45)' : 'rgba(255,211,0,.55)';
       g.fillRect(cx-6, y-1, 12, 3); g.fillRect(cx-4, y-2, 8, 5);
-      g.drawImage(img, cx - Math.floor(img.width/2), y - img.height - 2 + bob);
-      if (it.kind === 'bulb' && frame % 2){ g.fillStyle = V.nero; g.fillRect(cx-7, y-10, 2, 1); g.fillRect(cx+6, y-10, 2, 1); g.fillRect(cx, y-17+bob, 1, 2); }
+      g.drawImage(img, cx - Math.floor(img.width/2), y - img.height - 2 - bob);
+      if (it.kind === 'bulb' && frame % 2){ g.fillStyle = V.nero; g.fillRect(cx-7, y-10, 2, 1); g.fillRect(cx+6, y-10, 2, 1); g.fillRect(cx, y-17, 1, 2); }
     } else {
       const img = PROPS[it.kind];
       g.fillStyle = 'rgba(236,72,60,.28)'; g.fillRect(cx - Math.floor(img.width/2) - 2, y - 2, img.width + 4, 5);
       g.drawImage(img, cx - Math.floor(img.width/2), y - img.height + 2);
     }
   }
-  // runners, back to front
-  const order = [...race.runners].sort((a,b)=>b.d - a.d);
-  for (const r of order){
-    const y = sy(r.d);
-    if (y < -40 || y > H + 40) continue;
-    const moving = state !== 'countdown';
-    const fi = moving ? Math.floor(r.anim / 7) % 6 : 2;
-    const bob = moving ? r.c.bob[fi] : 0;
-    const rx = Math.round(r.x) - 12, ry = y - 31;
-    g.fillStyle = 'rgba(29,29,31,.14)'; g.fillRect(rx+5, y-1, 14, 2); g.fillRect(rx+7, y+1, 10, 1);
-    if (r.hit > 0 && Math.floor(r.hit*16)%2) continue;
-    g.drawImage(r.c.run[fi], rx, ry + bob);
-    if (r.i === PLAYER){
-      const my = ry - 6 + (Math.floor(race.t*4)%2);
-      g.fillStyle = V.nero; g.fillRect(rx+9, my, 7, 1); g.fillRect(rx+10, my+1, 5, 1); g.fillRect(rx+11, my+2, 3, 1); g.fillRect(rx+12, my+3, 1, 1);
-      g.fillStyle = V.giallo; g.fillRect(rx+10, my, 5, 1); g.fillRect(rx+11, my+1, 3, 1);
-    }
-  }
-  // fx
   for (const f of race.fx){
     const y = sy(f.d);
-    if (f.type==='dust'){ g.fillStyle = `rgba(29,29,31,${f.life*0.6})`; const s = f.life > .14 ? 2 : 1; g.fillRect(Math.round(f.x), y, s, s); }
+    if (f.type==='dust'){ g.fillStyle = `rgba(29,29,31,${f.life*0.6})`; const z = f.life > .14 ? 2 : 1; g.fillRect(Math.round(f.x), y, z, z); }
     if (f.type==='spark'){ g.fillStyle = f.c; g.fillRect(Math.round(f.x), y, 1, 1); }
     if (f.type==='trail'){ g.globalAlpha = f.life*3; g.fillStyle = f.c; g.fillRect(Math.round(f.x)-5, y, 10, 2); g.globalAlpha = 1; }
   }
-  // off-screen indicators for rivals
   for (const r of race.runners){
     if (r.i === PLAYER) continue;
-    const y = sy(r.d);
-    if (y < -2){ g.fillStyle = V.nero; g.fillRect(Math.round(r.x)-3, 1, 7, 5); g.fillStyle = r.c.color; g.fillRect(Math.round(r.x)-2, 2, 5, 3); }
-    if (y > H + 30){ g.fillStyle = V.nero; g.fillRect(Math.round(r.x)-3, H-6, 7, 5); g.fillStyle = r.c.color; g.fillRect(Math.round(r.x)-2, H-5, 5, 3); }
+    const y = syTrue(r.d);
+    if (y < 0){ g.fillStyle = V.nero; g.fillRect(Math.round(r.x)-3, 2, 7, 5); g.fillStyle = r.c.color; g.fillRect(Math.round(r.x)-2, 3, 5, 3); }
+    if (y > H + 30){ g.fillStyle = V.nero; g.fillRect(Math.round(r.x)-3, H-5, 7, 5); g.fillStyle = r.c.color; g.fillRect(Math.round(r.x)-2, H-4, 5, 3); }
   }
 
-  // ---- compose at full res ----
-  const shx = race.shake > 0 ? Math.round((Math.random()-.5)*6) : 0;
+  // ---- compose at device resolution ----
+  const shx = race.shake > 0 ? Math.round((Math.random()-.5)*2) * K : 0;
   out.fillStyle = '#fff'; out.fillRect(0,0,view.width,view.height);
-  out.drawImage(buf, shx, 0, W*S, H*S);
-  // Vivido mark on the finish line (crisp, not pixelated)
-  const fy = sy(FINISH);
-  if (fy > -30 && fy < H + 30 && MARK.complete){ out.imageSmoothingEnabled = true; out.drawImage(MARK, 192 - 27 + shx, (fy - 30) * S - 30, 54, 54); out.imageSmoothingEnabled = false; }
-  if (race.flash > 0){ out.fillStyle = `rgba(236,72,60,${race.flash*1.6})`; out.fillRect(0,0,view.width,view.height); }
-  hud(p);
+  out.drawImage(buf, OX + shx, Math.round((frac - 1) * K), W*K, BH*K);
+  // runners, back to front, on exact device pixels
+  const order = [...race.runners].sort((a,b)=>b.d - a.d);
+  for (const r of order){
+    const yS = syTrue(r.d);
+    if (yS < -40 || yS > H + 40) continue;
+    const moving = state !== 'countdown';
+    const fi = moving ? Math.floor(r.anim / 7) % 6 : 2;
+    const bob = moving ? r.c.bob[fi] : 0;
+    const bx = OX + shx + Math.round((r.x - 12) * K), by = Math.round((yS - 31) * K);
+    const box = (x, y, w, h) => out.fillRect(bx + x*K, by + y*K, w*K, h*K);
+    out.fillStyle = 'rgba(29,29,31,.14)'; box(5, 30, 14, 2); box(7, 32, 10, 1);
+    out.globalAlpha = (r.hit > 0 && Math.floor(r.hit*8)%2) ? 0.45 : 1;     // gentle blink when hit
+    out.drawImage(r.c.run[fi], bx, by + bob*K, 24*K, 32*K);
+    out.globalAlpha = 1;
+    if (r.i === PLAYER){
+      const my = -6 + (Math.floor(race.t*4)%2);
+      out.fillStyle = V.nero; box(9, my, 7, 1); box(10, my+1, 5, 1); box(11, my+2, 3, 1); box(12, my+3, 1, 1);
+      out.fillStyle = V.giallo; box(10, my, 5, 1); box(11, my+1, 3, 1);
+    }
+  }
+  const fy = syTrue(FINISH);
+  if (fy > -30 && fy < H + 30 && MARK.complete){
+    const ms = 18*K; out.imageSmoothingEnabled = true; out.drawImage(MARK, OX + 64*K - ms/2 + shx, Math.round((fy - 30)*K), ms, ms); out.imageSmoothingEnabled = false;
+  }
+  if (race.flash > 0){ out.fillStyle = `rgba(236,72,60,${race.flash*0.6})`; out.fillRect(0,0,view.width,view.height); }
+  out.save(); out.setTransform(HS, 0, 0, HS, 0, 0); hud(p); out.restore();
 }
 
 function hud(p){
-  // progress rail
-  const top = 76, bot = view.height - 40, rx = view.width - 16;
+  const VW = 384, VHt = view.height / HS;
+  const top = 76, bot = VHt - 40, rx = VW - 16;
   out.fillStyle = V.nero; out.fillRect(rx-2, top, 4, bot-top);
   if (MARK.complete){ out.imageSmoothingEnabled = true; out.drawImage(MARK, rx-10, top-24, 20, 20); out.imageSmoothingEnabled = false; }
   for (const r of [...race.runners].sort((a,b)=>(a.i===PLAYER)-(b.i===PLAYER))){
-    const prog = Math.min(1, r.d / FINISH), py = bot - (bot-top) * prog;
-    const s = r.i === PLAYER ? 16 : 12;
-    out.fillStyle = V.nero; out.fillRect(rx - s/2 - 2, py - s/2 - 2, s + 4, s + 4);
-    out.fillStyle = r.c.color; out.fillRect(rx - s/2, py - s/2, s, s);
+    const prog = Math.min(1, r.d / FINISH), py = Math.round(bot - (bot-top) * prog);
+    const z = r.i === PLAYER ? 16 : 12;
+    out.fillStyle = V.nero; out.fillRect(rx - z/2 - 2, py - z/2 - 2, z + 4, z + 4);
+    out.fillStyle = r.c.color; out.fillRect(rx - z/2, py - z/2, z, z);
   }
-  // impressions
   out.fillStyle = V.nero; out.fillRect(12, 12, 124, 40); out.fillStyle = V.bianco; out.fillRect(15, 15, 118, 34);
   out.drawImage(IMP[0], 22, 20, 26, 16);
   out.fillStyle = V.nero; out.font = '16px "Press Start 2P", monospace';
   out.fillText(String(p.score).padStart(3,'0'), 58, 41);
-  // position
   const pos = rankOf(p);
-  out.fillStyle = V.nero; out.fillRect(view.width - 128, 12, 66, 40); out.fillStyle = V.viola; out.fillRect(view.width - 125, 15, 60, 34);
-  out.fillStyle = V.bianco; out.font = '16px "Press Start 2P", monospace'; out.fillText(pos + '/3', view.width - 116, 41);
-  // popups
+  out.fillStyle = V.nero; out.fillRect(VW - 128, 12, 66, 40); out.fillStyle = V.viola; out.fillRect(VW - 125, 15, 60, 34);
+  out.fillStyle = V.bianco; out.font = '16px "Press Start 2P", monospace'; out.fillText(pos + '/3', VW - 116, 41);
   for (const f of race.fx) if (f.type==='plus'){
-    const y = sy(f.d) * S; out.globalAlpha = Math.min(1, f.life*3);
+    const x = (OX + f.x*K) / HS, y = syTrue(f.d) * K / HS; out.globalAlpha = Math.min(1, f.life*3);
     out.font = '13px "Press Start 2P", monospace'; const w = out.measureText(f.txt).width;
-    out.fillStyle = V.nero; out.fillText(f.txt, f.x*S - w/2 + 3, y + 3); out.fillStyle = f.col || V.bianco; out.fillText(f.txt, f.x*S - w/2, y);
+    out.fillStyle = V.nero; out.fillText(f.txt, x - w/2 + 3, y + 3); out.fillStyle = f.col || V.bianco; out.fillText(f.txt, x - w/2, y);
     out.globalAlpha = 1;
   }
-  // countdown / GO / finish banner
   let big = null;
   if (state === 'countdown') big = race.count > 3 ? 'PRONTI?' : String(Math.ceil(race.count));
   else if (race.goT > 0) big = 'VIA!';
   else if (state === 'finishing') big = rankOf(p) === 1 ? 'PRIMO!' : 'ARRIVATO!';
   if (big){
     out.font = `${big.length <= 4 ? 78 : 40}px "Press Start 2P", monospace`; const w = out.measureText(big).width;
-    const x = (view.width - w)/2, y = view.height*0.42;
+    const x = (VW - w)/2, y = VHt*0.42;
     out.fillStyle = V.nero; out.fillText(big, x+4, y+4); out.fillStyle = state === 'finishing' ? V.giallo : V.bianco; out.fillText(big, x, y);
     out.lineWidth = 3; out.strokeStyle = V.nero; out.strokeText(big, x, y);
     if (state === 'countdown' && race.count <= 3.6 && race.count > 3){
-      out.font = '11px "Press Start 2P", monospace'; const hint = '◀ swipe / tocca ▶'; const hw = out.measureText(hint).width;
-      out.fillStyle = V.nero; out.fillText(hint, (view.width-hw)/2, y + 40);
+      out.font = '11px "Press Start 2P", monospace'; const hint = '< swipe / tocca >'; const hw = out.measureText(hint).width;
+      out.fillStyle = V.nero; out.fillText(hint, (VW-hw)/2, y + 40);
     }
   }
 }
@@ -796,9 +798,16 @@ function refreshBest(){
 refreshBest();
 function fitView(){
   const r = document.getElementById('game').getBoundingClientRect();
-  H = Math.max(228, Math.min(282, Math.round(W * r.height / r.width)));
-  buf.height = H; view.height = H * S; g.imageSmoothingEnabled = false; out.imageSmoothingEnabled = false;
-  PLAYER_Y = H - 42;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const dw = Math.round(r.width * dpr), dh = Math.round(r.height * dpr);
+  view.width = dw; view.height = dh;
+  K = Math.max(1, Math.floor(dw / W));           // integer scale: every game pixel is K×K device pixels
+  OX = Math.floor((dw - W * K) / 2);
+  H = Math.ceil(dh / K);
+  buf.height = H + 2;
+  PLAYER_Y = H - 44;
+  HS = dw / 384;
+  g.imageSmoothingEnabled = false; out.imageSmoothingEnabled = false;
 }
 window.addEventListener('resize', () => { if (state !== 'title' && state !== 'results') fitView(); });
 function startRace(){
