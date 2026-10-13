@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Race Sprites</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#eef6fb; --card:#ffffff; --ink:#1d1a2b; --muted:#5d6b80; --line:#d7e3ee; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:Poppins, system-ui, sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:28px; margin:0 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 24px; font-size:14px; }
+  h2 { font-size:16px; margin:32px 0 12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; }
+  .card h3 { margin:0 0 2px; font-size:18px; display:flex; align-items:center; gap:8px; }
+  .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+  .card small { color:var(--muted); }
+  .row { display:flex; gap:12px; align-items:flex-end; justify-content:space-between; margin-top:12px; }
+  .cell { text-align:center; font-size:11px; color:var(--muted); }
+  .stage { border-radius:12px; display:flex; align-items:flex-end; justify-content:center; padding:8px; }
+  canvas { image-rendering:pixelated; image-rendering:crisp-edges; display:block; }
+  .scene-wrap { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  #scene { width:min(100%,324px); height:auto; border-radius:16px; border:1px solid var(--line); }
+  .props { display:flex; gap:16px; flex-wrap:wrap; }
+  .note { font-size:14px; color:var(--muted); max-width:420px; line-height:1.55; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Race · sprite test</h1>
+  <p class="sub">Pixel art 16×24 ricavata dagli avatar Vivido. Fronte = schermata di selezione, retro = in gara (corrono verso l'alto).</p>
+
+  <h2>Personaggi</h2>
+  <div class="grid" id="chars"></div>
+
+  <h2>Oggetti</h2>
+  <div class="card props" id="props"></div>
+
+  <h2>Anteprima gara</h2>
+  <div class="scene-wrap">
+    <canvas id="scene" width="324" height="576"></canvas>
+    <p class="note">Mockup animato, non ancora giocabile: tre corsie, impressions da raccogliere e ostacoli. Palette chiara e piatta ispirata al poster Hokkaido; le proporzioni chibi vengono dal reference pixel art.</p>
+  </div>
+</main>
+
+<script>
+// ---------- Palette ----------
+const COMMON = { K:'#1d1a2b', E:'#1d1a2b', M:'#8a2b3a', T:'#ffffff', P:'#2f3550', F:'#1b1b22', R:'#dfe4ee', W:'#ffffff' };
+
+const CHARS = [
+  { id:'red', label:'Avatar rosso', bg:'#e5484d', tag:'Ciuffo castano voluminoso',
+    pal:{ H:'#7a4a2a', h:'#a8703f', d:'#53311b', S:'#f8dcc8', s:'#e6bea6', b:'#f3b0a8', C:'#e5484d', c:'#bf3539' },
+    head:[
+      '......KKKKKKK...',
+      '...KKhhhhHHHHK..',
+      '..KhhHHHHHHHHHK.',
+      '.KHHHHHHHHHHHHK.',
+      '.KHHHHHHHHHHHdK.',
+      '.KdHHHHHHHHHHdK.',
+      '.KdSSSSSSSSSSdK.',
+      '.KSSddSSSSddSSK.',
+      'KsSSSESSSSESSSsK',
+      'KsSSSESSSSESSSsK',
+      '.KSbSSSSSSSSbSK.',
+      '.KSSSSMTTMSSSSK.',
+      '.KssSSSMMSSSssK.',
+      '..KsSSSSSSSSsK..',
+      '...KKKKKKKKKK...',
+    ]},
+  { id:'green', label:'Avatar verde', bg:'#5fd38a', tag:'Capelli corti + orecchino',
+    pal:{ H:'#4a3024', h:'#6d4836', d:'#2f1d16', S:'#f4cfb2', s:'#dfb092', b:'#f0a49a', C:'#4cc77a', c:'#33a35f' },
+    head:[
+      '................',
+      '...KKKKKKKKKK...',
+      '..KHHhHHHHhHHK..',
+      '.KHHHHHHHHHHHHK.',
+      '.KHHHHHHHHHHHHK.',
+      '.KdHHHHHHHHHHdK.',
+      '.KdSSSSSSSSSSdK.',
+      '.KSSddSSSSddSSK.',
+      'KsSSWESSSSWESSsK',
+      'KsSSSESSSSESSSsK',
+      '.KSbSSSSSSSSbSKR',
+      '.KSSSMTTTTMSSSK.',
+      '.KssSSMMMMSSssK.',
+      '..KsSSSSSSSSsK..',
+      '...KKKKKKKKKK...',
+    ]},
+  { id:'blue', label:'Avatar blu', bg:'#3b82f6', tag:'Barba + maglione nero',
+    pal:{ H:'#2a1f1a', h:'#43332a', d:'#17110e', S:'#bd7e52', s:'#9c6239', b:'#a96a42', C:'#2b2b33', c:'#18181d', B:'#2a1f1a' },
+    head:[
+      '................',
+      '...KKKKKKKKKK...',
+      '..KHHHHHHHHHHK..',
+      '.KHHHHHHHHHHHHK.',
+      '.KdHHHHHHHHHHdK.',
+      '.KdSSSSSSSSSSdK.',
+      '.KSSSSSSSSSSSSK.',
+      '.KSSddSSSSddSSK.',
+      'KsSSSESSSSESSSsK',
+      'KsBSSESSSSESSBsK',
+      '.KBBSSSSSSSSBBK.',
+      '.KBBBBMTTMBBBBK.',
+      '.KBBBBBMMBBBBBK.',
+      '..KBBBBBBBBBBK..',
+      '...KKKKKKKKKK...',
+    ]},
+];
+
+// Body: 9 rows. idle / runA / runB
+const BODY = {
+  idle:[
+    '...KCCCCCCCCK...',
+    '..KCCCCCCCCCCK..',
+    '..KCcCCCCCCcCK..',
+    '..KSKCCCCCCKSK..',
+    '...KPPPPPPPPK...',
+    '...KPPPKKPPPK...',
+    '...KPPK..KPPK...',
+    '...KFFK..KFFK...',
+    '....KK....KK....',
+  ],
+  runA:[
+    '...KCCCCCCCCK...',
+    '..KCCCCCCCCCCKK.',
+    '..KCcCCCCCCcKSK.',
+    '..KSKCCCCCCK.K..',
+    '...KPPPPPPPPK...',
+    '...KPPPKKPPPK...',
+    '...KFFK..KPPK...',
+    '....KK...KFFK...',
+    '..........KK....',
+  ],
+  runB:[
+    '...KCCCCCCCCK...',
+    '.KKCCCCCCCCCCK..',
+    '.KSKcCCCCCCcCK..',
+    '..K.KCCCCCCKSK..',
+    '...KPPPPPPPPK...',
+    '...KPPPKKPPPK...',
+    '...KPPK..KFFK...',
+    '...KFFK...KK....',
+    '....KK..........',
+  ],
+};
+
+// Back of head: face becomes hair, keep ears + beard edges
+function backHead(rows){
+  const face = new Set(['S','s','E','M','T','b','d','W']);
+  return rows.map((r,y)=>{
+    return r.split('').map((ch,x)=>{
+      if (x < 2 || x > 13) return ch;               // ears / outline / earring
+      if (ch === 'B') return (x===2||x===13) ? 'B' : 'H';
+      if (face.has(ch)) return (x===2||x===13) ? 'd' : 'H';
+      return ch;
+    }).join('');
+  });
+}
+
+function check(name, rows){ rows.forEach((r,i)=>{ if (r.length!==16) console.warn(name,'row',i,'len',r.length,r); }); }
+
+function makeSprite(rows, pal){
+  const c = document.createElement('canvas');
+  c.width = 16; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{
+    const col = pal[ch] ?? COMMON[ch];
+    if (col){ g.fillStyle = col; g.fillRect(x,y,1,1); }
+  }));
+  return c;
+}
+
+// Build sprite sets
+for (const ch of CHARS){
+  check(ch.id, ch.head);
+  const back = backHead(ch.head);
+  ch.front = makeSprite([...ch.head, ...BODY.idle], ch.pal);
+  ch.back = ['idle','runA','idle','runB'].map(k => makeSprite([...back, ...BODY[k]], ch.pal));
+  ch.frontRun = ['idle','runA','idle','runB'].map(k => makeSprite([...ch.head, ...BODY[k]], ch.pal));
+}
+Object.entries(BODY).forEach(([k,r])=>check('body '+k, r));
+
+// ---------- Props ----------
+const PROPS = [
+  { name:'Impression', rows:[
+    '....KKKK....',
+    '..KKYYYYKK..',
+    '.KYYyyyyYYK.',
+    '.KYyWWWWyYK.',
+    'KYyWWKKWWyYK',
+    'KYyWKUUKWyYK',
+    'KYyWWKKWWyYK',
+    '.KYyWWWWyYK.',
+    '.KYYyyyyYYK.',
+    '..KKYYYYKK..',
+    '....KKKK....',
+  ], pal:{ Y:'#ffc83d', y:'#f29f1c', U:'#0a66c2' }},
+  { name:'Cono', rows:[
+    '.....KK.....',
+    '....KOOK....',
+    '....KOOK....',
+    '...KWWWWK...',
+    '...KOOOOK...',
+    '..KOOOOOOK..',
+    '..KWWWWWWK..',
+    '.KOOOOOOOOK.',
+    'KKKKKKKKKKKK',
+    'KGGGGGGGGGGK',
+    'KKKKKKKKKKKK',
+  ], pal:{ O:'#f26b1d', G:'#3a3f55' }},
+  { name:'Scatola', rows:[
+    'KKKKKKKKKKKK',
+    'KXXXXTTXXXXK',
+    'KXXXXTTXXXXK',
+    'KxxxxTTxxxxK',
+    'KXXXXXXXXXXK',
+    'KXXXXXXXXXXK',
+    'KXXXXXXXXXXK',
+    'KxxxxxxxxxxK',
+    'KKKKKKKKKKKK',
+  ], pal:{ X:'#d29a5c', x:'#b07a43', T:'#efe1c4' }},
+  { name:'Pozzanghera', rows:[
+    '...KKKKKK...',
+    '.KKAAaAAAKK.',
+    'KAAAAAAaAAAK',
+    'KAaAAAAAAAAK',
+    '.KKAAAAAAKK.',
+    '...KKKKKK...',
+  ], pal:{ A:'#7fc4ea', a:'#d4eefb' }},
+];
+PROPS.forEach(p=>{ p.cv = (()=>{ const c=document.createElement('canvas'); c.width=p.rows[0].length; c.height=p.rows.length; const g=c.getContext('2d'); p.rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ const col=p.pal[ch]??COMMON[ch]; if(col){g.fillStyle=col; g.fillRect(x,y,1,1);} })); return c; })(); });
+
+// ---------- UI ----------
+function scaled(src, scale){
+  const c = document.createElement('canvas');
+  c.width = src.width*scale; c.height = src.height*scale;
+  const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.drawImage(src,0,0,c.width,c.height);
+  return c;
+}
+function animCanvas(frames, scale){
+  const c = document.createElement('canvas');
+  c.width = 16*scale; c.height = (24+1)*scale;
+  const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+  let i = 0;
+  setInterval(()=>{
+    g.clearRect(0,0,c.width,c.height);
+    const bob = (i%2) ? 0 : 1;
+    g.drawImage(frames[i%4], 0, bob*scale, 16*scale, 24*scale);
+    i++;
+  }, 140);
+  return c;
+}
+
+const wrap = document.getElementById('chars');
+for (const ch of CHARS){
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h3><span class="dot" style="background:${ch.bg}"></span>${ch.label}</h3><small>${ch.tag}</small>`;
+  const row = document.createElement('div'); row.className = 'row';
+  const items = [
+    ['Fronte', scaled(ch.front, 6)],
+    ['Corsa (retro)', animCanvas(ch.back, 6)],
+  ];
+  for (const [lbl, cv] of items){
+    const cell = document.createElement('div'); cell.className = 'cell';
+    const st = document.createElement('div'); st.className = 'stage'; st.style.background = ch.bg + '22';
+    st.appendChild(cv); cell.appendChild(st);
+    cell.appendChild(Object.assign(document.createElement('div'), { textContent: lbl }));
+    row.appendChild(cell);
+  }
+  card.appendChild(row); wrap.appendChild(card);
+}
+const propsEl = document.getElementById('props');
+for (const p of PROPS){
+  const cell = document.createElement('div'); cell.className = 'cell';
+  cell.appendChild(scaled(p.cv, 5));
+  cell.appendChild(Object.assign(document.createElement('div'), { textContent: p.name }));
+  propsEl.appendChild(cell);
+}
+
+// ---------- Scene mockup ----------
+const sc = document.getElementById('scene');
+const out = sc.getContext('2d'); out.imageSmoothingEnabled = false;
+const buf = document.createElement('canvas'); buf.width = 108; buf.height = 192;
+const sg = buf.getContext('2d');
+let score = 0;
+const W = 108, Hh = 192, LANE = [27, 54, 81];
+let t = 0, scroll = 0;
+sg.imageSmoothingEnabled = false;
+const items = [];
+function spawn(y){
+  const r = Math.random();
+  const p = r < .55 ? PROPS[0] : PROPS[1 + Math.floor(Math.random()*3)];
+  items.push({ p, lane: Math.floor(Math.random()*3), y });
+}
+for (let y = -20; y > -400; y -= 34) spawn(y);
+const runners = CHARS.map((c,i)=>({ c, lane:i, y: 130 + [0,-14,8][i], lx: LANE[i] }));
+
+function drawScene(){
+  t++; scroll = (scroll + 1.6) % 16;
+  // snow banks
+  sg.fillStyle = '#f4f9fd'; sg.fillRect(0,0,W,Hh);
+  sg.fillStyle = '#dbe9f4';
+  for (let y = -16 + scroll; y < Hh; y += 16){ sg.fillRect(2, y, 3, 2); sg.fillRect(W-6, y+8, 3, 2); }
+  // track
+  sg.fillStyle = '#9fb3c8'; sg.fillRect(12,0,84,Hh);
+  sg.fillStyle = '#f26b1d'; sg.fillRect(12,0,2,Hh); sg.fillRect(94,0,2,Hh);
+  sg.fillStyle = '#ffffff';
+  for (let y = -16 + scroll*2 % 16; y < Hh; y += 16){ sg.fillRect(40, y, 1, 8); sg.fillRect(67, y, 1, 8); }
+  // finish banner hint
+  sg.fillStyle = '#1d1a2b'; sg.fillRect(0,0,W,10);
+  // items
+  for (const it of items){
+    it.y += 1.6;
+    if (it.y > Hh + 10){ it.y -= 400; it.lane = Math.floor(Math.random()*3); }
+    sg.drawImage(it.p.cv, LANE[it.lane] - it.p.cv.width/2, Math.round(it.y));
+  }
+  // runners (drift lanes for life)
+  if (t % 90 === 0){ // two runners swap lanes, never overlap
+    const a = Math.floor(Math.random()*3), b = (a + 1 + Math.floor(Math.random()*2)) % 3;
+    [runners[a].lane, runners[b].lane] = [runners[b].lane, runners[a].lane];
+  }
+  runners.forEach((r,i)=>{
+    r.lx += (LANE[r.lane] - r.lx) * 0.12;
+    r.y += Math.sin((t + i*30)/40) * 0.15;
+    const f = r.c.back[Math.floor(t/6)%4];
+    const bob = Math.floor(t/6)%2 ? 0 : 1;
+    sg.fillStyle = 'rgba(29,26,43,.18)'; sg.fillRect(Math.round(r.lx)-5, Math.round(r.y)+23, 10, 2);
+    sg.drawImage(f, Math.round(r.lx) - 8, Math.round(r.y) + bob);
+  });
+  if (t % 20 === 0) score += 10;
+  out.drawImage(buf, 0, 0, 324, 576);
+  out.drawImage(PROPS[0].cv, 8, 4, 24, 22);
+  out.fillStyle = '#ffffff'; out.font = '600 16px Poppins, sans-serif';
+  out.fillText(score.toLocaleString('it-IT') + ' impressions', 40, 22);
+  requestAnimationFrame(drawScene);
+}
+drawScene();
+</script>
+</body>
+</html>
