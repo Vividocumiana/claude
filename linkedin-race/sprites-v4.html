@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impression Race v4</title>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#F5F5F7; --ink:#1D1D1F; --muted:#6e6e73; --line:#e3e3e8; --card:#fff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:Poppins, system-ui, sans-serif; }
+  main { max-width:1040px; margin:0 auto; padding:24px 16px 56px; }
+  h1 { font:700 30px 'Pixelify Sans', sans-serif; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 28px; font-size:14px; }
+  h2 { font:600 15px Poppins, sans-serif; margin:36px 0 12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  canvas { image-rendering:pixelated; image-rendering:crisp-edges; display:block; }
+  .phones { display:flex; gap:28px; flex-wrap:wrap; justify-content:center; }
+  .phone { width:340px; max-width:calc(100vw - 32px); border-radius:36px; padding:10px; background:#1D1D1F; box-shadow:0 20px 50px rgba(36,29,51,.25); }
+  .screen { border-radius:28px; overflow:hidden; position:relative; aspect-ratio:9/16; background:#fff; }
+  .screen canvas { width:100%; height:100%; }
+  .cap { text-align:center; color:var(--muted); font-size:13px; margin-top:10px; }
+
+  /* select screen */
+  .select { position:absolute; inset:0; padding:18px 14px; display:flex; flex-direction:column; gap:10px;
+            background:#fff; overflow:hidden; font-family:'Pixelify Sans', sans-serif; }
+  .select .logo { position:relative; text-align:center; font-weight:700; font-size:26px; line-height:.95; color:#1D1D1F; letter-spacing:.02em; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .select .logo canvas { width:45px; height:45px; }
+  .ribbons { position:absolute; inset:0; width:100%; height:100%; }
+  .select .logo span { font:600 13px Poppins, sans-serif; letter-spacing:0; background:linear-gradient(90deg,#EF87E7,#644BF6); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .pick { display:flex; align-items:center; gap:10px; background:#fff; border:3px solid #1D1D1F; border-radius:6px; padding:6px 10px 6px 6px;
+          box-shadow:0 4px 0 #1D1D1F; cursor:pointer; }
+  .pick.on { outline:4px solid var(--c); outline-offset:-1px; transform:translateY(-2px); box-shadow:0 6px 0 #1D1D1F; }
+  .pick .av { width:60px; height:60px; border-radius:4px; background:var(--c); flex:none; display:grid; place-items:center; }
+  .pick .av canvas { width:60px; height:60px; }
+  .pick .nm { font-weight:700; font-size:18px; }
+  .bars { display:grid; grid-template-columns:auto 1fr; gap:2px 8px; font-size:11px; color:#5d6b80; align-items:center; margin-top:2px; }
+  .bar { height:7px; background:#F5F5F7; border:2px solid #1D1D1F; position:relative; }
+  .bar i { position:absolute; inset:0 auto 0 0; background:var(--c); }
+  .go { position:relative; margin-top:auto; text-align:center; background:#FFD300; border:3px solid #1D1D1F; border-radius:6px; padding:10px; font-weight:700; font-size:20px; box-shadow:0 4px 0 #1D1D1F; }
+
+  .sheet { display:flex; gap:16px; flex-wrap:wrap; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; text-align:center; font-size:12px; color:var(--muted); }
+  .tile .st { display:flex; gap:10px; align-items:flex-end; justify-content:center; margin-bottom:8px; }
+  ul.diff { line-height:1.7; color:#3a4456; font-size:14px; padding-left:18px; max-width:720px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Impression Race · v4</h1>
+  <p class="sub">Ufficio in stile Vivido: palette del brand, nastri ad anello, stelline e doodle dal file di branding.</p>
+
+  <div class="phones">
+    <div>
+      <div class="phone"><div class="screen" id="selectScreen"></div></div>
+      <div class="cap">Selezione personaggio (tocca una card)</div>
+    </div>
+    <div>
+      <div class="phone"><div class="screen"><canvas id="scene" width="384" height="684"></canvas></div></div>
+      <div class="cap">In gara (mockup animato)</div>
+    </div>
+  </div>
+
+  <h2>Sprite sheet</h2>
+  <div class="sheet" id="sheet"></div>
+
+  <h2>Cosa è cambiato rispetto alla v3</h2>
+  <ul class="diff">
+    <li>Palette presa dal file di branding: nero, grigio, verde, giallo, arancione, viola, rosa Vivido.</li>
+    <li>La pista è un corridoio d'ufficio con il nastro ad anello Vivido dipinto sul pavimento, che cambia colore lungo il percorso.</li>
+    <li>Ai lati: scrivanie con laptop e post-it, piante, boccioni, pouf rosa, lavagne con doodle, stelline a 4 punte che brillano.</li>
+    <li>L'impression è l'occhio verde del brand (sbatte le palpebre); la lampadina è un boost "IDEA!" che fa scattare.</li>
+    <li>Ostacoli d'ufficio: cartello pavimento bagnato, sedia da ufficio, caffè rovesciato, scatoloni.</li>
+    <li>Traguardo con il logo Vivido; schermata di selezione con i nastri del brand e il logo.</li>
+  </ul>
+</main>
+
+<script>
+const PORTRAITS = {"gabriel": {"pal": ["#1d1a2b", "#a06d4e", "#7d472b", "#461b01", "#722e13", "#542d0d", "#310a00", "#250000", "#d59d7d", "#f9c8a6", "#ffdcb6", "#e4b18f", "#ffe8cb", "#000000", "#23142a"], "rows": ["............................000.................", "..........................001120................", ".................00000000021111300..............", "..............0004455425521211152200............", ".............045442221123522211211120...........", "............02242222442123542212225550..........", "............0222112245541255422225533500........", "............04455422255522455424545333420.......", "...........045555652455522455445536353630.......", "..........055533556545554245545335211120........", "..........0635533533455544555436422222220.......", ".........076735563535555453545652444444450......", ".........034563536666355533443355555555530......", ".........052453363443666634433333333336660......", ".........0542434899a9b12336763366666777660......", "........0354242999aaacccab1145677777777660......", "........063424b99aaaaccccccca9b8127776760.......", "........033351999aaacccccccaaaaa9b1666660.......", "........032228999aacccccccccaaa9999176660.......", "........03541b999aacccccccccaaaa99b84660........", "........03551999aaacccccccccaaa999b82530........", "........0332bb9b8b9ccccccccaaaa99bb81530........", "........0351bbb1112189accaaaa9999bb81530........", "........0348bb99aab8121aaaaaaaa99988130.........", ".......00328b99aaaccabb99a99b1111888230.........", "......08a22bb99aaacaaa9b99bb81112228260.........", "......08b21bb9b81889999bbbbbb9999b1840..........", "......09841bb9cbded51b9999bb99a99bb830..........", "......09818b99aa2dde189acabb9bbbbb810...........", "......09888b99accab9c9accab82e7611810...........", "......09918b9aaccccccaaaa9b91dddb9810...........", ".......0818b9aaccccccaa9999ac98899810...........", "........01889aacccccca999bb9acca9b880...........", ".........018b9acccccc9bac989aaaa9b880...........", ".........018b9aaaaaaab8ac989aaaa9b80............", "..........018b999bacca8181899aa99b80............", "..........018899981b9ac98b999999b80.............", "...........018b9abe118b99bb88b9bb10.............", "............0189aa11111111271abb80..............", "............01889a9b99b811e29ab810..............", ".............018b99b88bbb88b9b810...............", "..............018b99b888888bb100................", "...............0018bbbbb88b810..................", ".................018bb8888100...................", "..................001181100.....................", "....................00000.......................", "................................................", "................................................"]}, "nicolas": {"pal": ["#1d1a2b", "#442e1c", "#5b4932", "#32150a", "#000000", "#a97f54", "#c49b74", "#9b6543", "#fdcca5", "#ffd9b3", "#fee6c4", "#e6b892", "#f4bf97", "#dda77e"], "rows": ["...................0000000000...................", "................0001111111111000................", "..............00111111111111111100..............", ".............01122222222222222221100............", "............0122222222222222222221110...........", "...........011113311111111133333311110..........", "..........01133443333331113333333333110.........", "..........033332565721333333344344333110........", ".........0313168899aa9b65722775557143130........", ".........03116cc88999aaaaaaaaaa998c73310........", ".........0317bbc8899aaaaaaaa99998ccc73130.......", ".........0316bbc8899aaaaaaaaaa9988cbd1130.......", ".........032ddbc89999aaaaaaa99988ccbd7330.......", ".........037ddc8bdb999aaaaa9999998cdd7330.......", ".........035dd522222599999999b655dcbd5130.......", ".........035d726dd677c8999886227227dd5130.......", ".........016d6c8cbdddbc888ccd6dbcb7266130.......", "........0326dbccddd66db888bdddddbcc666130.......", "........0476dcb56666d6bc8cb66dddbcbbd610........", ".......09356bd5a656666d88cd666665dcd6510........", "......058656d5a6d31b66b89cd66655b56c6510........", "......056656d9a21445a5b99c6696537a5d65100.......", "......0b655dc9a5341da6b99c59b13419a6d57cd0......", "......0cd55dc89aabbaadc99c6aa14479ab656d50......", "......0cd55dc89aaaaa9c8aa8b9abbc998c655560......", "......0cc55bc89aaaaa98889888aaaaa98b657db0......", ".......0c55b889aaaa998c8cc89aaaaa98b655b0.......", ".......0d55b8899aaa99bb98dc99aaa988bd75c0.......", "........005dc888999986b986d9999a988c67dc0.......", ".........05dbccccc88867555d88889988b67c0........", ".........056dbbd6dc899b66d88cccccccd576b0.......", "..........06dbbb625ddc99998ccd6dbbb675ab0.......", "..........056dbc924275555557216dbbd67000........", "..........075db89d3433112113428cbd650...........", "...........076db8863333444441d9cd6570...........", "............056dc8b677777212dc8bd570............", ".............056dcbdd665556ddcb6570.............", "..............056ddddddd666dbd6570..............", "...............056ddddddddddd6570...............", "................056dd666666d6570................", ".................05566666665700.................", "..................00775755700...................", "....................0000000.....................", "................................................", "................................................", "................................................", "................................................", "................................................"]}, "zeeshan": {"pal": ["#1d1a2b", "#291c15", "#4c2e19", "#1e1714", "#1f120d", "#18110d", "#975f2e", "#e09d5c", "#f6b16e", "#d3813d", "#120e0e", "#0a0705", "#000000", "#1f1918"], "rows": ["......................00000000..................", "...................000111111110000..............", ".................0011222222211111100............", "...............0012222222222221111130...........", "..............0111222222222222211111400.........", ".............011122222222222222211114450........", "............0111111144443311111111111440........", "............01114122666662222144453111450.......", "............0142677888888877799662255144a0......", "...........0146788888888888888887796254450......", "...........056777788888888888888777796544a0.....", "...........029777888888888888888877799254a0.....", "...........02977888888888888888887779965450.....", "...........06977778888888888888888779964440.....", "...........06992222688888888666669779961440.....", "...........09611222368888882111112699992110.....", "..........026169999678888886666622129996110.....", "..........066999999777888777799999622996220.....", "..........069977887997888779977779796996220.....", "..........069799998797888797888888799996220.....", "..........069678242777888777992169779996220.....", "..........09978272b677888779876247999996620.....", ".........0799882bc48878887788262c68979966200....", "........0699978944288788877882cc4787999626790...", "........06697778797877778778872268879996299660..", "........09697788888779997788787787779996266690..", ".........0697888888799779788888888779996266990..", ".........069778888799887998888888877999226690...", ".........069778887796979697777888777996426990...", ".........026977777979666677777777779992b66990...", ".........02299962222222266666669777996456990....", "..........042992222222222111111297996454690.....", "..........04122292666666222222216962445560......", "..........0511227237888888872292221115b00.......", "...........04122994cd677762cb99221144bb0........", "...........0511169624444bb4269922114bb0.........", "............041127699966699697621145b0..........", ".............0411676977779667622145b0...........", "..............04129966666697922145b0............", "...............04126611129962114bb00............", "................041112222221115b521c0...........", ".................051112221114bb122bcb0..........", "................000b5411145b51222bcbbb000.......", ".............000abcc4455b4422222bbbabbbba00.....", "............0aabbbcc4222222222bcbaaaaaabaaa00...", "...........0aaabbbcccb44444bccba555aaaa5555aa0..", "..........05aaaaaabbcccccccba5555555aa533555aa0.", ".........05aa55555555aaaa5555555555a5333333355a0"]}};
+
+// ---------- color utils ----------
+const hex2rgb = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const rgb2hex = c => '#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+function rgb2hsl([r,g,b]){ r/=255;g/=255;b/=255; const M=Math.max(r,g,b),m=Math.min(r,g,b); let h=0,s=0,l=(M+m)/2;
+  if(M!==m){ const d=M-m; s=l>.5?d/(2-M-m):d/(M+m); h=M===r?(g-b)/d+(g<b?6:0):M===g?(b-r)/d+2:(r-g)/d+4; h*=60; } return [h,s,l]; }
+function hsl2rgb([h,s,l]){ h=((h%360)+360)%360/360; if(!s) return [l*255,l*255,l*255];
+  const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q, f=t=>{t=(t+1)%1; return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p;}; return [f(h+1/3)*255,f(h)*255,f(h-1/3)*255]; }
+// hue-shifted ramp: shadows drift toward purple, lights toward warm yellow
+function ramp(base, k=1){
+  const [h,s,l] = rgb2hsl(hex2rgb(base));
+  const toward = (h0, target, k) => { let d=((target-h0+540)%360)-180; return h0 + d*k; };
+  return {
+    hi: rgb2hex(hsl2rgb([toward(h,50,.25*k), Math.min(1,s*1.05), Math.min(.95,l+.11)])),
+    base,
+    sh: rgb2hex(hsl2rgb([toward(h,260,.22*k), Math.min(1,s*1.1+.04), Math.max(.06,l-.13)])),
+    dk: rgb2hex(hsl2rgb([toward(h,260,.35*k), Math.min(1,s*1.1+.05), Math.max(.04,l-.28)])),
+  };
+}
+const OUTLINE = '#1D1D1F';
+
+// ---------- Characters ----------
+const CHARS = [
+  { id:'gabriel', name:'Gabriel', color:'#e5484d', stats:[4,3,5],
+    mat:{ H:'#8a542f', S:'#f8d9c3', C:'#e5484d', P:'#34395a', F:'#2a2a33', B:'#8a542f' }, extra:{},},
+  { id:'nicolas', name:'Nicolas', color:'#4cc77a', stats:[5,4,3],
+    mat:{ H:'#4a3024', S:'#f4cfb2', C:'#4cc77a', P:'#34395a', F:'#2a2a33', B:'#4a3024' }, extra:{ R:'#e6ebf3' },},
+  { id:'zeeshan', name:'Zeeshan', color:'#3b82f6', stats:[3,5,4],
+    mat:{ H:'#2c211b', S:'#c4855a', C:'#3b82f6', P:'#34395a', F:'#2a2a33', B:'#2c211b' }, extra:{},},
+];
+const SPR = {"gabriel": {"front": ["...........KKKKHhhHKK...", "........KKKHHhhhHHhdHK..", "......KKHHhhhHHHhhHHdK..", "....KKHHhhHHHhhhHHhHdK..", "...KHHHHhHHhhHHHHhHHdK..", "...KHHHhHHHHHHHHHHHHdK..", "...KHHHHHHHHHHHHHHHdK...", "...KHHHHHHHHHHHHHHHdK...", "...KddHHHHSSSSSSSHdHK...", "...KdHSSddSSSSddSSHHK...", "..KSHSSSSSSSSSSSSSSHSK..", "..KsSSSSWESSSSWESSSSsK..", "..KSSSSSEESSSSEESSSSSK..", "...KSbbSSSSSsSSMSbbSK...", "...KSSSSSMTTTTMSSSSSK...", "....KSSSSSMMMMSSSSSK....", ".....KSSSSSSSSSSSSK.....", "......KKSSSSSSSSKK......", "....KKKKKKKKKKKKKKKK....", "...KSSSCCCSSSSCCCSSSK...", "..KSlSSCCCCSSCCCCSSlSK..", "..KSlSSCcccCCcccCSSlSK..", "..KSSSKCCCCccCCCCKSSSK..", "..KsSSKKCCCCCCCCKKSSsK..", "..KSSSKKccccccccKKSSSK..", "..KSSSKKPPPPPPPPKKSSSK..", "..KSSSKKPPPPPPPPKKSSSK..", "...KKK.KPPPKKPPPK.KKK...", ".......KPPPKKPPPK.......", "......KFFFFKKFFFFK......", "......KffffKKffffK......", ".......KKKK..KKKK......."], "run": [["...........KKKKHhhHKK...", "........KKKHHhhhHHhdHK..", "......KKHHhhhHHHhhHHdK..", "....KKHHhhHHHhhhHHhHdK..", "...KHHHHhHHhhHHHHhHHdK..", "...KHHHhHHHHHHHHHHHHdK..", "...KHHHHHHHHHHHHHHHdK...", "...KHHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHdHK...", "...KdHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "....KHHHHHHHHHHHHHHK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", "....KKKKKKKKKKKKKKKK....", "...KSSSCCCCccCCCCSSSK...", "..KSlSSCcCCccCCcCSSlSK..", "..KSlSSCCCCccCCCCSSlSK..", "..KSSSKCCCCccCCCCsSSSK..", "..KsSSKKCCCccCCCKKSSsK..", "..KSSSKKccccccccK.KKK...", "..KSSSSKPPPPPPPPK.......", ".KSSSKKKPPPPPPPPK.......", ".KSSSK.KPPPKKuuuK.......", "..KKK..KPPPKKuuuK.......", "......KFFFFK.KKK........", "......KffffK............", ".......KKKK............."], ["...........KKKKHhhHKK...", "........KKKHHhhhHHhdHK..", "......KKHHhhhHHHhhHHdK..", "....KKHHhhHHHhhhHHhHdK..", "...KHHHHhHHhhHHHHhHHdK..", "...KHHHhHHHHHHHHHHHHdK..", "...KHHHHHHHHHHHHHHHdK...", "...KHHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHdHK...", "...KdHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "....KHHHHHHHHHHHHHHK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", "....KKKKKKKKKKKKKKKK....", "...KSSSCCCCccCCCCSSSK...", "..KSlSSCcCCccCCcCSSlSK..", "..KSlSSCCCCccCCCCSSlSK..", "..KSSSKCCCCccCCCCsSSSK..", "..KsSSKKCCCccCCCKKSSsK..", "..KSSSKKccccccccK.KKK...", "..KSSSSKPPPPPPPPK.......", ".KSSSKKKPPPPPPPPK.......", ".KSSSK.KPPPKKPPPK.......", "..KKK..KPPPKKFFFFK......", "......KFFFFKKFFFFK......", "......KffffK.KKKK.......", ".......KKKK............."], ["...........KKKKHhhHKK...", "........KKKHHhhhHHhdHK..", "......KKHHhhhHHHhhHHdK..", "....KKHHhhHHHhhhHHhHdK..", "...KHHHHhHHhhHHHHhHHdK..", "...KHHHhHHHHHHHHHHHHdK..", "...KHHHHHHHHHHHHHHHdK...", "...KHHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHdHK...", "...KdHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "....KHHHHHHHHHHHHHHK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", "....KKKKKKKKKKKKKKKK....", "...KSSSCCCCccCCCCSSSK...", "..KSlSSCcCCccCCcCSSlSK..", "..KSlSSCCCCccCCCCSSlSK..", "..KSSSKCCCCccCCCCKSSSK..", "..KsSSKKCCCccCCCKKSSsK..", "..KSSSKKccccccccKKSSSK..", "..KSSSKKPPPPPPPPKKSSSK..", "..KSSSKKPPPPPPPPKKSSSK..", "...KKK.KPPPKKPPPK.KKK...", "......KFFFFKKFFFFK......", "......KFFFFKKFFFFK......", ".......KKKK..KKKK.......", "........................"], ["...........KKKKHhhHKK...", "........KKKHHhhhHHhdHK..", "......KKHHhhhHHHhhHHdK..", "....KKHHhhHHHhhhHHhHdK..", "...KHHHHhHHhhHHHHhHHdK..", "...KHHHhHHHHHHHHHHHHdK..", "...KHHHHHHHHHHHHHHHdK...", "...KHHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHdHK...", "...KdHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "....KHHHHHHHHHHHHHHK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", "....KKKKKKKKKKKKKKKK....", "...KSSSCCCCccCCCCSSSK...", "..KSlSSCcCCccCCcCSSlSK..", "..KSlSSCCCCccCCCCSSlSK..", "..KSSSsCCCCccCCCCKSSSK..", "..KsSSKKCCCccCCCKKSSsK..", "...KKK.KccccccccKKSSSK..", ".......KPPPPPPPPKSSSSK..", ".......KPPPPPPPPKKKSSSK.", ".......KuuuKKPPPK.KSSSK.", ".......KuuuKKPPPK..KKK..", "........KKK.KFFFFK......", "............KffffK......", ".............KKKK......."], ["...........KKKKHhhHKK...", "........KKKHHhhhHHhdHK..", "......KKHHhhhHHHhhHHdK..", "....KKHHhhHHHhhhHHhHdK..", "...KHHHHhHHhhHHHHhHHdK..", "...KHHHhHHHHHHHHHHHHdK..", "...KHHHHHHHHHHHHHHHdK...", "...KHHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHdHK...", "...KdHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "....KHHHHHHHHHHHHHHK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", "....KKKKKKKKKKKKKKKK....", "...KSSSCCCCccCCCCSSSK...", "..KSlSSCcCCccCCcCSSlSK..", "..KSlSSCCCCccCCCCSSlSK..", "..KSSSsCCCCccCCCCKSSSK..", "..KsSSKKCCCccCCCKKSSsK..", "...KKK.KccccccccKKSSSK..", ".......KPPPPPPPPKSSSSK..", ".......KPPPPPPPPKKKSSSK.", ".......KPPPKKPPPK.KSSSK.", "......KFFFFKKPPPK..KKK..", "......KFFFFKKFFFFK......", ".......KKKK.KffffK......", ".............KKKK......."], ["...........KKKKHhhHKK...", "........KKKHHhhhHHhdHK..", "......KKHHhhhHHHhhHHdK..", "....KKHHhhHHHhhhHHhHdK..", "...KHHHHhHHhhHHHHhHHdK..", "...KHHHhHHHHHHHHHHHHdK..", "...KHHHHHHHHHHHHHHHdK...", "...KHHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHdHK...", "...KdHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "....KHHHHHHHHHHHHHHK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", "....KKKKKKKKKKKKKKKK....", "...KSSSCCCCccCCCCSSSK...", "..KSlSSCcCCccCCcCSSlSK..", "..KSlSSCCCCccCCCCSSlSK..", "..KSSSKCCCCccCCCCKSSSK..", "..KsSSKKCCCccCCCKKSSsK..", "..KSSSKKccccccccKKSSSK..", "..KSSSKKPPPPPPPPKKSSSK..", "..KSSSKKPPPPPPPPKKSSSK..", "...KKK.KPPPKKPPPK.KKK...", "......KFFFFKKFFFFK......", "......KFFFFKKFFFFK......", ".......KKKK..KKKK.......", "........................"]], "bob": [0, 1, 0, 0, 1, 0]}, "nicolas": {"front": ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHhhhhHHHHHHK.....", "....KHHHHHHHHhhhHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KddSdddSSSSdddSddK...", "...KSSSSSSSSSSSSSSSSK...", "..KSSSSSWESSSSWESSSSSK..", "..KsSSSSEESSSSEESSSSsK..", "..KSSSSSEESSSSEESSSSSK..", "...KSbbSSSSSsSSSSbbSRK..", "...KSSSSSMTTTTMSSSSSK...", "....KSSSSMMrrMMSSSSK....", ".....KSSSSMMMMSSSSK.....", "......KKSSSSSSSSKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCccCCCCCCK....", "....KCCcCCCcCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KSScCCCCCCCCcSSK....", "....KSSccccccccccSSK....", ".....KKPPPPPPPPPPKK.....", "......KPPPPPPPPPPK......", "......KPPPPKKPPPPK......", "......KPPPPKKPPPPK......", ".....KFFFFFKKFFFFFK.....", ".....KfffffKKfffffK.....", "......KKKKK..KKKKK......"], "run": [["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHhhhhHHHHHHK.....", "....KHHHHHHHHhhhHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHddK...", "...KHHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHRK..", "...KHHHHHHHHHHHHHHHHK...", "....KSHHHHHHHHHHHHSK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCCSSK....", "....KCCCCCCCCCCCCSSK....", "....KCCccccccccccKK.....", "...KSSKPPPPPPPPPPK......", "...KSSKPPPPPPPPPPK......", "....KKKPPPPKKuuuuK......", "......KPPPPKKuuuuK......", ".....KFFFFFK.KKKK.......", ".....KfffffK............", "......KKKKK............."], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHhhhhHHHHHHK.....", "....KHHHHHHHHhhhHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHddK...", "...KHHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHRK..", "...KHHHHHHHHHHHHHHHHK...", "....KSHHHHHHHHHHHHSK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCCSSK....", "....KCCCCCCCCCCCCSSK....", "....KCCccccccccccKK.....", "...KSSKPPPPPPPPPPK......", "...KSSKPPPPPPPPPPK......", "....KKKPPPPKKPPPPK......", "......KPPPPKKFFFFK......", ".....KFFFFFKKFFFFK......", ".....KfffffK.KKKK.......", "......KKKKK............."], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHhhhhHHHHHHK.....", "....KHHHHHHHHhhhHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHddK...", "...KHHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHRK..", "...KHHHHHHHHHHHHHHHHK...", "....KSHHHHHHHHHHHHSK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KSScCCCCCCCCcSSK....", "....KSSccccccccccSSK....", ".....KKPPPPPPPPPPKK.....", "......KPPPPPPPPPPK......", "......KPPPPKKPPPPK......", "......KFFFFKKFFFFK......", "......KFFFFKKFFFFK......", ".......KKKK..KKKK.......", "........................"], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHhhhhHHHHHHK.....", "....KHHHHHHHHhhhHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHddK...", "...KHHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHRK..", "...KHHHHHHHHHHHHHHHHK...", "....KSHHHHHHHHHHHHSK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", ".....KKccccccccccCCK....", "......KPPPPPPPPPPKSSK...", "......KPPPPPPPPPPKSSK...", "......KuuuuKKPPPPKKK....", "......KuuuuKKPPPPK......", ".......KKKK.KFFFFFK.....", "............KfffffK.....", ".............KKKKK......"], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHhhhhHHHHHHK.....", "....KHHHHHHHHhhhHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHddK...", "...KHHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHRK..", "...KHHHHHHHHHHHHHHHHK...", "....KSHHHHHHHHHHHHSK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", ".....KKccccccccccCCK....", "......KPPPPPPPPPPKSSK...", "......KPPPPPPPPPPKSSK...", "......KPPPPKKPPPPKKK....", "......KFFFFKKPPPPK......", "......KFFFFKKFFFFFK.....", ".......KKKK.KfffffK.....", ".............KKKKK......"], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHhhhhHHHHHHK.....", "....KHHHHHHHHhhhHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KddHHHHHHHHHHHHddK...", "...KHHHHHHHHHHHHHHHHK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KHHHHHHHHHHHHHHHHRK..", "...KHHHHHHHHHHHHHHHHK...", "....KSHHHHHHHHHHHHSK....", ".....KddddddddddddK.....", "......KKSssssssSKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KSScCCCCCCCCcSSK....", "....KSSccccccccccSSK....", ".....KKPPPPPPPPPPKK.....", "......KPPPPPPPPPPK......", "......KPPPPKKPPPPK......", "......KFFFFKKFFFFK......", "......KFFFFKKFFFFK......", ".......KKKK..KKKK.......", "........................"]], "bob": [0, 1, 0, 0, 1, 0]}, "zeeshan": {"front": ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHHHhhhHHHHHK.....", "....KHHHHHHHHHhHHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHSSSSSSSSSSSSHdK...", "...KdSSdddSSSSdddSSdK...", "...KdSSSSSSSSSSSSSSdK...", "..KSHSSSWESSSSWESSSHSK..", "..KsHSSSEESSSSEESSSHsK..", "..KSBBBSEESSsSEESBBBSK..", "...KBBBSBBBBBBBBSBBBK...", "...KBBBSSMTTTTMSSBBBK...", "....KBBgBBMMMMBBgBBK....", ".....KBBBBBgBBBBBBK.....", "......KKBgBBBBBBKK......", ".....KKKKKKKKKKKKKK.....", "....KCCCCCccccCCCCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KSScCCCCCCCCcSSK....", "....KSSccccccccccSSK....", ".....KKPPPPPPPPPPKK.....", "......KPPPPPPPPPPK......", "......KPPPPKKPPPPK......", "......KPPPPKKPPPPK......", ".....KFFFFFKKFFFFFK.....", ".....KfffffKKfffffK.....", "......KKKKK..KKKKK......"], "run": [["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHHHhhhHHHHHK.....", "....KHHHHHHHHHhHHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KBHHHHHHHHHHHHHHBK...", "...KBHHHHHHHHHHHHHHBK...", "...KBSHHHHHHHHHHHHSBK...", "....KBddddddddddddBK....", ".....KKKSssssssSKKK.....", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCCSSK....", "....KCCCCCCCCCCCCSSK....", "....KCCccccccccccKK.....", "...KSSKPPPPPPPPPPK......", "...KSSKPPPPPPPPPPK......", "....KKKPPPPKKuuuuK......", "......KPPPPKKuuuuK......", ".....KFFFFFK.KKKK.......", ".....KfffffK............", "......KKKKK............."], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHHHhhhHHHHHK.....", "....KHHHHHHHHHhHHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KBHHHHHHHHHHHHHHBK...", "...KBHHHHHHHHHHHHHHBK...", "...KBSHHHHHHHHHHHHSBK...", "....KBddddddddddddBK....", ".....KKKSssssssSKKK.....", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCcCCK....", "....KCCCCCCCCCCCCSSK....", "....KCCCCCCCCCCCCSSK....", "....KCCccccccccccKK.....", "...KSSKPPPPPPPPPPK......", "...KSSKPPPPPPPPPPK......", "....KKKPPPPKKPPPPK......", "......KPPPPKKFFFFK......", ".....KFFFFFKKFFFFK......", ".....KfffffK.KKKK.......", "......KKKKK............."], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHHHhhhHHHHHK.....", "....KHHHHHHHHHhHHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KBHHHHHHHHHHHHHHBK...", "...KBHHHHHHHHHHHHHHBK...", "...KBSHHHHHHHHHHHHSBK...", "....KBddddddddddddBK....", ".....KKKSssssssSKKK.....", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KSScCCCCCCCCcSSK....", "....KSSccccccccccSSK....", ".....KKPPPPPPPPPPKK.....", "......KPPPPPPPPPPK......", "......KPPPPKKPPPPK......", "......KFFFFKKFFFFK......", "......KFFFFKKFFFFK......", ".......KKKK..KKKK.......", "........................"], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHHHhhhHHHHHK.....", "....KHHHHHHHHHhHHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KBHHHHHHHHHHHHHHBK...", "...KBHHHHHHHHHHHHHHBK...", "...KBSHHHHHHHHHHHHSBK...", "....KBddddddddddddBK....", ".....KKKSssssssSKKK.....", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", ".....KKccccccccccCCK....", "......KPPPPPPPPPPKSSK...", "......KPPPPPPPPPPKSSK...", "......KuuuuKKPPPPKKK....", "......KuuuuKKPPPPK......", ".......KKKK.KFFFFFK.....", "............KfffffK.....", ".............KKKKK......"], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHHHhhhHHHHHK.....", "....KHHHHHHHHHhHHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KBHHHHHHHHHHHHHHBK...", "...KBHHHHHHHHHHHHHHBK...", "...KBSHHHHHHHHHHHHSBK...", "....KBddddddddddddBK....", ".....KKKSssssssSKKK.....", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KCCcCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", "....KSSCCCCCCCCCCCCK....", ".....KKccccccccccCCK....", "......KPPPPPPPPPPKSSK...", "......KPPPPPPPPPPKSSK...", "......KPPPPKKPPPPKKK....", "......KFFFFKKPPPPK......", "......KFFFFKKFFFFFK.....", ".......KKKK.KfffffK.....", ".............KKKKK......"], ["........................", "........KKKKKKKK........", "......KKHHHHHHHHKK......", ".....KHHHHhhhHHHHHK.....", "....KHHHHHHHHHhHHHHK....", "...KHHHHHHHHHHHHHHHHK...", "...KHHHHHHHHHHHHHHHHK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "...KdHHHHHHHHHHHHHHdK...", "..KSHHHHHHHHHHHHHHHHSK..", "..KsHHHHHHHHHHHHHHHHsK..", "..KSHHHHHHHHHHHHHHHHSK..", "...KBHHHHHHHHHHHHHHBK...", "...KBHHHHHHHHHHHHHHBK...", "...KBSHHHHHHHHHHHHSBK...", "....KBddddddddddddBK....", ".....KKKSssssssSKKK.....", ".....KKKKKKKKKKKKKK.....", "....KCCCCCCCCCCCCCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KCCcCCCCCCCCcCCK....", "....KSScCCCCCCCCcSSK....", "....KSSccccccccccSSK....", ".....KKPPPPPPPPPPKK.....", "......KPPPPPPPPPPK......", "......KPPPPKKPPPPK......", "......KFFFFKKFFFFK......", "......KFFFFKKFFFFK......", ".......KKKK..KKKK.......", "........................"]], "bob": [0, 1, 0, 0, 1, 0]}};
+
+// Paint a letter grid with lighting + selective outline
+const MATS = ['H','S','C','P','F','B'];
+const FIXED = { E:'#1D1D1F', W:'#ffffff', M:'#7a2335', T:'#ffffff', b:'#f2a39b', r:'#d9566a', u:'#c9cfdb', R:'#e6ebf3' };
+const FORCED = { l:r=>r.S.hi, h:r=>r.H.hi, d:r=>r.H.dk, s:r=>r.S.sh, c:r=>r.C.sh, f:r=>r.F.dk, g:r=>r.B.hi };
+function paint(rows, ch){
+  const h = rows.length, w = rows[0].length;
+  const at = (x,y) => (x<0||y<0||x>=w||y>=h) ? '.' : rows[y][x];
+  const ramps = {}; for (const m of MATS) ramps[m] = ramp(ch.mat[m], m==='S' ? .25 : m==='C' ? .4 : 1);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){
+    const k = at(x,y); let col = null;
+    if (k === '.') continue;
+    if (k === 'K'){
+      const n4 = [at(x+1,y),at(x-1,y),at(x,y+1),at(x,y-1)];
+      if (n4.includes('.')) col = OUTLINE;
+      else {
+        const cnt = {}; n4.filter(m=>MATS.includes(m)).forEach(m=>cnt[m]=(cnt[m]||0)+1);
+        const best = Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+        col = best ? ramps[best].dk : OUTLINE;
+      }
+    } else if (MATS.includes(k)){
+      const edge = q => q==='.'||q==='K';
+      const r = ramps[k];
+      if (edge(at(x+1,y)) || edge(at(x,y+1))) col = r.sh;
+      else if (edge(at(x-1,y)) || edge(at(x,y-1))) col = r.hi;
+      else col = r.base;
+      if (k==='S' && edge(at(x,y-1)) && at(x,y-1)!=='.' && MATS.includes(at(x,y-2))) col = r.sh; // hair casts shadow on forehead
+    } else if (k in FORCED) col = FORCED[k](ramps);
+    else col = FIXED[k] ?? ch.extra[k];
+    if (k==='b' && ch.id==='zeeshan') col = ramps.S.sh;
+    if (col){ g.fillStyle = col; g.fillRect(x,y,1,1); }
+  }
+  return c;
+}
+for (const ch of CHARS){
+  ch.front = paint(SPR[ch.id].front, ch);
+  ch.run = SPR[ch.id].run.map(r => paint(r, ch));
+  ch.bob = SPR[ch.id].bob;
+  const p = PORTRAITS[ch.id]; const pc = document.createElement('canvas'); pc.width = 48; pc.height = 48;
+  const pg = pc.getContext('2d'); p.rows.forEach((r,y)=>[...r].forEach((q,x)=>{ if(q!=='.'){ pg.fillStyle=p.pal[parseInt(q,36)]; pg.fillRect(x,y,1,1);} }));
+  ch.portrait = pc;
+}
+
+// ---------- Vivido palette (from brand Figma) ----------
+const V = { nero:'#1D1D1F', grigio:'#F5F5F7', bianco:'#FFFFFF', verde:'#74DB8B', giallo:'#FFD300', arancione:'#EC612A', viola:'#644BF6', rosa:'#EF87E7' };
+
+// ---------- Props ----------
+function grid(rows, pal){
+  const w = Math.max(...rows.map(r=>r.length));
+  const c = document.createElement('canvas'); c.width = w; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((r,y)=>[...r].forEach((k,x)=>{ const col = k==='K'?V.nero:pal[k]; if(col){ g.fillStyle=col; g.fillRect(x,y,1,1);} }));
+  return c;
+}
+function canvasOf(w, h, fn){ const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); fn(g, (col,x,y,ww=1,hh=1)=>{ g.fillStyle = col; g.fillRect(x,y,ww,hh); }); return c; }
+
+// impression = the Vivido eye doodle
+const EYE_ROWS = [
+  '....KKKKK....',
+  '..KKGGGGGKK..',
+  '.KGGGKKKGGGK.',
+  'KGGGKWggKGGGK',
+  'KGGGKgggKGGGK',
+  '.KGGGKKKGGGK.',
+  '..KKGGGGGKK..',
+  '....KKKKK....',
+];
+const IMP = [0,1,2,3].map(f => grid(EYE_ROWS.map((r,y)=>{
+  if (f===1 && y===1) return '..KKGhhGGKK..';
+  if (f===2 && y===1) return '..KKGGGhhKK..';
+  if (f===3 && (y===3||y===4)) return 'KGGGKKKKKGGGK';   // blink
+  return r;
+}), { G:V.verde, g:'#4fbf6a', W:V.bianco, h:'#c6f3d0' }));
+const BULB = grid([
+  '..KKKKK..',
+  '.KYYYYhK.',
+  'KYYYYYYhK',
+  'KYYYYYYYK',
+  'KYYYYYYYK',
+  '.KYYYYyK.',
+  '..KYYyK..',
+  '..KKKKK..',
+  '..KgggK..',
+  '..KKKKK..',
+  '..KgggK..',
+  '...KKK...',
+], { Y:V.giallo, y:'#e6b800', h:'#fff3a0', g:'#a3a3ad' });
+const PROPS = {
+  sign: grid([
+    '....KK....',
+    '...KYYK...',
+    '...KYYK...',
+    '..KYKKYK..',
+    '..KYKKYK..',
+    '.KYYKKYYK.',
+    '.KYYYYYYK.',
+    'KYYYKKYYYK',
+    'KYYYYYYYYK',
+    'KyyyyyyyyK',
+    'KKKKKKKKKK',
+  ], { Y:V.giallo, y:'#d9b100' }),
+  chair: grid([
+    '...KKKKKK...',
+    '..KPPPPPPK..',
+    '..KPppppPK..',
+    '..KKKKKKKK..',
+    '.KVVVVVVVVK.',
+    'KAKVVVVVVKAK',
+    'KAKVVVVVVKAK',
+    'KAKVvvvvVKAK',
+    '.KKVVVVVVKK.',
+    '..KKKKKKKK..',
+    '.K..KKKK..K.',
+    'KwK.K..K.KwK',
+    '.K........K.',
+  ], { P:V.viola, p:'#4c36d4', V:'#7d68ff', v:V.viola, A:'#4a4a52', w:'#8a8a95' }),
+  coffee: grid([
+    '...KKKKKK....',
+    '.KKccCcccKK..',
+    'KccccccccccK.',
+    'KcccccCccccKK',
+    '.KKccccccKKK.',
+    '...KKKKKK....',
+  ], { c:'#8b5a3c', C:'#c08a62' }),
+  box: grid([
+    'KKKKKKKKKKKK',
+    'KhhhhTThhhhK',
+    'KXXXXTTXXXXK',
+    'KXXXXTtXXXxK',
+    'KXXXXXXXXXxK',
+    'KXXXXXXXXXxK',
+    'KxxxxxxxxxxK',
+    'KKKKKKKKKKKK',
+  ], { X:'#d79c5e', x:'#ad723d', h:'#ecbd85', T:'#f3e6c9', t:'#d8c8a5' }),
+};
+const STAR = [V.viola, V.arancione, V.rosa].map(c => grid([
+  '...K...',
+  '..KCK..',
+  '.KKCKK.',
+  'KCCCCCK',
+  '.KKCKK.',
+  '..KCK..',
+  '...K...',
+], { C:c }));
+
+// office scenery (sides of the corridor)
+const SCENERY = {
+  plant: grid([
+    '.....KK.....',
+    '..KK.KGK.KK.',
+    '.KGGKKGGKGGK',
+    '.KGgGKGgKgGK',
+    'KGGgGKGgGgK.',
+    'KGgGGKgGGGK.',
+    '.KGGgKGgGK..',
+    '..KKGgGgKK..',
+    '....KgGK....',
+    '..KKKKKKKK..',
+    '..KOOOOOoK..',
+    '...KOOOoK...',
+    '...KOOOoK...',
+    '....KKKK....',
+  ], { G:V.verde, g:'#4fbf6a', O:V.arancione, o:'#c94c1d' }),
+  desk: canvasOf(20, 14, (g,p)=>{
+    p(V.nero,0,0,20,11); p(V.bianco,1,1,18,9); p('#e3e3e8',1,9,18,1); p('#e3e3e8',18,1,1,9);
+    p(V.nero,3,2,7,5); p(V.viola,4,3,5,3); p('#9d8bff',4,3,2,1);                // laptop screen
+    p(V.nero,3,7,7,2); p('#56565f',4,7,5,1);                                     // keyboard
+    p(V.nero,12,3,4,4); p(V.arancione,13,4,2,2);                                 // mug
+    p(V.giallo,13,8,3,2);                                                        // sticky note
+    p(V.nero,1,11,2,3); p(V.nero,17,11,2,3);                                     // legs
+  }),
+  cooler: grid([
+    '..KKKK..',
+    '.KBBBBK.',
+    '.KBbBBK.',
+    '.KBBBBK.',
+    '..KKKK..',
+    '.KKKKKK.',
+    'KWWWWWWK',
+    'KWKRKWwK',
+    'KWWWWWwK',
+    'KWWWWWwK',
+    'KWWWWWwK',
+    'KwwwwwwK',
+    'KKKKKKKK',
+  ], { B:'#cfe3ff', b:V.bianco, W:V.bianco, w:'#dcdce2', R:V.arancione }),
+  bean: grid([
+    '...KKKKKK...',
+    '.KKPPPPPPKK.',
+    'KPPPpppPPPPK',
+    'KPPppppppPPK',
+    'KPPPppppPPPK',
+    'KPPPPPPPPPpK',
+    '.KPPPPPPPpK.',
+    '..KKKKKKKK..',
+  ], { P:V.rosa, p:'#d968cf' }),
+  board: canvasOf(16, 18, (g,p)=>{
+    p(V.nero,0,0,16,12); p(V.bianco,1,1,14,10);
+    p(V.verde,3,3,4,1); p(V.verde,2,4,1,2); p(V.verde,7,4,1,2); p(V.verde,3,6,4,1);   // doodle loop
+    p(V.arancione,9,3,4,1); p(V.viola,9,5,3,1); p(V.rosa,9,7,4,1);                     // notes
+    p(V.nero,3,12,1,6); p(V.nero,12,12,1,6); p(V.nero,2,17,3,1); p(V.nero,11,17,3,1);
+  }),
+};
+
+// Vivido logo: four chevrons pointing to the center
+function vividoLogo(){
+  const top = ['OO...OO', '.OO.OO.', '..OOO..', '...O...'];
+  return canvasOf(15, 15, (g,p)=>{
+    top.forEach((r,y)=>[...r].forEach((k,x)=>{ if (k==='O'){
+      p(V.arancione, 4+x, y);           // top, pointing down
+      p(V.verde, 4+x, 14-y);            // bottom, pointing up
+      p(V.rosa, y, 4+x);                // left, pointing right
+      p(V.viola, 14-y, 4+x);            // right, pointing left
+    }}));
+  });
+}
+const LOGO = vividoLogo();
+
+// ---------- Select screen ----------
+const sel = document.getElementById('selectScreen');
+sel.innerHTML = `<div class="select">
+  <svg class="ribbons" viewBox="0 0 320 570" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="${V.rosa}"/><stop offset="1" stop-color="${V.viola}"/></linearGradient></defs>
+    <path d="M-20 40 C 40 0, 80 90, 30 110 S -10 60, 40 30" fill="none" stroke="${V.verde}" stroke-width="16" stroke-linecap="round"/>
+    <path d="M250 -10 C 330 40, 270 120, 240 80 S 300 10, 340 60" fill="none" stroke="url(#rg)" stroke-width="16" stroke-linecap="round"/>
+    <path d="M260 600 C 300 520, 360 500, 330 470 S 250 500, 280 540" fill="none" stroke="${V.giallo}" stroke-width="16" stroke-linecap="round"/>
+    <path d="M-30 560 C 10 500, 70 520, 40 545" fill="none" stroke="${V.arancione}" stroke-width="16" stroke-linecap="round"/>
+  </svg>
+  <div class="logo"><canvas id="selLogo" width="15" height="15"></canvas><div>IMPRESSION<br>RACE</div><span>by Vivido</span></div>
+  <div id="picks" style="display:flex;flex-direction:column;gap:10px;position:relative"></div>
+  <div class="go">VIA! ▶</div></div>`;
+sel.querySelector('#selLogo').getContext('2d').drawImage(LOGO,0,0);
+const picks = sel.querySelector('#picks');
+const LBL = ['Velocità','Scatto','Fortuna'];
+CHARS.forEach((ch,i)=>{
+  const el = document.createElement('div'); el.className = 'pick' + (i===0?' on':''); el.style.setProperty('--c', ch.color);
+  const av = document.createElement('div'); av.className = 'av';
+  const pc = document.createElement('canvas'); pc.width = 48; pc.height = 48; pc.getContext('2d').drawImage(ch.portrait,0,0); av.appendChild(pc);
+  const info = document.createElement('div'); info.style.flex = '1';
+  info.innerHTML = `<div class="nm">${ch.name}</div><div class="bars">${ch.stats.map((s,k)=>`<span>${LBL[k]}</span><div class="bar"><i style="width:${s*20}%"></i></div>`).join('')}</div>`;
+  el.append(av, info);
+  el.onclick = () => { picks.querySelectorAll('.pick').forEach(p=>p.classList.remove('on')); el.classList.add('on'); PLAYER = i; };
+  picks.appendChild(el);
+});
+
+// ---------- Sheet ----------
+function big(src, s){ const c=document.createElement('canvas'); c.width=src.width*s; c.height=src.height*s; const g=c.getContext('2d'); g.imageSmoothingEnabled=false; g.drawImage(src,0,0,c.width,c.height); return c; }
+const sheet = document.getElementById('sheet');
+for (const ch of CHARS){
+  const t = document.createElement('div'); t.className = 'tile';
+  const st = document.createElement('div'); st.className = 'st';
+  st.append(big(ch.portrait,2), big(ch.front,4));
+  const an = document.createElement('canvas'); an.width = 96; an.height = 136; const ag = an.getContext('2d'); ag.imageSmoothingEnabled = false;
+  let f = 0; setInterval(()=>{ ag.clearRect(0,0,96,136); ag.drawImage(ch.run[f%6],0,ch.bob[f%6]*4,96,128); f++; },100);
+  st.append(an); t.append(st, Object.assign(document.createElement('div'),{textContent:ch.name}));
+  sheet.appendChild(t);
+}
+for (const [label, list] of [
+  ['impression (occhio Vivido), boost (lampadina), stelline', [IMP[0], BULB, ...STAR]],
+  ['ostacoli: cartello bagnato, sedia, caffè, scatola', [PROPS.sign, PROPS.chair, PROPS.coffee, PROPS.box]],
+  ['ufficio: pianta, scrivania, boccione, pouf, lavagna, logo', [SCENERY.plant, SCENERY.desk, SCENERY.cooler, SCENERY.bean, SCENERY.board, LOGO]],
+]){
+  const t = document.createElement('div'); t.className = 'tile';
+  const st = document.createElement('div'); st.className = 'st';
+  list.forEach(p=>st.append(big(p,3)));
+  t.append(st, Object.assign(document.createElement('div'),{textContent:label}));
+  sheet.appendChild(t);
+}
+
+// ---------- Race scene ----------
+let PLAYER = 0;
+const out = document.getElementById('scene').getContext('2d'); out.imageSmoothingEnabled = false;
+const W = 128, H = 228, S = 3;
+const buf = document.createElement('canvas'); buf.width = W; buf.height = H;
+const g = buf.getContext('2d'); g.imageSmoothingEnabled = false;
+const TRACK_L = 20, TRACK_R = 108, LANES = [35, 64, 93];
+const SPEED = 1.4;
+let t = 0, score = 0, dist = 0;
+
+// floor texture: office tiles + pastel brand ribbon painted on the corridor (seamless, period FH)
+const FH = 456;
+const floor = document.createElement('canvas'); floor.width = W; floor.height = FH;
+{
+  const fg = floor.getContext('2d');
+  fg.fillStyle = V.bianco; fg.fillRect(0,0,W,FH);
+  fg.fillStyle = V.grigio; fg.fillRect(TRACK_L,0,TRACK_R-TRACK_L,FH);
+  fg.fillStyle = '#ececf0';
+  for (let y=0;y<FH;y+=19) fg.fillRect(TRACK_L,y,TRACK_R-TRACK_L,1);
+  for (let x=TRACK_L+22;x<TRACK_R;x+=22) fg.fillRect(x,0,1,FH);
+  fg.fillStyle = '#f0f0f3';
+  for (let y=0;y<FH;y+=12){ fg.fillRect(0,y,TRACK_L-3,1); fg.fillRect(TRACK_R+3,y,W-TRACK_R-3,1); }
+  // brand ribbon: looping curve (prolate cycloid), colour cycling through the palette, pastel
+  const stops = [V.verde, V.giallo, V.arancione, V.rosa, V.viola, V.verde].map(hex2rgb);
+  const pastel = (u) => { const k = u*(stops.length-1), i = Math.floor(k), f = k-i; const a = stops[i], b = stops[Math.min(i+1,stops.length-1)];
+    return rgb2hex(a.map((v,j)=> (v + (b[j]-v)*f) * .42 + 245*.58)); };
+  const LOOPS = 3, s = FH/(LOOPS*2*Math.PI), b = 46;
+  for (let tt = -0.5; tt < LOOPS*2*Math.PI + 0.5; tt += 0.01){
+    const x = 64 + 28*Math.cos(tt), y = s*tt - b*Math.sin(tt);
+    const yy = ((y % FH) + FH) % FH;
+    fg.fillStyle = pastel(yy/FH);
+    for (const off of [0, -FH, FH]) fg.fillRect(Math.round(x)-4, Math.round(yy+off)-4, 8, 8);
+  }
+  // corridor edges: black line + brand colour tape
+  const tape = [V.verde, V.giallo, V.arancione, V.rosa, V.viola];
+  for (let y=0, i=0; y<FH; y+=12, i++){
+    fg.fillStyle = tape[i%5]; fg.fillRect(TRACK_L-2, y, 2, 8); fg.fillRect(TRACK_R, y, 2, 8);
+  }
+  fg.fillStyle = V.nero; fg.fillRect(TRACK_L-3,0,1,FH); fg.fillRect(TRACK_R+2,0,1,FH);
+  // lane dashes
+  fg.fillStyle = '#d6d6dc';
+  for (let y=0;y<FH;y+=16){ fg.fillRect(49,y,1,8); fg.fillRect(78,y,1,8); }
+}
+const decor = [];
+const DECOR_KINDS = ['plant','desk','cooler','bean','board','plant','desk'];
+const pickDecor = () => DECOR_KINDS[Math.floor(Math.random()*DECOR_KINDS.length)];
+for (let y=-30; y < H+40; y += 30){
+  decor.push({ k: pickDecor(), side: 0, y });
+  decor.push({ k: pickDecor(), side: 1, y: y + 15 });
+}
+const items = []; const fx = []; const stars = [];
+for (let i=0;i<4;i++) stars.push({ x: Math.random()<.5 ? 2+Math.random()*10 : W-9-Math.random()*8, y: Math.random()*H, c: i%3, ph: Math.random()*60 });
+const KINDS = ['imp','imp','imp','imp','imp','bulb','sign','chair','coffee','box'];
+const pickKind = () => KINDS[Math.floor(Math.random()*KINDS.length)];
+for (let y=-10; y>-460; y-=38) items.push({ kind: pickKind(), lane: Math.floor(Math.random()*3), y, alive:true });
+const runners = CHARS.map((c,i)=>({ c, lane:i, x:LANES[i], y:150 + [0,-16,10][i], hit:0, boost:0 }));
+const FINISH = 3200;
+
+function draw(){
+  t++; dist += SPEED;
+  const sc = dist % FH;
+  for (let y = -FH + sc; y < H; y += FH) g.drawImage(floor, 0, Math.floor(y));
+
+  // finish line with Vivido logo
+  const fy = H - (FINISH - dist) % FINISH - 40;
+  if (fy > -20 && fy < H){
+    for (let x=TRACK_L; x<TRACK_R; x+=4) for (let r=0;r<2;r++){ g.fillStyle = ((x/4+r)%2)?V.nero:V.bianco; g.fillRect(x, Math.floor(fy)+r*4, 4, 4); }
+    g.drawImage(LOGO, 57, Math.floor(fy)-18);
+  }
+
+  // decor
+  for (const d of decor){ d.y += SPEED; if (d.y > H + 20){ d.y -= H + 60; d.k = pickDecor(); } }
+  [...decor].sort((a,b)=>a.y-b.y).forEach(d=>{
+    const img = SCENERY[d.k];
+    const x = d.side===0 ? TRACK_L - 5 - img.width : TRACK_R + 5;
+    g.fillStyle = 'rgba(29,29,31,.08)'; g.fillRect(x+1, Math.floor(d.y)+img.height-1, img.width, 2);
+    g.drawImage(img, x, Math.floor(d.y));
+  });
+  // twinkling sparkles on the sides
+  for (const s of stars){
+    s.y += SPEED; if (s.y > H + 8){ s.y = -8; }
+    if (((t + s.ph) % 60) < 44) g.drawImage(STAR[s.c], Math.round(s.x), Math.round(s.y));
+  }
+
+  // items
+  for (const it of items){
+    it.y += SPEED;
+    if (it.y > H + 12){ it.y -= 460; it.lane = Math.floor(Math.random()*3); it.alive = true; it.kind = pickKind(); }
+    if (!it.alive) continue;
+    const cx = LANES[it.lane], iy = Math.floor(it.y);
+    if (it.kind === 'imp' || it.kind === 'bulb'){
+      const img = it.kind === 'imp' ? IMP[(Math.floor(t/7)%12===11) ? 3 : Math.floor(t/7)%3] : BULB;
+      const bob = Math.round(Math.sin((t+it.y)/10)*1.5);
+      g.fillStyle = 'rgba(29,29,31,.12)'; g.fillRect(cx-4, iy+12, 8, 2);
+      g.drawImage(img, cx-Math.floor(img.width/2), iy+bob);
+      if (it.kind==='bulb' && (t>>3)%2){ g.fillStyle = V.nero; g.fillRect(cx-7, iy+2, 2, 1); g.fillRect(cx+6, iy+2, 2, 1); g.fillRect(cx, iy-3+bob, 1, 2); }
+    } else {
+      const img = PROPS[it.kind]; g.drawImage(img, cx-Math.floor(img.width/2), iy);
+    }
+  }
+
+  // lane swaps (never overlap)
+  if (t % 100 === 0){
+    const a = Math.floor(Math.random()*3), b = (a + 1 + Math.floor(Math.random()*2)) % 3;
+    [runners[a].lane, runners[b].lane] = [runners[b].lane, runners[a].lane];
+  }
+  runners.forEach((r,i)=>{
+    r.x += (LANES[r.lane] - r.x) * .14;
+    r.y += Math.sin((t + i*50)/50) * .12 + (r.hit ? .35 : r.boost ? -.45 : -0.02);
+    r.y = Math.max(104, Math.min(184, r.y));
+    if (r.hit) r.hit--; if (r.boost) r.boost--;
+    const fi = Math.floor(t/(r.boost?3:4))%6, bob = r.c.bob[fi];
+    const rx = Math.round(r.x)-12, ry = Math.round(r.y);
+    for (const it of items){
+      if (!it.alive || it.lane !== r.lane) continue;
+      if (Math.abs((it.y+6) - (ry+24)) < 9){
+        it.alive = false;
+        if (it.kind === 'imp'){
+          if (i===PLAYER) score += 1;
+          fx.push({ type:'plus', txt:'+1', x:rx+12, y:ry-2, life:30, me:i===PLAYER });
+          for (let k=0;k<6;k++) fx.push({ type:'spark', x:LANES[it.lane], y:it.y+4, vx:Math.cos(k)*1.2, vy:Math.sin(k)*1.2-.5, life:14, c:[V.verde,V.giallo,V.rosa][k%3] });
+        } else if (it.kind === 'bulb'){
+          r.boost = 70; fx.push({ type:'plus', txt:'IDEA!', x:rx+12, y:ry-2, life:36, me:i===PLAYER });
+        } else r.hit = 24;
+      }
+    }
+    if (t % 6 === i*2) fx.push({ type:'dust', x:rx+7+Math.random()*10, y:ry+31, life:16 });
+    if (r.boost && t % 2 === 0) fx.push({ type:'trail', x:rx+12, y:ry+18, life:10, c:r.c.color });
+    g.fillStyle = 'rgba(29,29,31,.14)'; g.fillRect(rx+5, ry+30, 14, 2); g.fillRect(rx+7, ry+32, 10, 1);
+    if (r.hit && (r.hit>>2)%2) return;
+    g.drawImage(r.c.run[fi], rx, ry + bob);
+    if (i === PLAYER){
+      const my = ry-6+((t>>4)%2);
+      g.fillStyle = V.nero; g.fillRect(rx+9, my, 7, 1); g.fillRect(rx+10, my+1, 5, 1); g.fillRect(rx+11, my+2, 3, 1); g.fillRect(rx+12, my+3, 1, 1);
+      g.fillStyle = V.giallo; g.fillRect(rx+10, my, 5, 1); g.fillRect(rx+11, my+1, 3, 1);
+    }
+  });
+
+  for (let k=fx.length-1;k>=0;k--){
+    const f = fx[k]; f.life--;
+    if (f.type==='dust'){ f.y += SPEED*.6; g.fillStyle = `rgba(29,29,31,${f.life/80})`; g.fillRect(Math.round(f.x), Math.round(f.y), f.life>8?2:1, f.life>8?2:1); }
+    if (f.type==='spark'){ f.x+=f.vx; f.y+=f.vy; g.fillStyle = f.c; g.fillRect(Math.round(f.x), Math.round(f.y), 1, 1); }
+    if (f.type==='trail'){ f.y += SPEED; g.globalAlpha = f.life/20; g.fillStyle = f.c; g.fillRect(Math.round(f.x)-5, Math.round(f.y), 10, 2); g.globalAlpha = 1; }
+    if (f.life<=0) fx.splice(k,1);
+  }
+
+  // ---- compose + crisp HUD ----
+  out.drawImage(buf, 0, 0, W*S, H*S);
+  out.fillStyle = V.nero; out.fillRect(W*S-17, 72, 4, H*S-162);
+  runners.forEach((r)=>{
+    const prog = Math.min(1, ((dist % FINISH) + (190 - r.y)*6) / FINISH);
+    const py = 70 + (H*S-166) * (1 - prog);
+    out.fillStyle = V.nero; out.fillRect(W*S-23, py-2, 16, 12);
+    out.fillStyle = r.c.color; out.fillRect(W*S-21, py, 12, 8);
+  });
+  out.fillStyle = V.nero; out.fillRect(12, 12, 196, 40); out.fillStyle = V.bianco; out.fillRect(15, 15, 190, 34);
+  out.drawImage(IMP[0], 22, 20, 26, 16);
+  out.fillStyle = V.nero; out.font = '700 22px "Pixelify Sans", monospace';
+  out.fillText(String(score).padStart(4,'0'), 56, 40);
+  out.font = '600 13px "Pixelify Sans", monospace'; out.fillStyle = '#6e6e73'; out.fillText('IMPRESSIONS', 112, 39);
+  const order = [...runners].sort((a,b)=>a.y-b.y); const pos = order.indexOf(runners[PLAYER]) + 1;
+  out.fillStyle = V.nero; out.fillRect(W*S-92, 12, 64, 40); out.fillStyle = V.viola; out.fillRect(W*S-89, 15, 58, 34);
+  out.fillStyle = V.bianco; out.font = '700 24px "Pixelify Sans", monospace'; out.fillText(pos + '°/3', W*S-82, 41);
+  for (const f of fx) if (f.type==='plus'){
+    f.y -= .5; out.globalAlpha = Math.min(1, f.life/12);
+    out.font = '700 18px "Pixelify Sans", monospace'; const w = out.measureText(f.txt).width;
+    out.fillStyle = V.nero; out.fillText(f.txt, f.x*S-w/2+2, f.y*S+2); out.fillStyle = f.me ? V.giallo : V.bianco; out.fillText(f.txt, f.x*S-w/2, f.y*S); out.lineWidth = 1; out.strokeStyle = V.nero; out.strokeText(f.txt, f.x*S-w/2, f.y*S);
+    out.globalAlpha = 1;
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
