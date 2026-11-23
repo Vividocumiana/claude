@@ -3,7 +3,7 @@
 @font-face { font-family: "Neue Plak"; src: url("https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab5f7c03bc1be2290997e40_Neue%20Plak%20Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Neue Plak"; src: url("https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab5f7c03bc1be2290997e30_Neue%20Plak%20SemiBold.ttf") format("truetype"); font-weight: 500; font-display: swap; }
 @font-face { font-family: "Neue Plak"; src: url("https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab5f7c03bc1be2290997e44_Neue%20Plak%20Bold.ttf") format("truetype"); font-weight: 500; font-display: swap; }
-:root { --blue: #243782; --blue-d: #141414; --ink: #241f21; --mute: #666; --line: #e6e6ea; --soft: #f5f5f7; --ok: #1f7a45; --err: #c0392b; --badge: rgba(14,58,124,.10); --badge-ink: #0e3a7c; }
+:root { --blue: #131B2C; --blue-d: #141414; --ink: #241f21; --mute: #666; --line: #e6e6ea; --soft: #f5f5f7; --ok: #1f7a45; --err: #c0392b; --badge: rgba(14,58,124,.10); --badge-ink: #0e3a7c; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--soft); color: var(--ink); -webkit-font-smoothing: antialiased; font-weight: 400; font-family: "Neue Plak", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 15px; }
 [hidden] { display: none !important; }
@@ -18,7 +18,7 @@ button { font: inherit; }
 .btn:focus-visible, .drop:focus-within, .side button:focus-visible, .doc:focus-visible, .seg button:focus-visible, .chips button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
 /* Login */
-.login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: #0b1024 radial-gradient(circle at 80% 10%, #243782 0, rgba(36,55,130,0) 60%); }
+.login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: #131B2C radial-gradient(circle at 80% 10%,rgba(179,18,31,.55) 0,rgba(179,18,31,0) 60%); }
 .login-card { width: 100%; max-width: 420px; background: #fff; border-radius: 18px; padding: 36px 32px; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
 .login-card .logo { margin-bottom: 28px; }
 .login-card h1 { font-size: 26px; margin: 0 0 8px; }
@@ -134,7 +134,7 @@ button { font: inherit; }
 .field > span { font-size: 13px; font-weight: 500; }
 .field em { font-style: normal; font-weight: 400; color: var(--mute); }
 .field input, .field select { height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; font: inherit; font-size: 15px; background: #fff; color: var(--ink); width: 100%; }
-.field input:focus, .field select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(36,55,130,.12); }
+.field input:focus, .field select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(19,27,44,.12); }
 .full { grid-column: 1 / -1; }
 .check { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
 .check input { width: 18px; height: 18px; accent-color: var(--blue); }
@@ -247,7 +247,7 @@ h1, h2, h3, .head h2, .modal-box h2 { font-weight: 500; letter-spacing: -0.02em;
 .chipbox input { accent-color: var(--blue); margin: 0; }
 .chipbox:has(input:checked) { border-color: var(--blue); background: #eef0f8; }
 .grow { flex: 1; }
-.pill.sheet { background: rgba(36,55,130,.08); color: var(--blue); }
+.pill.sheet { background: rgba(19,27,44,.08); color: var(--blue); }
 .pill.sheet:before { display: none; }
 .check em.mute { font-style: normal; font-size: 13px; }
 .login-cover { background: none; display: flex; align-items: center; justify-content: center; padding: 40px 0 40px 40px; min-height: 100vh; }

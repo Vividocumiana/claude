@@ -1,6 +1,6 @@
 /* Maserati – FaSTLAne 2030 / Maserati Day · Media viewer */
 .stlm, .stlm-lb {
-  --stlm-blue: #243782; --stlm-blue-d: #1a2862; --stlm-ink: #0b1024; --stlm-mute: #5b6178;
+  --stlm-blue: #131B2C; --stlm-blue-d: #B3121F; --stlm-ink: #131B2C; --stlm-mute: #5b6178;
   --stlm-line: #e4e7f0; --stlm-soft: #f3f4f8; --stlm-r: 16px;
   font-family: var(--mainfont), -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   color: var(--stlm-ink); box-sizing: border-box; text-align: left;

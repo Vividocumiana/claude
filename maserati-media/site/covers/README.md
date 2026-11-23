@@ -1,5 +1,3 @@
-# Brand covers (key visuals)
-
-1920x1080, logo kept inside the central square: the cards on the Brands page show a square crop, the brand page hero a near-square crop.
-Rebuilt on 2 Oct 2026 from the client feedback: uncut Stellantis logo, sharper DS and Citroen, bigger Leapmotor and PEUGEOT logos.
-`compose.py` shows how they were made. Uploaded to R2 `_img/c2610-cover-*.jpg` and set as "Key visual" of each brand.
+key-visual-maserati-day.jpg: 1920×1080 event key visual (home card, main event).
+og-maserati-day.jpg: 1200×630 social image.
+Both come from the 2000×1125 copy sent in chat: replace with the original file when available.
