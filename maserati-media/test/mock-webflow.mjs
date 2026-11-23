@@ -3,7 +3,7 @@
 import http from "node:http";
 
 const PORT = +process.argv[2] || 9911, FLAKY = process.argv[3] === "flaky";
-const DOCS = "6ab5f7c03bc1be2290997df6", EVENTS = "6ab5f7c03bc1be2290997df3", CONTACTS = "6ab5f7c03bc1be2290997df5", MARKETS = "6ab5f7c03bc1be2290997df4";
+const DOCS = "6b045175d646a29758a3b1a8", EVENTS = "6b045175d646a29758a3b1a5", CONTACTS = "6b045175d646a29758a3b1a7", MARKETS = "6b045175d646a29758a3b1a6";
 const TYPES = [["7a9ad7e3f50e72f0112cf09a17bd8fc8", "foto"], ["fee0afe4ef58459229968b9458a1b9bf", "video"], ["dd698b63f1dd43127313941b65026013", "documento"], ["9601092c426098de9fec86e629060ce5", "embargo"]];
 let seq = 0x100000;
 const id = () => "6abb" + (seq++).toString(16).padStart(20, "0");

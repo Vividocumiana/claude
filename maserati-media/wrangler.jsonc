@@ -5,22 +5,22 @@
   "compatibility_date": "2026-09-01",
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "vars": {
-    "WEBFLOW_DOCS_COLLECTION": "__TODO_DOCS_COLLECTION_ID__",   // All Documents
-    "WEBFLOW_EVENTS_COLLECTION": "__TODO_EVENTS_COLLECTION_ID__", // Events (one per model)
+    "WEBFLOW_DOCS_COLLECTION": "6b045175d646a29758a3b1a8",   // All Documents
+    "WEBFLOW_EVENTS_COLLECTION": "6b045175d646a29758a3b1a5", // Events (one per model)
     "SITE_URL": "https://fastlane-2030-maserati-day-2026.com",
     // Other collections editable from the manager (fields shown in this order)
     "CMS_COLLECTIONS": {
       "brands": {
-        "id": "__TODO_EVENTS_COLLECTION_ID__", "title": "Modelli", "singular": "Modello", "sort": "sort-order", "noDelete": true,
+        "id": "6b045175d646a29758a3b1a5", "title": "Modelli", "singular": "Modello", "sort": "sort-order", "noDelete": true,
         "fields": ["name", "logo", "event-description", "event-key-visual", "event-date", "sort-order", "media-site-link", "instagram", "tiktok", "linkedin", "facebook"],
         "filter": { "main-event": false },
-        "defaults": { "main-event": false, "multimarket-event": true, "embargo": true, "status": "__TODO_STATUS_OPTION_ID__", "event-reference": "__TODO_MAIN_EVENT_ITEM_ID__", "event-date": "10 December 2026" },
+        "defaults": { "main-event": false, "multimarket-event": true, "embargo": true, "status": "2473844870a72a60d721c34e8011ccdb", "event-reference": "6b045175d646a29758a3b25d", "event-date": "10 December 2026" },
         "labels": { "name": "Nome del modello", "logo": "Immagine nella riga dei modelli", "event-description": "Descrizione", "event-key-visual": "Immagine di copertina", "event-date": "Date", "sort-order": "Posizione nella lista", "media-site-link": "Link al Media Site", "instagram": "Instagram", "tiktok": "TikTok", "linkedin": "LinkedIn", "facebook": "Facebook" },
         "help": { "logo": "Render del modello: SVG o PNG con sfondo trasparente. Compare nella riga dei modelli in alto; finché è vuoto compare il nome scritto.", "event-key-visual": "JPG 1920×1080 con fondo pieno (niente PNG trasparenti). Il sito la ritaglia: quadrata nelle card e quasi quadrata in testa alla pagina del modello, quindi tieni logo e testi al centro, dentro un quadrato di circa 900×900 px.", "event-description": "Una o due frasi, in inglese: compare nella card del modello e in testa alla sua pagina.", "sort-order": "1 = primo della lista. Gli altri modelli non si spostano da soli: se serve, aggiorna anche le loro posizioni.", "media-site-link": "Pulsante “Media Site” nella pagina del modello. Lascia vuoto per nasconderlo.", "instagram": "Lascia vuoto un social per non mostrare il pulsante." }
       },
       "contacts": {
-        "id": "__TODO_CONTACTS_COLLECTION_ID__", "title": "Contatti stampa", "singular": "Contatto", "fields": ["name", "position", "email", "phone-number"],
-        "defaults": { "country": ["__TODO_HQ_MARKET_ITEM_ID__"] }, // HQ only: every contact goes to the HQ list
+        "id": "6b045175d646a29758a3b1a7", "title": "Contatti stampa", "singular": "Contatto", "fields": ["name", "position", "email", "phone-number"],
+        "defaults": { "country": ["6b045175d646a29758a3b269"] }, // HQ only: every contact goes to the HQ list
         "labels": { "name": "Nome e cognome", "position": "Ruolo", "email": "Email", "phone-number": "Telefono" },
         "help": { "phone-number": "Con il prefisso internazionale, senza (0): es. +33 6 75 58 80 41" }
       }

@@ -13,13 +13,22 @@ How the whole thing works: `../PRESSKIT-PLAYBOOK.md` and `../stellantis-media/RE
   "Contents under embargo until 10/12/2026 7:00 p.m."
 - Storage keys: gate `mas26_access`, cookie `mas26_consent`.
 
+## Webflow IDs
+
+Site `6b045175d646a29758a3b1b6` ("Copy of Stellantis Mondial Auto Paris 2026", workspace `66cfb3b0e610bf8a12df2fb9`).
+Collections (prefix `6b045175d646a29758a3b`): Events `…1a5`, Markets `…1a6`, Contacts `…1a7`, All Documents `…1a8`.
+Pages: Home `…18d`, Models (`/models`, was Brands) `…195`, Contact `…198`, Events Template `…194`,
+All Documents Template `…199`, Cookie `…19c`, Privacy `…19d`, Terms `…19e`, 404 `…19f`.
+Items: main event `…25d` (slug `fastlane-2030-maserati-day`), Markets "Maserati HQ" `…269`;
+models `concept`, `grecale`, `granturismo`, `grancabrio`, `mcpura`, `gt2-stradale` (sort-order 1–6).
+
 ## Status: prepared, NOT deployed – values still missing
 
 Search for `__TODO_` in this folder. Still to do:
 
 | What | Where |
 | --- | --- |
-| Webflow site/page/collection IDs, status option, main event item, HQ Markets item | `wrangler.jsonc`, `test/mock-webflow.mjs` (still has the Stellantis IDs and brands) |
+| e2e fixtures still use Stellantis brand names (IDs updated) | `test/mock-webflow.mjs`, `test/e2e-cms.mjs` |
 | Colour (client's option 1, 2 or 3): replace `#243782`, `#1a2862`, `#0b1024` and Webflow variable `BrandColor` | `site/webflow-code/*.html`, `site/cookie-policy/site-footer.html`, `public/*.css`, `public/upload/upload.css` |
 | Maserati logos (dark + white SVG from the EPS) uploaded to Webflow → URLs | `__TODO_LOGO_DARK_URL__`, `__TODO_LOGO_WHITE_URL__`; `public/upload/logo.svg` (file to add) |
 | Gate password hash (`printf 'password' | sha256sum`) and confirmed unlock time (now 10/12/2026 19:00 CET) | `site/webflow-code/site-head.html` (gate + embargo notice) |
