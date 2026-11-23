@@ -1,5 +1,5 @@
 // End-to-end test of the Press Kit Manager in a real browser.
-//   BASE=http://localhost:8787 PW=test FILES=./fixtures node test/e2e.mjs
+//   BASE=http://localhost:8787 PW=test FILES=./fixtures node test/e2e.mjs   (BRAND=grecale BRAND_NAME=Grecale for the Maserati site)
 // FILES must contain: "Grande Panda 01.jpg", "Grande Panda 02.jpg", "Grande Panda 03.jpg", "Press release.pdf", "Fact sheet.docx".
 // Against production set LEGACY=0 (does not touch existing documents); the test document is deleted at the end.
 import { chromium } from 'playwright';
@@ -9,6 +9,7 @@ const PW = process.env.PW || 'test';
 const DIR = (process.env.OUT || tmpdir()) + '/';
 const F = (process.env.FILES || DIR + 'files') + '/';
 const remote = BASE.startsWith('https');
+const BRAND = process.env.BRAND || 'fiat', BRAND_NAME = process.env.BRAND_NAME || 'FIAT'; // model used for the test document
 const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, proxy: remote ? { server: process.env.HTTPS_PROXY } : undefined });
 const ctx = await b.newContext({ viewport: { width: 1360, height: 900 }, ignoreHTTPSErrors: remote });
 await ctx.addInitScript(() => { try { localStorage.setItem('mas26_help_seen', '1'); } catch (e) {} });
@@ -29,10 +30,10 @@ await p.fill('#pwd', PW); await p.click('#login-form button');
 await p.waitForSelector('#v-brand:not([hidden])', { timeout: 30000 });
 step('signed in, brand view');
 
-await p.click('#side [data-brand="fiat"]');
-await p.waitForFunction(() => document.getElementById('brand-title').textContent === 'FIAT');
+await p.click('#side [data-brand="' + BRAND + '"]');
+await p.waitForFunction((n) => document.getElementById('brand-title').textContent === n, BRAND_NAME);
 await shot('01-brand');
-step('fiat docs: ' + await p.locator('#docs .doc').count());
+step(BRAND + ' docs: ' + await p.locator('#docs .doc').count());
 
 // New document
 await p.click('#new-doc');
@@ -131,8 +132,7 @@ step('document deleted, docs left: ' + await p.locator('#docs .doc').count());
 
 // Mobile layout
 await p.setViewportSize({ width: 390, height: 844 });
-await p.click('#docs .doc:has-text("B-Roll")');
-await p.waitForSelector('#v-doc:not([hidden])');
+if (process.env.LEGACY !== '0') { await p.click('#docs .doc:has-text("B-Roll")'); await p.waitForSelector('#v-doc:not([hidden])'); }
 await shot('05-mobile');
 const overflow = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 step('mobile horizontal overflow: ' + overflow);

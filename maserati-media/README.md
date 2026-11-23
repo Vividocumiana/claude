@@ -32,15 +32,15 @@ Open points:
 
 | What | Where |
 | --- | --- |
-| `WEBFLOW_TOKEN` secret is rejected by Webflow (401/403): create a site API token on THIS site (CMS read/write) and `npx wrangler secret put WEBFLOW_TOKEN` | Press Kit Manager cannot list models/documents until then |
 | Final passwords, unlock time confirmed | gate `HASH`/`UNLOCK_AT` in `site/webflow-code/site-head.html` (+ embargo notice), `UPLOAD_PASSWORD` secret |
 | Colour confirmation; light tint `#2536831a` still on a few badge styles in Webflow | Webflow variable `BrandColor`, code files, `public/*.css` |
 | Model covers (now the event key visual as placeholder), descriptions, renders for the models row | Events items (`event-key-visual`, `event-description`, `logo`) |
 | Key visual at full quality (now the 2000 px copy from chat) | `site/covers/`, `public/upload/cover*.webp`, `og.jpg` |
 | Favicon / webclip: upload by hand (no API) | `site/favicon/` |
 | Legal pages: see `site/webflow-code/legal-pages.md` | Webflow |
-| e2e fixtures still use Stellantis brand names; e2e not run for this copy | `test/mock-webflow.mjs`, `test/e2e-cms.mjs` |
-| Document page (viewer, lightbox, video, PDF, ZIP) not tested: no documents yet | — |
+| `test/e2e.mjs` passed against the live service (`BRAND=grecale BRAND_NAME=Grecale LEGACY=0`); mock fixtures and `e2e-cms`/`e2e-folders` still use Stellantis brand names, not run | `test/` |
+| `[TEST] Grecale press materials` (published, flagged technical sheet) is the test document: delete it from the Manager before going live | Press Kit Manager → Grecale |
+| Document template: the legacy "Schede tecniche" list was removed and a CSS rule keeps the viewer visible on technical-sheet documents (Webflow condition on `.box-container`); better: remove that condition in the Designer | `site/webflow-code/document-template.html` |
 | Media Site link of the models = https://www.media.stellantis.com/em-en/maserati (to confirm) | Events items |
 
 ## API

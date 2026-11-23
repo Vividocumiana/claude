@@ -10,6 +10,8 @@
 .box-container > .w-embed:has(.stl-media){width:100%}
 @media (max-width:767px){.timeline-bottom:has(.stl-media){padding-right:24px}}
 .stl-media{width:100%;max-width:1200px;margin:0 auto}
+/* The old template hides the viewer area when "Scheda tecnica" is on (Webflow conditional visibility): keep it visible */
+.box-container.w-condition-invisible:has(.stl-media){display:flex !important}
 </style>
 <script>
 // Maserati media viewer (Cloudflare Worker + R2). Files come from the document's "Media Folder".
@@ -29,7 +31,7 @@ document.addEventListener('DOMContentLoaded',function(){
     v.setAttribute('data-stl-media',folder);
     var s=document.createElement('script');s.src=STL_MEDIA_HOST+'/viewer.js';document.body.appendChild(s);
   }else{
-    var bc=v.closest('.box-container');(bc||v).style.display='none';
+    var bc=v.closest('.box-container');(bc||v).style.setProperty('display','none','important');
   }
 });
 </script>
