@@ -1,0 +1,53 @@
+<!-- Webflow pages "Contact" (/contact) and 404 – exported 23 Nov 2026 -->
+
+<!-- ===== CONTACT · HEAD ===== -->
+<style>
+/* Ensure that the modal is above everything */
+.selectmarketmodal {
+  position: fixed !important;
+  z-index: 9999 !important; /* Highest priority z-index */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Optional: Ensure the modal’s parent container also has high z-index */
+.selectmarketmodal-container {
+  position: relative;
+  z-index: 9998; /* Ensure it's layered below the modal */
+}
+</style>
+
+<!-- ===== CONTACT · FOOTER ===== -->
+<style>
+/* Contact cards: phone under the name, hidden when the contact has no number */
+.contact-block .div-block-2 a:empty{display:none}
+.contact-block .div-block-2 a{display:block}
+/* HQ only: no tabs per brand. The HQ list (.collection-list-wrapper-2) is shown as it is, the old tabs are hidden
+   (better: delete the tabs block in the Designer). */
+.timeline-tabs{display:none}
+</style>
+<script>
+// Contacts without a phone number: Webflow renders an empty tel: link, remove it
+document.querySelectorAll('.contact-block .div-block-2 a[href^="tel:"]').forEach(function(a){ if (!a.textContent.trim()) a.parentNode.removeChild(a); });
+
+// Empty state of the HQ list
+(function(){var e=document.querySelector('.timeline-top .collection-list-wrapper-2 .w-dyn-empty');if(e)e.innerHTML='<div class="text-block-4">Maserati press contacts will be available soon.</div>';})();
+</script>
+
+<!-- ===== 404 · HEAD ===== -->
+<style>
+.utility-page-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#fff;font-family:var(--mainfont),Arial,sans-serif}
+.utility-page-content{text-align:center;max-width:460px;display:flex;flex-direction:column;align-items:center}
+.utility-page-content img{height:34px;width:auto;margin-bottom:40px}
+.utility-page-content h2{font-size:32px;line-height:1.2;margin:0 0 12px;color:#0b1024;font-weight:600}
+.utility-page-content div{font-size:16px;line-height:1.5;color:#555}
+.stl-404-btn{display:inline-block;margin-top:28px;padding:14px 24px;border-radius:10px;background:#243782;color:#fff!important;text-decoration:none;font-weight:600}
+.stl-404-btn:hover{background:#1a2862}
+</style>
+
+<!-- ===== 404 · FOOTER ===== -->
+<script>
+(function(){var c=document.querySelector('.utility-page-content');if(!c)return;var i=c.querySelector('img');if(i){i.src='__TODO_LOGO_DARK_URL__';i.alt='Maserati';}var a=document.createElement('a');a.href='/';a.className='stl-404-btn';a.textContent='Back to the press kit';c.appendChild(a);})();
+</script>

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Gestione Press Kit – Maserati Day 2026</title>
+<link rel="icon" type="image/svg+xml" href="/upload/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/upload/favicon-32.png">
+<link rel="apple-touch-icon" href="/upload/apple-touch-icon.png">
+<link rel="stylesheet" href="/upload/upload.css">
+</head>
+<body>
+<div id="login" class="login split" hidden>
+  <div class="login-cover"><img src="/upload/cover.webp" alt="Maserati"></div>
+  <form class="login-card" id="login-form">
+    <img class="logo" src="/upload/logo.svg" alt="Maserati">
+    <h1>Gestione Press Kit</h1>
+    <p>FaSTLAne 2030 / Maserati Day. Inserisci la password per gestire documenti, foto, video e file del press kit.</p>
+    <input id="pwd" type="password" placeholder="Password" autocomplete="current-password" required aria-label="Password">
+    <button class="btn primary" type="submit">Accedi</button>
+    <div class="err" id="login-err" role="alert"></div>
+  </form>
+</div>
+
+<div id="app" class="app" hidden>
+  <header class="top">
+    <img class="logo" src="/upload/logo.svg" alt="Maserati">
+    <div class="top-title">Gestione Press Kit <span>FaSTLAne 2030 / Maserati Day</span></div>
+    <a class="btn ghost small hide-m" id="site-link" target="_blank" rel="noopener">Apri il sito ↗</a>
+    <button class="btn ghost small" id="logout" type="button">Esci</button>
+  </header>
+  <div class="layout">
+    <nav class="side" id="side" aria-label="Modelli"></nav>
+    <main class="main" id="main">
+      <div class="loading" id="loading"><span class="spin"></span> Caricamento…</div>
+
+      <!-- Webflow unreachable -->
+      <section id="v-error" class="empty-state" hidden>
+        <h2>Webflow non risponde</h2>
+        <p id="error-msg"></p>
+        <p><button class="btn primary" id="retry" type="button">Riprova</button></p>
+        <p class="mute">Puoi comunque aggiungere o togliere file ai documenti esistenti:</p>
+        <div class="folder-list" id="fallback-folders"></div>
+      </section>
+
+      <!-- Brand: list of documents -->
+      <section id="v-brand" hidden>
+        <div class="head">
+          <div>
+            <div class="crumb">Modello</div>
+            <h2 id="brand-title"></h2>
+            <div class="sub" id="brand-sub"></div>
+          </div>
+          <button class="btn primary" id="new-doc" type="button">+ Nuovo documento</button>
+        </div>
+        <div class="notice warn" id="limit-warn" hidden></div>
+        <div class="chips" id="chips" role="tablist" aria-label="Filtra per categoria"></div>
+        <div class="docs" id="docs"></div>
+        <div id="loose" hidden>
+          <h3 class="loose-h">Cartelle non collegate a un documento</h3>
+          <p class="sub">Questi file sono stati caricati ma non sono ancora sul sito. Crea un documento per pubblicarli.</p>
+          <div class="docs" id="loose-list"></div>
+        </div>
+      </section>
+
+      <!-- One document -->
+      <section id="v-doc" hidden>
+        <a class="back" id="back" href="#">← <span></span></a>
+        <div class="head">
+          <div class="head-t">
+            <div class="crumb" id="doc-crumb"></div>
+            <h2 id="doc-title"></h2>
+            <div class="status-line"><span class="pill" id="doc-pill"></span><span class="sub" id="doc-sub"></span></div>
+          </div>
+          <div class="actions">
+            <a class="btn ghost" id="doc-view" target="_blank" rel="noopener">Vedi sul sito ↗</a>
+            <button class="btn ghost" id="doc-unpublish" type="button">Ritira</button>
+            <button class="btn primary" id="doc-publish" type="button">Pubblica</button>
+          </div>
+        </div>
+        <div class="notice" id="doc-notice" hidden></div>
+
+        <div class="card">
+          <div class="card-h"><h3>File</h3><span class="sub" id="files-meta"></span></div>
+          <div class="drop" id="drop">
+            <input type="file" id="file-input" multiple hidden>
+            <input type="file" id="dir-input" webkitdirectory multiple hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <strong>Trascina qui file o cartelle</strong>
+            <span>Foto, video, PDF e qualsiasi altro documento, di qualsiasi dimensione. Le cartelle mantengono le sottocartelle. Un file con lo stesso nome sostituisce quello vecchio.</span>
+            <div class="drop-btns"><button class="btn small" type="button" id="pick-files">Scegli file</button><button class="btn small" type="button" id="pick-dir">Scegli cartella</button></div>
+          </div>
+          <div class="q-sum" id="q-sum" hidden><span></span><button class="btn small" type="button" id="q-retry" hidden>Riprova i non riusciti</button></div>
+          <div class="queue" id="queue"></div>
+          <div class="files" id="files"></div>
+        </div>
+
+        <form class="card" id="details" novalidate>
+          <div class="card-h"><h3>Dettagli</h3><span class="sub">Mostrati sul sito</span></div>
+          <div class="form-grid">
+            <label class="field full"><span>Titolo</span><input id="d-name" maxlength="200" required></label>
+            <div class="field full"><span>Categoria</span><div class="seg" id="d-type" role="radiogroup" aria-label="Categoria"></div></div>
+            <label class="field full"><span>Descrizione breve <em>facoltativa</em></span><input id="d-desc" maxlength="500"></label>
+            <label class="check full"><input type="checkbox" id="d-sheet"> <span>Scheda tecnica <em class="mute">– mostrata con un badge e sotto il filtro “Technical sheets” nella pagina del modello</em></span></label>
+          </div>
+          <div class="form-foot">
+            <span class="sub" id="d-hint"></span>
+            <button class="btn ghost" id="d-reset" type="button" disabled>Annulla</button>
+            <button class="btn primary" id="d-save" type="submit" disabled>Salva modifiche</button>
+          </div>
+        </form>
+
+        <div class="danger">
+          <div><b>Elimina questo documento</b><span>Lo toglie dal sito e cancella tutti i suoi file. L’operazione non si può annullare.</span></div>
+          <button class="btn danger-btn" id="doc-delete" type="button">Elimina documento</button>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="v-help" hidden>
+        <div class="help-hero"><img src="/upload/cover-1200.webp" srcset="/upload/cover-1200.webp 1200w, /upload/cover.webp 2000w" sizes="(max-width: 1100px) 100vw, 1100px" alt="FaSTLAne 2030 / Maserati Day"></div>
+        <div class="head"><div><div class="crumb">Guida</div><h2>Come funziona</h2><div class="sub">Tutto quello che serve per pubblicare materiali stampa sul sito del press kit.</div></div></div>
+        <div class="help">
+          <ol class="steps">
+            <li><b>Scegli un modello</b><span>I modelli a sinistra sono le pagine modello del sito. Ogni pagina modello mostra i suoi documenti.</span></li>
+            <li><b>Crea un documento</b><span>Clicca <em>+ Nuovo documento</em>, dai un titolo, scegli la categoria (Foto, Video, Documenti) e, se vuoi, una descrizione breve. Nella stessa finestra puoi già trascinare i file o un’intera cartella.</span></li>
+            <li><b>Aggiungi i file</b><span>Trascina file o cartelle nel riquadro, oppure usa <em>Scegli file</em> / <em>Scegli cartella</em>. Non ci sono limiti di dimensione. Le cartelle mantengono le sottocartelle: i giornalisti vedranno una sezione per cartella.</span></li>
+            <li><b>Pubblica</b><span>Un documento nuovo è una <em>Bozza</em>: nessuno lo vede. Quando file e dettagli sono pronti, clicca <em>Pubblica</em>. Compare nella pagina del modello in pochi secondi.</span></li>
+          </ol>
+          <div class="help-grid">
+            <div class="card"><h3>Da sapere</h3><ul>
+              <li>I file aggiunti a un documento <b>online</b> sono subito visibili. Le modifiche a titolo, categoria o descrizione vanno online quando clicchi <em>Salva modifiche</em>.</li>
+              <li>Un file con lo <b>stesso nome</b> sostituisce quello vecchio. Usa <em>Rinomina</em> per cambiare un nome (l’estensione resta).</li>
+              <li><em>Ritira</em> nasconde un documento senza cancellare nulla. <em>Elimina documento</em> lo toglie definitivamente insieme ai suoi file.</li>
+              <li>Miniature e anteprime vengono create nel tuo browser durante l’upload: tieni la pagina aperta fino al termine.</li>
+              <li>Se un upload non va a buon fine (per esempio cade la connessione), clicca <em>Riprova i non riusciti</em>.</li>
+            </ul></div>
+            <div class="card"><h3>Categorie</h3><ul>
+              <li><b>Foto</b>, <b>Video</b>, <b>Documenti</b>: compaiono sotto il filtro corrispondente nella pagina del modello.</li>
+              <li><b>Scheda tecnica</b>: spuntala per le schede tecniche. Il documento riceve il badge “Technical sheet” e compare sotto il filtro “Technical sheets”.</li>
+            </ul></div>
+            <div class="card"><h3>Cosa vedono i giornalisti</h3><ul>
+              <li>Una galleria con le anteprime di foto, video e PDF, il pulsante <em>Download</em> su ogni file, <em>Download folder</em> per ogni cartella e <em>Download all</em> in ZIP. Il sito pubblico è in inglese.</li>
+              <li>Gli originali vengono sempre scaricati alla massima qualità.</li>
+              <li>Usa <em>Vedi sul sito</em> su un documento online per controllarlo.</li>
+            </ul></div>
+            <div class="card"><h3>Contatti stampa</h3><ul>
+              <li>In <em>Contatti stampa</em> puoi aggiungere, modificare e togliere i contatti dell’ufficio stampa mostrati sul sito.</li>
+              <li>I nuovi contatti restano in bozza finché non li pubblichi.</li>
+            </ul></div>
+          </div>
+          <div class="card"><h3>Qualcosa non va?</h3><ul>
+            <li><b>“Webflow non risponde”</b>: il sistema dei contenuti del sito è momentaneamente non disponibile. Puoi comunque aggiungere o togliere file; per il resto riprova tra qualche minuto.</li>
+            <li><b>“La sessione è scaduta”</b>: accedi di nuovo, non si perde nulla.</li>
+            <li><b>Cartelle non collegate a un documento</b> (in fondo alla pagina di un modello): file caricati senza documento. Crea un documento a partire da quei file, oppure eliminali.</li>
+          </ul></div>
+        </div>
+      </section>
+
+      <!-- Other collections (press contacts, …) -->
+      <section id="v-cms" hidden>
+        <div class="head">
+          <div><div class="crumb">Contenuti del sito</div><h2 id="cms-title"></h2><div class="sub" id="cms-sub"></div></div>
+          <button class="btn primary" id="cms-new" type="button"></button>
+        </div>
+        <input class="search" id="cms-search" type="search" placeholder="Cerca…" aria-label="Cerca">
+        <div class="docs" id="cms-list"></div>
+      </section>
+
+      <!-- Folder only (Webflow offline) -->
+      <section id="v-folder" hidden></section>
+    </main>
+  </div>
+</div>
+
+<!-- New document -->
+<div class="modal" id="m-new" hidden>
+  <form class="modal-box" id="new-form" novalidate role="dialog" aria-modal="true" aria-labelledby="m-new-t">
+    <h2 id="m-new-t">Nuovo documento</h2>
+    <p class="sub">Viene creato come bozza: aggiungi i file e pubblicalo quando è pronto.</p>
+    <div class="form-grid">
+      <label class="field full"><span>Modello</span><select id="n-brand" required></select></label>
+      <label class="field full"><span>Titolo</span><input id="n-name" maxlength="200" placeholder="es. Grande Panda – Foto" required></label>
+      <div class="field full"><span>Categoria</span><div class="seg" id="n-type" role="radiogroup" aria-label="Categoria"></div></div>
+      <label class="field full"><span>Descrizione breve <em>facoltativa</em></span><input id="n-desc" maxlength="500" placeholder="es. Foto in alta risoluzione dello stand"></label>
+      <label class="check full"><input type="checkbox" id="n-sheet"> <span>Scheda tecnica <em class="mute">– mostrata con un badge e sotto il filtro “Technical sheets”</em></span></label>
+      <div class="notice full" id="n-folder" hidden></div>
+      <div class="field full" id="n-files-f"><span>File <em>facoltativi, puoi aggiungerli anche dopo</em></span>
+        <div class="drop small-drop" id="n-drop">
+          <input type="file" id="n-file-input" multiple hidden>
+          <input type="file" id="n-dir-input" webkitdirectory multiple hidden>
+          <strong>Trascina file o una cartella</strong>
+          <div class="drop-btns"><button class="btn small" type="button" id="n-pick-files">Scegli file</button><button class="btn small" type="button" id="n-pick-dir">Scegli cartella</button></div>
+          <div class="staged" id="n-staged" hidden><span></span><button type="button" class="linkbtn" id="n-clear">Rimuovi</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="err" id="n-err" role="alert"></div>
+    <div class="form-foot">
+      <button class="btn ghost" type="button" data-close>Annulla</button>
+      <button class="btn primary" type="submit" id="n-create">Crea documento</button>
+    </div>
+  </form>
+</div>
+
+<!-- Edit an item of another collection -->
+<div class="modal" id="m-item" hidden>
+  <form class="modal-box" id="item-form" novalidate role="dialog" aria-modal="true" aria-labelledby="i-title">
+    <div class="modal-h"><h2 id="i-title"></h2><span class="pill" id="i-pill"></span></div>
+    <div class="form-grid" id="i-fields"></div>
+    <div class="err" id="i-err" role="alert"></div>
+    <div class="form-foot">
+      <button class="btn danger-btn" type="button" id="i-delete">Elimina</button>
+      <span class="grow"></span>
+      <button class="btn ghost" type="button" data-close>Annulla</button>
+      <button class="btn ghost" type="button" id="i-unpublish">Ritira</button>
+      <button class="btn ghost" type="submit" id="i-save" data-mode="save">Salva bozza</button>
+      <button class="btn primary" type="submit" id="i-publish" data-mode="publish">Salva e pubblica</button>
+    </div>
+  </form>
+</div>
+
+<!-- Confirm -->
+<div class="modal" id="m-confirm" hidden>
+  <div class="modal-box small" role="alertdialog" aria-modal="true" aria-labelledby="c-title">
+    <h2 id="c-title"></h2>
+    <p id="c-text"></p>
+    <div class="form-foot">
+      <button class="btn ghost" type="button" id="c-no">Annulla</button>
+      <button class="btn primary" type="button" id="c-yes"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="login" id="boot-err" hidden><div class="login-card"><h1>Problema di connessione</h1><p>La pagina non si è caricata completamente. Controlla la connessione e ricarica.</p><button class="btn primary" type="button" onclick="location.reload()">Ricarica</button></div></div>
+<script>
+// Load the app script with retries: a dropped connection must not leave a blank page
+(function load(n) {
+  var s = document.createElement("script");
+  s.src = "/upload/upload.js" + (n ? "?r=" + Date.now() : "");
+  s.onerror = function () { s.remove(); if (n < 3) setTimeout(function () { load(n + 1); }, 1000 * (n + 1)); else document.getElementById("boot-err").hidden = false; };
+  document.body.appendChild(s);
+})(0);
+</script>
+</body>
+</html>

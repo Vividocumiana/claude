@@ -1,0 +1,35 @@
+<!-- Webflow page "All Documents Template" (/all-documents/<slug>) – exported 23 Nov 2026.
+     Needs on the page: a hidden text bound to the CMS field "Media Folder" with attribute data-media-folder,
+     and an Embed <div class="stl-media"></div> inside .box-container. Footer code: empty. -->
+
+<!-- ===== HEAD ===== -->
+<style>
+.testimonial-badge.sheet-badge{display:flex}
+/* Media viewer: full width with symmetric gutters */
+.box-container:has(.stl-media){margin-left:0;margin-right:0;width:100%}
+.box-container > .w-embed:has(.stl-media){width:100%}
+@media (max-width:767px){.timeline-bottom:has(.stl-media){padding-right:24px}}
+.stl-media{width:100%;max-width:1200px;margin:0 auto}
+</style>
+<script>
+// Maserati media viewer (Cloudflare Worker + R2). Files come from the document's "Media Folder".
+var STL_MEDIA_HOST = "https://mas26-media.toolpress.workers.dev";
+document.addEventListener('DOMContentLoaded',function(){
+  var h=document.querySelector('h4.h2');if(h&&h.textContent.trim()){document.title=h.textContent.trim()+' – FaSTLAne 2030 / Maserati Day Press Kit';}
+  // Technical sheet badge (list kept by the Press Kit Manager), added after the category badges
+  var slug=location.pathname.replace(/\/+$/,'').split('/').pop(), badges=document.querySelectorAll('.testimonial-badge'), last=badges[badges.length-1];
+  if(window.fetch&&last){fetch(STL_MEDIA_HOST+'/api/sheets').then(function(r){return r.json();}).then(function(j){
+    if((j.slugs||[]).indexOf(slug)<0)return;
+    var b=document.createElement('div');b.className='testimonial-badge sheet-badge';var t=document.createElement('div');t.textContent='Technical sheet';b.appendChild(t);last.parentNode.insertBefore(b,last.nextSibling);
+  }).catch(function(){});}
+  var m=document.querySelector('[data-media-folder]'), folder=m?m.textContent.trim():'';
+  var v=document.querySelector('.stl-media');
+  if(!v)return;
+  if(folder&&folder!=='-'){
+    v.setAttribute('data-stl-media',folder);
+    var s=document.createElement('script');s.src=STL_MEDIA_HOST+'/viewer.js';document.body.appendChild(s);
+  }else{
+    var bc=v.closest('.box-container');(bc||v).style.display='none';
+  }
+});
+</script>
