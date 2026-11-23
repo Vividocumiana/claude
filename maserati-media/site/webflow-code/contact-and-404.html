@@ -24,16 +24,18 @@
 /* Contact cards: phone under the name, hidden when the contact has no number */
 .contact-block .div-block-2 a:empty{display:none}
 .contact-block .div-block-2 a{display:block}
-/* HQ only: no tabs per brand. The HQ list (.collection-list-wrapper-2) is shown as it is, the old tabs are hidden
-   (better: delete the tabs block in the Designer). */
-.timeline-tabs{display:none}
 </style>
 <script>
 // Contacts without a phone number: Webflow renders an empty tel: link, remove it
 document.querySelectorAll('.contact-block .div-block-2 a[href^="tel:"]').forEach(function(a){ if (!a.textContent.trim()) a.parentNode.removeChild(a); });
 
-// Empty state of the HQ list
-(function(){var e=document.querySelector('.timeline-top .collection-list-wrapper-2 .w-dyn-empty');if(e)e.innerHTML='<div class="text-block-4">Maserati press contacts will be available soon.</div>';})();
+// HQ only (no tabs per brand: the tabs block was deleted from the page): the HQ list gets the card layout the tabs had
+(function(){
+  var list=document.querySelector('.collection-list-wrapper-2'); if(!list) return;
+  list.className='collectioncontact w-dyn-list';
+  var items=list.querySelector('.w-dyn-items'); if(items) items.classList.add('collectioncontact2');
+  var e=list.querySelector('.w-dyn-empty'); if(e){e.className='empty-state w-dyn-empty';e.innerHTML='<div class="text-block-4">Maserati press contacts will be available soon.</div>';}
+})();
 </script>
 
 <!-- ===== 404 · HEAD ===== -->

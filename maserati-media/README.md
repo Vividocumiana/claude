@@ -22,20 +22,26 @@ All Documents Template `…199`, Cookie `…19c`, Privacy `…19d`, Terms `…19
 Items: main event `…25d` (slug `fastlane-2030-maserati-day`), Markets "Maserati HQ" `…269`;
 models `concept`, `grecale`, `granturismo`, `grancabrio`, `mcpura`, `gt2-stradale` (sort-order 1–6).
 
-## Status: prepared, NOT deployed – values still missing
+## Status (23 Nov 2026): staging only, domain NOT connected
 
-Search for `__TODO_` in this folder. Still to do:
+Staging: https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io (rename the subdomain in Webflow).
+Gate and upload password: temporary. Colours: option 3 (night blue `#131B2C`, red `#B3121F`), draft to be confirmed.
+Worker deployed: https://mas26-media.toolpress.workers.dev (bucket `mas26-media`).
+
+Open points:
 
 | What | Where |
 | --- | --- |
-| e2e fixtures still use Stellantis brand names (IDs updated) | `test/mock-webflow.mjs`, `test/e2e-cms.mjs` |
-| Colour (client's option 1, 2 or 3): replace `#243782`, `#1a2862`, `#0b1024` and Webflow variable `BrandColor` | `site/webflow-code/*.html`, `site/cookie-policy/site-footer.html`, `public/*.css`, `public/upload/upload.css` |
-| Maserati logos (dark + white SVG from the EPS) uploaded to Webflow → URLs | `__TODO_LOGO_DARK_URL__`, `__TODO_LOGO_WHITE_URL__`; `public/upload/logo.svg` (file to add) |
-| Gate password hash (`printf 'password' | sha256sum`) and confirmed unlock time (now 10/12/2026 19:00 CET) | `site/webflow-code/site-head.html` (gate + embargo notice) |
-| Key visual (red trident on blue bodywork): home event card, manager login cover, OG image | Webflow; `public/upload/cover*.webp` (still the Paris image) |
-| Favicon / webclip | `site/favicon/`, `public/upload/favicon*`, `apple-touch-icon.png` (still Stellantis) |
-| Cookie / privacy texts: controller entity and legal requirements for Maserati | `site/cookie-policy/`, `site/privacy-policy/` (still the Stellantis texts) |
-| Secrets `UPLOAD_PASSWORD`, `TOKEN_SECRET`, `WEBFLOW_TOKEN`, then bucket + deploy | see Deploy |
+| `WEBFLOW_TOKEN` secret is rejected by Webflow (401/403): create a site API token on THIS site (CMS read/write) and `npx wrangler secret put WEBFLOW_TOKEN` | Press Kit Manager cannot list models/documents until then |
+| Final passwords, unlock time confirmed | gate `HASH`/`UNLOCK_AT` in `site/webflow-code/site-head.html` (+ embargo notice), `UPLOAD_PASSWORD` secret |
+| Colour confirmation; light tint `#2536831a` still on a few badge styles in Webflow | Webflow variable `BrandColor`, code files, `public/*.css` |
+| Model covers (now the event key visual as placeholder), descriptions, renders for the models row | Events items (`event-key-visual`, `event-description`, `logo`) |
+| Key visual at full quality (now the 2000 px copy from chat) | `site/covers/`, `public/upload/cover*.webp`, `og.jpg` |
+| Favicon / webclip: upload by hand (no API) | `site/favicon/` |
+| Legal pages: see `site/webflow-code/legal-pages.md` | Webflow |
+| e2e fixtures still use Stellantis brand names; e2e not run for this copy | `test/mock-webflow.mjs`, `test/e2e-cms.mjs` |
+| Document page (viewer, lightbox, video, PDF, ZIP) not tested: no documents yet | — |
+| Media Site link of the models = https://www.media.stellantis.com/em-en/maserati (to confirm) | Events items |
 
 ## API
 
