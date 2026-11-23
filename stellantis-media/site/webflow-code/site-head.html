@@ -1,0 +1,111 @@
+<!-- Webflow: Site settings → Custom code → Head code (exported 23 Nov 2026).
+     Site footer code = ../cookie-policy/site-footer.html -->
+<style>
+/* Empty states: no grey box */
+.w-dyn-empty,.stl-empty{background-color:transparent;padding:0;color:#666;font-family:var(--mainfont),Arial,sans-serif;font-size:16px;line-height:1.5}
+</style>
+<script>
+/* Info link: behave like the other navbar links (mobile menu alignment + closes menu on tap) */
+document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll("a.nav-link:not(.w-nav-link)").forEach(function(a){a.classList.add("w-nav-link");a.addEventListener("click",function(){var b=document.querySelector(".w-nav-button.w--open");if(b)setTimeout(function(){b.click();},50);});});});
+</script>
+<!-- Brand logos row (brand pages + Brands page): full-width strip under the fixed navbar.
+     Logos come from the "Logo" field of the brands, managed in the Press Kit Manager. -->
+<style>
+[data-brandbar]{margin-top:96px;background:#fff;border-bottom:1px solid #e6e6ea;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+[data-brandbar] + section{margin-top:0 !important}
+[data-brandbar]::-webkit-scrollbar{display:none}
+[data-brandbar] .w-dyn-items{display:flex;flex-wrap:nowrap;gap:8px;align-items:stretch;width:max-content;min-width:100%;justify-content:center}
+[data-brandbar] .w-dyn-item{flex:0 0 auto}
+[data-brandbar] .w-dyn-empty{display:none}
+[data-bb-link]{display:flex;align-items:center;justify-content:center;height:52px;min-width:96px;padding:0 16px;border-radius:12px;border:1px solid transparent;background:transparent;text-decoration:none;color:#241f21;transition:background .2s,border-color .2s,opacity .2s;opacity:.65}
+[data-bb-link]:hover{opacity:1;background:#f5f5f7}
+[data-bb-link].is-current{opacity:1;background:#f5f5f7;border-color:#243782}
+[data-bb-link]:focus-visible{outline:2px solid #243782;outline-offset:2px}
+[data-bb-logo]{display:block;height:28px;width:auto;max-width:112px;object-fit:contain}
+[data-bb-name]{font-size:14px;line-height:1.2;white-space:nowrap}
+[data-bb-slug]{display:none}
+[data-bb-link].has-logo [data-bb-name]{display:none}
+[data-bb-link]:not(.has-logo) [data-bb-logo]{display:none}
+@media (max-width:767px){[data-brandbar]{padding:10px 16px}[data-brandbar] .w-dyn-items{justify-content:flex-start}[data-bb-link]{height:44px;min-width:76px;padding:0 12px}[data-bb-logo]{height:22px;max-width:88px}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var bar = document.querySelector('[data-brandbar]'); if (!bar) return;
+  // Sit right below the fixed navbar, whatever its height on this screen size
+  var nav = document.querySelector('.navbar');
+  function fit() { if (nav) bar.style.marginTop = Math.max(nav.offsetHeight - 1, 0) + 'px'; }
+  fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit);
+  var here = location.pathname.replace(/\/+$/, '').split('/').pop();
+  bar.querySelectorAll('[data-bb-link]').forEach(function (a) {
+    var slugEl = a.querySelector('[data-bb-slug]'), slug = slugEl ? slugEl.textContent.trim() : '';
+    var img = a.querySelector('[data-bb-logo]'), src = img ? (img.getAttribute('src') || '') : '';
+    // No logo yet (empty image): the brand name is shown instead
+    if (img && src && !img.classList.contains('w-dyn-bind-empty') && !/placeholder/i.test(src)) {
+      a.classList.add('has-logo');
+      img.loading = 'eager'; img.removeAttribute('srcset'); img.removeAttribute('sizes');
+      if (!img.complete) { img.src = src; }
+      img.addEventListener('error', function () { a.classList.remove('has-logo'); });
+    }
+    var name = a.querySelector('[data-bb-name]'); if (name) a.setAttribute('aria-label', name.textContent.trim());
+    if (slug) a.setAttribute('href', '/events/' + slug);
+    if (slug && slug === here) { a.classList.add('is-current'); a.setAttribute('aria-current', 'page'); }
+  });
+  var cur = bar.querySelector('[data-bb-link].is-current');
+  if (cur && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = cur.offsetLeft - bar.clientWidth / 2 + cur.offsetWidth / 2;
+});
+</script>
+<!-- Timed password gate (client-side, low security by design).
+     To change: UNLOCK_AT, HASH = sha256 of the new password (e.g. `printf 'Pwd' | sha256sum`),
+     KEY (unique per site), logo URL, texts. -->
+<script>
+(function(){
+  var UNLOCK_AT = Date.parse("2026-10-11T19:00:00+02:00"); // Sunday 11 October 2026, 7:00 pm Paris time (embargo end): the site becomes public
+  var HASH = "ff2b4695211755cfafdd9cc32d768d4cf5a8b9c11a4a7351900d842ca2ba1783"; // SHA-256 of the password
+  var KEY = "stl26_access";
+  if (Date.now() >= UNLOCK_AT) return;
+  try { if (localStorage.getItem(KEY) === HASH) return; } catch(e){}
+  var d = document.documentElement; d.className += " stl-locked";
+  var st = document.createElement("style");
+  st.textContent = "html.stl-locked body{visibility:hidden!important;overflow:hidden!important}"
+   + "#stl-gate{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:#0b1024 radial-gradient(circle at 80% 10%,#243782 0,rgba(36,55,130,0) 60%);font-family:var(--mainfont),-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fff;visibility:visible}"
+   + "#stl-gate .b{width:100%;max-width:420px;text-align:center}"
+   + "#stl-gate .l{display:block;height:34px;width:auto;margin:0 auto 40px}"
+   + "#stl-gate h1{font-size:28px;line-height:1.25;margin:0 0 12px;font-weight:600}"
+   + "#stl-gate p{font-size:15px;line-height:1.5;margin:0 0 28px;color:rgba(255,255,255,.72)}"
+   + "#stl-gate form{display:flex;gap:10px}"
+   + "#stl-gate input{flex:1;min-width:0;height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;padding:0 14px;font-size:16px;outline:none}"
+   + "#stl-gate input:focus{border-color:#fff}"
+   + "#stl-gate button{height:48px;padding:0 20px;border-radius:10px;border:0;background:#fff;color:#243782;font-weight:700;font-size:15px;cursor:pointer}"
+   + "#stl-gate .e{min-height:20px;margin-top:12px;font-size:14px;color:#ff9b9b}"
+   + "#stl-gate .f{margin-top:36px;font-size:13px;color:rgba(255,255,255,.5)}";
+  (document.head || d).appendChild(st);
+  function sha(s){
+    if (window.crypto && crypto.subtle && window.TextEncoder) {
+      return crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)).then(function(b){
+        return Array.prototype.map.call(new Uint8Array(b), function(x){return ("0"+x.toString(16)).slice(-2);}).join("");
+      });
+    }
+    return Promise.resolve("");
+  }
+  function show(){
+    var g = document.createElement("div"); g.id = "stl-gate";
+    g.innerHTML = '<div class="b"><img class="l" src="https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab61df994788ceb9c8f1238_stellantis-logo-white.svg" alt="Stellantis"><h1>Mondial de l\'Auto Paris 2026<br>Press Kit</h1>'
+      + '<p>This area is reserved for accredited media until the press materials are released.</p>'
+      + '<form><input type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required><button type="submit">Enter</button></form>'
+      + '<div class="e" role="alert"></div><div class="f">Open to everyone from 7:00 pm (Paris time) on Sunday, 11 October 2026</div></div>';
+    d.appendChild(g);
+    var f = g.querySelector("form"), i = g.querySelector("input"), e = g.querySelector(".e");
+    i.focus();
+    f.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      sha(i.value.trim()).then(function(h){
+        if (h === HASH) {
+          try { localStorage.setItem(KEY, HASH); } catch(x){}
+          d.className = d.className.replace(" stl-locked", ""); g.parentNode.removeChild(g);
+        } else { e.textContent = "Incorrect password. Please try again."; i.value = ""; i.focus(); }
+      });
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", show); else show();
+})();
+</script>

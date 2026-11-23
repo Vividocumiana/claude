@@ -1,0 +1,95 @@
+<!-- Webflow pages "Contact" (/contact) and 404 – exported 23 Nov 2026 -->
+
+<!-- ===== CONTACT · HEAD ===== -->
+<style>
+/* Ensure that the modal is above everything */
+.selectmarketmodal {
+  position: fixed !important;
+  z-index: 9999 !important; /* Highest priority z-index */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Optional: Ensure the modal’s parent container also has high z-index */
+.selectmarketmodal-container {
+  position: relative;
+  z-index: 9998; /* Ensure it's layered below the modal */
+}
+</style>
+
+<!-- ===== CONTACT · FOOTER ===== -->
+<style>
+/* Contact cards: phone under the name, hidden when the contact has no number */
+.contact-block .div-block-2 a:empty{display:none}
+.contact-block .div-block-2 a{display:block}
+/* The corporate list and the extra brand lists (data-brand-tab) move into their own tabs */
+.timeline-top .collection-list-wrapper-2,.timeline-top [data-brand-tab]{display:none}
+</style>
+<script>
+// Contacts without a phone number: Webflow renders an empty tel: link, remove it
+document.querySelectorAll('.contact-block .div-block-2 a[href^="tel:"]').forEach(function(a){ if (!a.textContent.trim()) a.parentNode.removeChild(a); });
+
+// Extra tabs built from CMS lists placed at the top of the page:
+// - "Stellantis Corporate" (first, open by default): list filtered on the "Stellantis Corporate" brand
+// - every list with data-brand-tab="<Brand>" (e.g. Jeep): own tab, in alphabetical order among the brands
+(function () {
+  var tabs = document.querySelector('.timeline-tabs'), menu = tabs && tabs.querySelector('.w-tab-menu'), content = tabs && tabs.querySelector('.w-tab-content');
+  if (!menu || !content) return;
+  var first = menu.querySelector('.w-tab-link'); if (!first) return;
+  function makeTab(name, id, list, emptyText, before) {
+    var link = first.cloneNode(true);
+    link.setAttribute('data-w-tab', id); link.removeAttribute('id'); link.removeAttribute('aria-controls');
+    link.classList.remove('w--current');
+    (link.querySelector('div') || link).textContent = name;
+    var pane = document.createElement('div');
+    pane.className = 'w-tab-pane'; pane.setAttribute('data-w-tab', id); pane.setAttribute('role', 'tabpanel');
+    list.className = 'collectioncontact w-dyn-list'; list.style.display = '';
+    var items = list.querySelector('.w-dyn-items'); if (items) items.classList.add('collectioncontact2');
+    var empty = list.querySelector('.w-dyn-empty');
+    if (empty) { empty.className = 'empty-state w-dyn-empty'; empty.innerHTML = '<div class="text-block-4">' + emptyText + '</div>'; }
+    pane.appendChild(list);
+    var beforePane = before && content.querySelector('.w-tab-pane[data-w-tab="' + before.getAttribute('data-w-tab') + '"]');
+    menu.insertBefore(link, before || null);
+    content.insertBefore(pane, beforePane || null);
+    return link;
+  }
+  var later = 'Press contacts for this brand will be available soon. In the meantime, please contact the Stellantis press office.';
+  document.querySelectorAll('.timeline-top [data-brand-tab]').forEach(function (list) {
+    var name = list.getAttribute('data-brand-tab'), before = null;
+    menu.querySelectorAll('.w-tab-link').forEach(function (l) { if (!before && l.textContent.trim().localeCompare(name, 'en', { sensitivity: 'base' }) > 0) before = l; });
+    makeTab(name, 'Brand-' + name, list, later, before);
+  });
+  var corp = document.querySelector('.timeline-top .collection-list-wrapper-2');
+  var start = corp ? makeTab('Stellantis Corporate', 'Corporate', corp, 'Stellantis Corporate press contacts will be available soon.', menu.querySelector('.w-tab-link')) : null;
+  // The tabs are switched here (Webflow's own handler does not know the added tabs)
+  function show(l) {
+    var id = l.getAttribute('data-w-tab');
+    menu.querySelectorAll('.w-tab-link').forEach(function (x) { var on = x === l; x.classList.toggle('w--current', on); x.setAttribute('aria-selected', on ? 'true' : 'false'); x.setAttribute('tabindex', on ? '0' : '-1'); });
+    content.querySelectorAll('.w-tab-pane').forEach(function (p) { var on = p.getAttribute('data-w-tab') === id; p.classList.toggle('w--tab-active', on); p.style.opacity = ''; p.style.transition = ''; });
+    tabs.setAttribute('data-current', id);
+  }
+  menu.addEventListener('click', function (e) {
+    var l = e.target.closest('.w-tab-link'); if (!l) return;
+    e.preventDefault(); e.stopPropagation(); show(l);
+  }, true);
+  show(start || menu.querySelector('.w-tab-link'));
+})();
+</script>
+
+<!-- ===== 404 · HEAD ===== -->
+<style>
+.utility-page-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#fff;font-family:var(--mainfont),Arial,sans-serif}
+.utility-page-content{text-align:center;max-width:460px;display:flex;flex-direction:column;align-items:center}
+.utility-page-content img{height:34px;width:auto;margin-bottom:40px}
+.utility-page-content h2{font-size:32px;line-height:1.2;margin:0 0 12px;color:#0b1024;font-weight:600}
+.utility-page-content div{font-size:16px;line-height:1.5;color:#555}
+.stl-404-btn{display:inline-block;margin-top:28px;padding:14px 24px;border-radius:10px;background:#243782;color:#fff!important;text-decoration:none;font-weight:600}
+.stl-404-btn:hover{background:#1a2862}
+</style>
+
+<!-- ===== 404 · FOOTER ===== -->
+<script>
+(function(){var c=document.querySelector('.utility-page-content');if(!c)return;var i=c.querySelector('img');if(i){i.src='https://cdn.prod.website-files.com/6ab5f7c03bc1be2290997e01/6ab61d6550050578bb4b1052_stellantis-1.svg';i.alt='Stellantis';}var a=document.createElement('a');a.href='/brands';a.className='stl-404-btn';a.textContent='Go to all brands';c.appendChild(a);})();
+</script>

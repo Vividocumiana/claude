@@ -1,0 +1,125 @@
+<!-- Webflow page "Events Template" (brand page, /events/<slug>) – exported 23 Nov 2026 -->
+
+<!-- ===== HEAD ===== -->
+<script>
+// Tab title = brand name
+document.addEventListener('DOMContentLoaded',function(){var h=document.querySelector('h1.h1-heading');if(h&&h.textContent.trim()){document.title=h.textContent.trim()+' Press Kit – Stellantis at Mondial de l\'Auto Paris 2026';}});
+</script>
+<!-- Brand logos row: styles and script are in the site head code -->
+
+<!-- ===== FOOTER (before </body>) ===== -->
+<style>
+.filtri {
+    overflow-x: scroll; /* Allows horizontal scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+}
+
+.filtri::-webkit-scrollbar {
+    display: none; /* Hide scrollbar in Webkit browsers (Chrome, Safari, etc.) */
+}
+.stl-empty{padding:32px 0;color:#666;font-size:16px;line-height:1.5}
+.testimonial-badge.sheet-badge{display:flex}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mixitup/3.3.0/mixitup.min.js"></script>
+
+<script>
+       // Link buttons next to the filters (Media Site, Instagram, TikTok, LinkedIn, Facebook from the Events CMS):
+       // hide the ones without a link, open the others in a new tab
+       document.querySelectorAll('.filtri a:not([data-filter])').forEach(function(a){
+         var h = (a.getAttribute('href') || '').trim();
+         if (!h || h === '#') { a.parentNode.removeChild(a); return; }
+         a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener');
+       });
+
+       // Keep only the documents that belong to this brand folder (event slug = last URL segment)
+       var pageSlug = window.location.pathname.replace(/\/+$/, '').split('/').pop();
+       document.querySelectorAll('.w-dyn-item.mix').forEach(function(item){
+         var s = item.querySelector('.ev-slug');
+         var itemSlug = s ? (s.textContent || '').trim() : '';
+         if (itemSlug !== pageSlug) { item.parentNode.removeChild(item); }
+       });
+       var listEl = document.querySelector('.container');
+       if (listEl && !listEl.querySelector('.w-dyn-item')) {
+         var msg = document.createElement('div');
+         msg.className = 'stl-empty';
+         msg.textContent = 'Press materials for this brand will be available here soon.';
+         listEl.parentNode.insertBefore(msg, listEl);
+       }
+
+       // Creating dynamic elements classes from its categories:
+       var catArray = document.querySelectorAll('.w-dyn-item .categ');
+       catArray.forEach( function(elem) {
+         var text = elem.innerText || elem.innerContent;
+         if (!text) {
+              text = 'empty';
+              }
+         var conv = text.replace(/[!\"#$%&'\(\)\*\+,\.\/:;<=>\?\@\[\\\]\^`\{\|\}~]/g, '');
+         var className = conv.replace (/ /g, "-")
+                             .toLowerCase()
+                             .trim();
+         if (!isNaN(parseInt(className.charAt(0), 10))) {
+            className = ("_" + className);
+         }
+         elem.parentElement.classList.add(className);  });
+
+       // Creating a custom data-order attributes from blog titles:
+       var sortArray = document.querySelectorAll('.w-dyn-item .title');
+       sortArray.forEach( function(sortElem) {
+         var sortText = sortElem.innerText || sortElem.innerContent;
+         sortElem.parentElement.setAttribute('data-order', sortText);});
+      // Set the reference to the container
+      var containerEl = document.querySelector('.container');
+
+      // Technical sheets: flagged in the Press Kit Manager, list served by the media service.
+      // Filters start after at most 2.5 s; a late answer still adds the badges (not the filter).
+      var STL_MEDIA_HOST = "https://stl26-media.toolpress.workers.dev";
+      function markSheets(slugs, late) {
+        var found = 0;
+        document.querySelectorAll('.w-dyn-item.mix').forEach(function(item){
+          var a = item.querySelector('a[href*="/all-documents/"]');
+          var slug = a ? a.getAttribute('href').replace(/\/+$/, '').split('/').pop() : '';
+          if (slugs.indexOf(slug) < 0) return;
+          found++;
+          item.classList.add('scheda-tecnica');
+          var head = item.querySelector('.testimonial-card-header');
+          if (head && !head.querySelector('.sheet-badge')) {
+            var b = document.createElement('div'); b.className = 'testimonial-badge sheet-badge';
+            var t = document.createElement('div'); t.textContent = 'Technical sheet'; b.appendChild(t); head.appendChild(b);
+          }
+        });
+        var ref = document.querySelector('[data-filter=".documento"]');
+        if (!late && found && ref && !document.querySelector('[data-filter=".scheda-tecnica"]')) {
+          var btn = ref.cloneNode(true);
+          btn.setAttribute('data-filter', '.scheda-tecnica');
+          btn.classList.remove('mixitup-control-active');
+          var label = btn.querySelector('div') || btn; label.textContent = 'Technical sheets';
+          ref.parentNode.insertBefore(btn, ref.nextSibling);
+        }
+      }
+      var started = false;
+      function startMix() { if (started) return; started = true; if (containerEl && window.mixitup) { try { mixitup(containerEl); } catch (e) {} } }
+      if (window.fetch && containerEl && containerEl.querySelector('.w-dyn-item')) {
+        setTimeout(startMix, 2500);
+        fetch(STL_MEDIA_HOST + '/api/sheets').then(function(r){ return r.json(); })
+          .then(function(j){ markSheets(j.slugs || [], started); })
+          .catch(function(){})
+          .then(startMix);
+      } else {
+        startMix();
+      }
+</script>
+
+<style>
+.link-block{
+background-image:;
+}
+.nolink{
+text-decoration:none;}
+
+.mixitup-control-active{
+color: #000000;
+font-weight: 600;
+}
+</style>
