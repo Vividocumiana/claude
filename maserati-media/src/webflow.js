@@ -198,7 +198,7 @@ function docOut(i) {
 
 function webflowMessage(status, j) {
   const detail = j && (j.message || j.msg || (j.details && JSON.stringify(j.details)) || j.code);
-  if (status === 401 || status === 403) return "Webflow ha rifiutato la richiesta (controlla i permessi del token API)";
+  if (status === 401 || status === 403) return "Webflow ha rifiutato la richiesta (controlla i permessi del token API)" + (detail ? " – " + status + ": " + String(detail).slice(0, 160) : "");
   if (status === 429) return "Webflow è occupato, riprova tra un minuto";
   if (status >= 500) return "Webflow è temporaneamente non disponibile, riprova";
   return "Webflow: " + (detail || "errore " + status);
