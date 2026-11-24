@@ -35,7 +35,8 @@ Open points:
 | Final passwords, unlock time confirmed | gate `HASH`/`UNLOCK_AT` in `site/webflow-code/site-head.html` (+ embargo notice), `UPLOAD_PASSWORD` secret |
 | Colour confirmation; light tint `#2536831a` still on a few badge styles in Webflow | Webflow variable `BrandColor`, code files, `public/*.css` |
 | Model covers (now the event key visual as placeholder), descriptions, renders for the models row | Events items (`event-key-visual`, `event-description`, `logo`) |
-| Models row: renders set on Grecale, GranTurismo, GranCabrio, MCPura, GT2 Stradale through the Manager API (24 Nov); Concept render missing. The new row styles (bigger render + name below) are in `site/webflow-code/site-head.html` but NOT yet pasted in Webflow: the Webflow connection lost access to the site on 24 Nov, so the live row still shows small renders without names | Webflow site head code |
+| Models row: renders on Grecale, GranTurismo, GranCabrio, MCPura, GT2 Stradale with the name below (live on staging, 24 Nov); Concept render still missing | Events items (`logo`) |
+| Colour feedback (24 Nov): option 3 ok, red option ok with the centenary trident artwork as event image, blue option wanted with the normal white trident as event image and the "Press Kit" title kept. Final choice not made yet; previews in `site/qa/preview/`, event images in `site/covers/event-trident-*.png` | — |
 | Key visual at full quality (now the 2000 px copy from chat) | `site/covers/`, `public/upload/cover*.webp`, `og.jpg` |
 | Favicon / webclip: upload by hand (no API) | `site/favicon/` |
 | Legal pages: see `site/webflow-code/legal-pages.md` | Webflow |
