@@ -35,7 +35,7 @@ Open points:
 | Final passwords, unlock time confirmed | gate `HASH`/`UNLOCK_AT` in `site/webflow-code/site-head.html` (+ embargo notice), `UPLOAD_PASSWORD` secret |
 | Colour confirmation; light tint `#2536831a` still on a few badge styles in Webflow | Webflow variable `BrandColor`, code files, `public/*.css` |
 | Model covers (now the event key visual as placeholder), descriptions, renders for the models row | Events items (`event-key-visual`, `event-description`, `logo`) |
-| Models row renders: files ready in `public/upload/models/` (Grecale, GranTurismo, GranCabrio, GT2 Stradale) and new row styles in `site/webflow-code/site-head.html`, but NOT yet applied in Webflow (the Webflow connection lost access to the site on 24 Nov). To apply: set the `logo` field of the four models to `https://mas26-media.toolpress.workers.dev/upload/models/<slug>.webp`, paste the site head code, publish. MCPura coupé and Concept renders missing (only MCPura Cielo received: `site/covers/render-mcpura-cielo.webp`, not used) | Webflow |
+| Models row: renders set on Grecale, GranTurismo, GranCabrio, MCPura, GT2 Stradale through the Manager API (24 Nov); Concept render missing. The new row styles (bigger render + name below) are in `site/webflow-code/site-head.html` but NOT yet pasted in Webflow: the Webflow connection lost access to the site on 24 Nov, so the live row still shows small renders without names | Webflow site head code |
 | Key visual at full quality (now the 2000 px copy from chat) | `site/covers/`, `public/upload/cover*.webp`, `og.jpg` |
 | Favicon / webclip: upload by hand (no API) | `site/favicon/` |
 | Legal pages: see `site/webflow-code/legal-pages.md` | Webflow |
