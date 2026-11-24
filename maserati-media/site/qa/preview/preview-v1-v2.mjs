@@ -2,7 +2,7 @@ import { createRequire } from 'module'; const { chromium } = createRequire(impor
 import fs from 'fs';
 const B = 'https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io', OUT = process.env.OUT + '/';
 const jq = fs.readFileSync(new URL('./lib/jquery/dist/jquery.min.js', import.meta.url));
-const ART = 'data:image/svg+xml;base64,' + fs.readFileSync(new URL('./trident-art.svg', import.meta.url)).toString('base64');
+const KV = {}; 
 const V = { v1: { main: '#0C2340', soft: '#f5f5f7', hover: '#0C2340' }, v2: { main: '#971B2F', soft: '#DDE5ED', hover: '#971B2F' } };
 const b = await chromium.launch();
 async function shot(v, path, name, unlocked, vp = { width: 1440, height: 900 }, mobile = false) {
@@ -23,22 +23,19 @@ async function shot(v, path, name, unlocked, vp = { width: 1440, height: 900 }, 
     .washed-grey{background-color:${k.soft} !important}
     [data-bb-link].is-current{border-color:${k.main} !important}
     .header-background{background-color:${k.main} !important}
-    .header-background.event-page{background-image:url("${ART}") !important;background-repeat:no-repeat !important;background-position:center !important;background-size:auto 78% !important}
-    .header-background.event-page > *{display:none !important}
-    .header-background:not(.event-page){background-image:url("${ART}") !important;background-repeat:no-repeat !important;background-position:right -40px bottom -150px !important;background-size:auto 62% !important}
     #stl-gate{background:${k.main} !important}
-    #stl-gate .l{height:190px !important;margin-bottom:28px !important}
     #stl-gate button{color:${k.main} !important}
     .badge.red,.testimonial-badge.documento{background-color:${k.main}1a !important}
   ` });
-  await p.evaluate((art) => { const i = document.querySelector('#stl-gate .l'); if (i) i.src = art; }, ART);
+  await p.evaluate((src) => { document.querySelectorAll('img.event-image').forEach((i) => { i.removeAttribute('srcset'); i.src = src; }); const h = document.querySelector('.header-background.event-page'); if (h) { h.style.backgroundImage = 'url("' + src + '")'; h.style.backgroundSize = 'cover'; h.style.backgroundPosition = 'center'; h.querySelectorAll('img').forEach((i) => { i.removeAttribute('srcset'); i.src = src; }); } }, 'data:image/png;base64,' + fs.readFileSync(new URL('./kv-' + v + '.png', import.meta.url)).toString('base64'));
   await p.waitForTimeout(2500);
   await p.screenshot({ path: OUT + name }); await c.close(); console.log(name);
 }
 for (const v of ['v1', 'v2']) {
-  await shot(v, '/', `${v}-tridente-home.png`, true);
-  await shot(v, '/events/grecale', `${v}-tridente-modello.png`, true);
-  await shot(v, '/', `${v}-tridente-password.png`, false, { width: 1280, height: 800 });
-  await shot(v, '/events/grecale', `${v}-tridente-telefono.png`, true, { width: 390, height: 844 }, true);
+  const pg = await b.newPage({ viewport: { width: 1920, height: 1080 } });
+  await pg.setContent('<body style="margin:0">' + fs.readFileSync(new URL('./kv-' + v + '.svg', import.meta.url), 'utf8') + '</body>'); await pg.screenshot({ path: new URL('./kv-' + v + '.png', import.meta.url).pathname }); await pg.close();
+  await shot(v, '/', `${v}-tridente-evento-home.png`, true);
+  await shot(v, '/events/grecale', `${v}-tridente-evento-modello.png`, true);
+  await shot(v, '/', `${v}-tridente-evento-telefono.png`, true, { width: 390, height: 844 }, true);
 }
 await b.close();
