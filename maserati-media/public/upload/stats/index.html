@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Statistiche – Press Kit Maserati Day 2026</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/upload/favicon-32.png">
+<style>
+:root { --main: #131B2C; --accent: #B3121F; --ink: #241f21; --mute: #666; --line: #e6e6ea; --soft: #f5f5f7; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--ink); background: var(--soft); font-size: 15px; line-height: 1.5; }
+header { display: flex; align-items: center; gap: 16px; padding: 14px 24px; background: #fff; border-bottom: 1px solid var(--line); }
+header img { height: 40px; }
+header h1 { font-size: 17px; margin: 0; font-weight: 600; flex: 1; }
+header h1 span { color: var(--mute); font-weight: 400; margin-left: 8px; }
+a.btn, button.btn { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.btn.primary { background: var(--main); border-color: var(--main); color: #fff; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+.bar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 20px; }
+.bar label { display: grid; gap: 4px; font-size: 13px; color: var(--mute); }
+.bar input { height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: #fff; }
+.bar .sp { flex: 1; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.tile { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.tile b { display: block; font-size: 30px; line-height: 1.1; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile span { color: var(--mute); font-size: 13px; }
+.tile small { display: block; margin-top: 6px; color: var(--mute); font-size: 12px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; overflow-x: auto; }
+.card h2 { font-size: 16px; margin: 0 0 4px; }
+.card p.sub { margin: 0 0 12px; color: var(--mute); font-size: 13px; }
+.split { display: flex; height: 26px; border-radius: 8px; overflow: hidden; background: var(--soft); margin: 10px 0 8px; }
+.split i { display: block; height: 100%; }
+.split .qr { background: var(--accent); } .split .link { background: var(--main); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--mute); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 600; color: var(--mute); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid #f0f0f3; vertical-align: middle; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .b { display: inline-block; height: 8px; border-radius: 4px; background: var(--main); vertical-align: middle; margin-right: 8px; min-width: 2px; }
+td.name { overflow-wrap: anywhere; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.empty { color: var(--mute); padding: 8px 0; }
+.note { color: var(--mute); font-size: 13px; margin-top: 20px; }
+#err { color: #c0392b; margin-bottom: 12px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } header h1 span { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <img src="/upload/logo.svg" alt="Maserati">
+  <h1>Statistiche <span>FaSTLAne 2030 / Maserati Day</span></h1>
+  <a class="btn" href="/upload/">← Gestione Press Kit</a>
+</header>
+<main>
+  <div class="bar">
+    <label>Dal <input type="date" id="from"></label>
+    <label>Al <input type="date" id="to"></label>
+    <button class="btn primary" id="go" type="button">Aggiorna</button>
+    <div class="sp"></div>
+    <button class="btn" id="csv" type="button">Scarica CSV</button>
+  </div>
+  <div id="err" role="alert"></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="card">
+    <h2>Da dove arrivano le visite</h2>
+    <p class="sub">QR code = chi apre il sito inquadrando il QR (indirizzo con <code>?src=qr</code>). Link diretto = tutti gli altri: link ricevuto via mail o chat, indirizzo digitato, altri siti.</p>
+    <div class="split" id="split"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div class="card"><h2>Giorno per giorno</h2><div id="days"></div></div>
+  <div class="grid2">
+    <div class="card"><h2>File più scaricati</h2><p class="sub">Download del file originale, uno per uno.</p><div id="files"></div></div>
+    <div class="card"><h2>Documenti più scaricati</h2><p class="sub">File singoli e ZIP “Download all” sommati, per documento.</p><div id="folders"></div></div>
+    <div class="card"><h2>Pagine più viste</h2><div id="pages"></div></div>
+    <div class="card"><h2>Paesi</h2><p class="sub">Visite per Paese di collegamento.</p><div id="countries"></div></div>
+  </div>
+  <p class="note">Come si contano: una <b>visita</b> è l’arrivo sul sito (la prima pagina aperta, da qualunque provenienza); le <b>pagine viste</b> contano ogni pagina aperta; i <b>download</b> contano ogni file originale scaricato e ogni ZIP. I dati sono anonimi: niente cookie, niente indirizzi IP, nessun identificativo del visitatore, quindi la stessa persona che torna il giorno dopo conta come una nuova visita. I programmi automatici (motori di ricerca, anteprime dei link nelle chat) sono esclusi.</p>
+</main>
+<script>
+(function () {
+  var token = ""; try { token = sessionStorage.getItem("mas26_up") || ""; } catch (e) {}
+  if (!token) { location.href = "/upload/"; return; }
+  var $ = function (id) { return document.getElementById(id); }, last = null;
+  var nf = new Intl.NumberFormat("it-IT");
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function iso(d) { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(d); }
+  function dayLabel(s) { var p = s.split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
+  var names = null; try { names = new Intl.DisplayNames(["it"], { type: "region" }); } catch (e) {}
+  function country(c) { if (!c || c === "??" || c === "XX" || c === "T1") return "Sconosciuto"; try { return names ? names.of(c) : c; } catch (e) { return c; } }
+  function table(rows, label, fmt) {
+    if (!rows.length) return '<div class="empty">Ancora nessun dato nel periodo.</div>';
+    var max = Math.max.apply(null, rows.map(function (r) { return r.count; })) || 1;
+    return "<table><thead><tr><th>" + label + '</th><th class="n">Numero</th></tr></thead><tbody>' + rows.map(function (r) {
+      return '<tr><td class="name"><span class="b" style="width:' + Math.round(60 * r.count / max) + 'px"></span>' + esc(fmt ? fmt(r.name) : r.name) + '</td><td class="n">' + nf.format(r.count) + "</td></tr>";
+    }).join("") + "</tbody></table>";
+  }
+  function render(j) {
+    last = j; var t = j.totals;
+    $("tiles").innerHTML = [
+      [t.visits, "Visite", "arrivi sul sito"],
+      [t.qr, "Da QR code", t.visits ? Math.round(100 * t.qr / t.visits) + "% delle visite" : ""],
+      [t.link, "Da link diretto", t.visits ? Math.round(100 * t.link / t.visits) + "% delle visite" : ""],
+      [t.views, "Pagine viste", ""],
+      [t.downloads, "File scaricati", ""],
+      [t.zips, "ZIP scaricati", "“Download all”"]
+    ].map(function (x) { return '<div class="tile"><b>' + nf.format(x[0]) + "</b><span>" + x[1] + "</span>" + (x[2] ? "<small>" + x[2] + "</small>" : "") + "</div>"; }).join("");
+    var tot = t.qr + t.link;
+    $("split").innerHTML = tot ? '<i class="qr" style="width:' + (100 * t.qr / tot) + '%"></i><i class="link" style="width:' + (100 * t.link / tot) + '%"></i>' : "";
+    $("legend").innerHTML = '<span><i style="background:var(--accent)"></i>QR code: ' + nf.format(t.qr) + '</span><span><i style="background:var(--main)"></i>Link diretto: ' + nf.format(t.link) + "</span>";
+    var days = j.days.filter(function (d) { return d.views || d.downloads || d.zips; });
+    $("days").innerHTML = days.length ? '<table><thead><tr><th>Giorno</th><th class="n">Visite</th><th class="n">da QR</th><th class="n">da link</th><th class="n">Pagine viste</th><th class="n">File scaricati</th><th class="n">ZIP</th></tr></thead><tbody>'
+      + days.slice().reverse().map(function (d) { return "<tr><td>" + dayLabel(d.day) + (d.day === j.today ? " (oggi)" : "") + '</td><td class="n">' + [d.visits, d.qr, d.link, d.views, d.downloads, d.zips].map(nf.format).join('</td><td class="n">') + "</td></tr>"; }).join("") + "</tbody></table>"
+      : '<div class="empty">Ancora nessun dato nel periodo.</div>';
+    $("files").innerHTML = table(j.files, "File");
+    $("folders").innerHTML = table(j.folders, "Documento (cartella)");
+    $("pages").innerHTML = table(j.pages, "Pagina");
+    $("countries").innerHTML = table(j.countries, "Paese", country);
+  }
+  function load() {
+    $("err").textContent = "";
+    fetch("/api/admin/stats?from=" + $("from").value + "&to=" + $("to").value, { headers: { authorization: "Bearer " + token } })
+      .then(function (r) { if (r.status === 401) { location.href = "/upload/"; throw new Error("stop"); } return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || "Errore"); return j; }); })
+      .then(render).catch(function (e) { if (e.message !== "stop") $("err").textContent = "Non riesco a leggere le statistiche: " + e.message; });
+  }
+  function csv() {
+    if (!last) return;
+    var q = function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }, L = [];
+    L.push(["Periodo", last.from, last.to].map(q).join(";"));
+    L.push(""); L.push(["Giorno", "Visite", "Da QR", "Da link", "Pagine viste", "File scaricati", "ZIP"].map(q).join(";"));
+    last.days.forEach(function (d) { L.push([d.day, d.visits, d.qr, d.link, d.views, d.downloads, d.zips].map(q).join(";")); });
+    [["File", last.files], ["Documento", last.folders], ["Pagina", last.pages], ["Paese", last.countries]].forEach(function (s) {
+      L.push(""); L.push([s[0], "Numero"].map(q).join(";")); s[1].forEach(function (r) { L.push([r.name, r.count].map(q).join(";")); });
+    });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + L.join("\r\n")], { type: "text/csv" }));
+    a.download = "statistiche-press-kit-" + last.from + "_" + last.to + ".csv"; document.body.appendChild(a); a.click(); a.remove();
+  }
+  $("to").value = iso(new Date()); $("from").value = iso(new Date(Date.now() - 29 * 864e5));
+  $("go").addEventListener("click", load); $("csv").addEventListener("click", csv);
+  load();
+})();
+</script>
+</body>
+</html>

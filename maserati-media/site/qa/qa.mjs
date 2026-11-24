@@ -72,7 +72,7 @@ await p.screenshot({ path: DIR + 'gate.png' });
 log('gate shows', g1.gate && g1.logo > 0 && g1.hidden === 'hidden' && /Contents under embargo until 10\/12\/2026 7:00 p\.m\./.test(g1.txt) && /FaSTLAne 2030 \/ Maserati Day/.test(g1.txt), JSON.stringify(g1.txt));
 await p.fill('#stl-gate input', 'wrong'); await p.click('#stl-gate button'); await p.waitForTimeout(500);
 log('gate wrong password', /Incorrect password/.test(await p.innerText('#stl-gate .e')) && await p.isVisible('#stl-gate'), '');
-await p.fill('#stl-gate input', 'maserati123'); await p.click('#stl-gate button'); await p.waitForTimeout(500);
+await p.fill('#stl-gate input', process.env.GATE_PW); await p.click('#stl-gate button'); await p.waitForTimeout(500);
 log('gate right password unlocks', !(await p.$('#stl-gate')) && await p.evaluate(() => getComputedStyle(document.body).visibility) === 'visible', '');
 await go(p, '/models'); log('gate remembered', !(await p.$('#stl-gate')), '');
 await c.close();

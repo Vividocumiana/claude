@@ -27,7 +27,8 @@
     }
   },
   "r2_buckets": [
-    { "binding": "MEDIA", "bucket_name": "mas26-media" }
+    { "binding": "MEDIA", "bucket_name": "mas26-media" },
+    { "binding": "STATS", "bucket_name": "mas26-stats" } // anonymous usage statistics (see src/worker.js)
   ]
   // Secrets (set with `npx wrangler secret put <NAME>`):
   //   UPLOAD_PASSWORD – password of the /upload page

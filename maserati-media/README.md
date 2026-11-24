@@ -45,6 +45,21 @@ Open points:
 | Document template: the legacy "Schede tecniche" list was removed and a CSS rule keeps the viewer visible on technical-sheet documents (Webflow condition on `.box-container`); better: remove that condition in the Designer | `site/webflow-code/document-template.html` |
 | Media Site link of the models = https://www.media.stellantis.com/em-en/maserati (to confirm) | Events items |
 
+## Statistics (basic, anonymous)
+
+Agreed with the client on 24 Nov 2026: Base level + basic numbers (total visits, downloads, QR code vs direct link).
+
+- The QR code must point to `https://fastlane-2030-maserati-day-2026.com/?src=qr`; every other link without the parameter.
+- Site: registered inline script `MaseratiStats` (Webflow → site scripts, footer, source in `site/webflow-code/stats-beacon.js`)
+  sends `POST /t {p: path, l: 1 if first page of a visit, q: 1 if ?src=qr}`. No cookie, no storage.
+- Worker: counts page views, visits (QR / link), `/f/...?dl` downloads and ZIPs; bots excluded; country from Cloudflare.
+  One empty object per event in the R2 bucket `mas26-stats` (`e/<day>/...`, data in the metadata), past days summed in `roll/<day>.json`.
+  No IP address and no visitor identifier are stored, so unique visitors cannot be counted.
+- Manager: **Statistiche** (`/upload/stats/`): totals, QR vs link, day by day, top files / documents / pages, countries, CSV export.
+  API: `GET /api/admin/stats?from=YYYY-MM-DD&to=YYYY-MM-DD` (Bearer token).
+- Before going live: empty the test data (`npx wrangler r2 object delete` on `mas26-stats`, or delete the bucket content from the dashboard)
+  and add a line about anonymous access statistics to the privacy / cookie texts if legal asks for it.
+
 ## API
 
 | Route | |

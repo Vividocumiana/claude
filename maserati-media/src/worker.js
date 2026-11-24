@@ -21,8 +21,17 @@ export default {
       if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
       if (p === "/upload" || p === "/upload/") return env.ASSETS.fetch(new Request(new URL("/upload/index.html", url), req));
       if (p === "/preview" || p === "/preview/") return env.ASSETS.fetch(new Request(new URL("/preview/index.html", url), req));
-      if (p.startsWith("/f/")) return await serveFile(req, env, decodeKey(p.slice(3)), url.searchParams.has("dl"));
-      if (p.startsWith("/zip/")) return await serveZip(req, env, ctx, cleanFolder(decodeURIComponent(p.slice(5))), url.searchParams.get("sub") || "");
+      if (p.startsWith("/f/")) {
+        const key = decodeKey(p.slice(3)), dl = url.searchParams.has("dl");
+        if (dl) trackDownload(env, ctx, req, key);
+        return await serveFile(req, env, key, dl);
+      }
+      if (p.startsWith("/zip/")) {
+        const folder = cleanFolder(decodeURIComponent(p.slice(5)));
+        track(env, ctx, req, "zip", { f: folder });
+        return await serveZip(req, env, ctx, folder, url.searchParams.get("sub") || "");
+      }
+      if (p === "/t" && req.method === "POST") return await trackView(req, env, ctx);
       if (p === "/api/list") return cors(json(await listFolder(env, cleanFolder(url.searchParams.get("folder") || ""), url.origin)));
       if (p === "/api/login" && req.method === "POST") return await login(req, env);
       if (p === "/api/sheets") return await sheets(env);
@@ -467,6 +476,7 @@ async function admin(req, env, url, action) {
   if (action.startsWith("cms/")) return cms(req, env, url, action.slice(4));
   if (action === "image" && m === "POST") return uploadImage(req, env, url);
   if (action === "state" || action === "docs" || action.startsWith("docs/")) return documents(req, env, url, action);
+  if (action === "stats" && m === "GET") return json(await stats(env, url));
   if (action === "folders" && m === "GET") return json({ folders: await folderStats(env) });
   if (action === "rename" && m === "POST") {
     const src = targetKey(url);
@@ -544,4 +554,82 @@ async function admin(req, env, url, action) {
     return json({ ok: true });
   }
   fail("Not found", 404);
+}
+
+// ---------- statistics (basic, anonymous) ----------
+// What is counted: page views sent by the site (POST /t), visits (= first page of a visit, split
+// "qr" / "link": the QR code URL carries ?src=qr), file downloads (/f/...?dl) and ZIP downloads.
+// No cookies, no IP address, no identifier: every event is one empty object in the STATS bucket
+// (key e/<day>/<time>-<random>) whose metadata holds type, page or file, source and country.
+// Past days are summed once and kept in roll/<day>.json.
+const BOTS = /bot|crawl|spider|slurp|preview|monitor|headless|lighthouse|curl|wget|python|facebookexternalhit|whatsapp|telegram|slack/i;
+function statsDay(d) { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(d); }
+function track(env, ctx, req, type, data = {}) {
+  if (!env.STATS || BOTS.test(req.headers.get("user-agent") || "")) return;
+  const now = new Date(), meta = { t: type, c: String((req.cf && req.cf.country) || "") };
+  for (const [k, v] of Object.entries(data)) if (v) meta[k] = encodeURIComponent(String(v).slice(0, 300));
+  const key = "e/" + statsDay(now) + "/" + now.getTime() + "-" + Math.random().toString(36).slice(2, 8);
+  ctx.waitUntil(env.STATS.put(key, "", { customMetadata: meta }).catch(() => {}));
+}
+function trackDownload(env, ctx, req, key) {
+  if (key.startsWith("_")) return; // thumbnails, previews, CMS images
+  const range = req.headers.get("range");
+  if (range && !/^bytes=0-/.test(range)) return; // resumed download: already counted
+  const i = key.lastIndexOf("/");
+  track(env, ctx, req, "download", { f: docFolderOf(key), n: i < 0 ? key : key.slice(i + 1) });
+}
+async function trackView(req, env, ctx) {
+  let j = {};
+  try { j = JSON.parse((await req.text()).slice(0, 2000)); } catch (e) {}
+  const path = typeof j.p === "string" && j.p.startsWith("/") ? j.p.slice(0, 200) : "";
+  if (path) track(env, ctx, req, "view", { p: path, s: j.l ? (j.q ? "qr" : "link") : "" });
+  return cors(new Response(null, { status: 204 }));
+}
+function emptyDay() { return { views: 0, visits: 0, qr: 0, link: 0, downloads: 0, zips: 0, pages: {}, files: {}, folders: {}, countries: {} }; }
+const bump = (o, k, n = 1) => { if (k) o[k] = (o[k] || 0) + n; };
+async function sumDay(env, day) {
+  const out = emptyDay(), dec = (v) => { try { return decodeURIComponent(v || ""); } catch (e) { return v || ""; } };
+  let cursor;
+  do {
+    const r = await env.STATS.list({ prefix: "e/" + day + "/", cursor, include: ["customMetadata"] });
+    for (const o of r.objects) {
+      const m = o.customMetadata || {};
+      if (m.t === "view") {
+        out.views++; bump(out.pages, dec(m.p));
+        if (m.s) { out.visits++; out[m.s === "qr" ? "qr" : "link"]++; bump(out.countries, m.c || "??"); }
+      } else if (m.t === "download") { out.downloads++; bump(out.files, dec(m.f) + "/" + dec(m.n)); bump(out.folders, dec(m.f)); }
+      else if (m.t === "zip") { out.zips++; bump(out.folders, dec(m.f)); }
+    }
+    cursor = r.truncated ? r.cursor : undefined;
+  } while (cursor);
+  return out;
+}
+async function dayStats(env, day, today) {
+  if (day >= today) return sumDay(env, day);
+  const saved = await env.STATS.get("roll/" + day + ".json");
+  if (saved) return saved.json();
+  const d = await sumDay(env, day);
+  await env.STATS.put("roll/" + day + ".json", JSON.stringify(d), { httpMetadata: { contentType: "application/json" } });
+  return d;
+}
+async function stats(env, url) {
+  if (!env.STATS) fail("Statistiche non attive", 503);
+  const today = statsDay(new Date()), ok = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || "");
+  const to = ok(url.searchParams.get("to")) ? url.searchParams.get("to") : today;
+  let from = ok(url.searchParams.get("from")) ? url.searchParams.get("from") : statsDay(new Date(Date.now() - 29 * 864e5));
+  const days = [];
+  for (let t = Date.parse(from + "T12:00:00Z"); days.length < 120 && statsDay(new Date(t)) <= to; t += 864e5) days.push(new Date(t).toISOString().slice(0, 10));
+  const list = await Promise.all(days.map((d) => dayStats(env, d, today)));
+  const total = emptyDay();
+  list.forEach((d) => {
+    for (const k of ["views", "visits", "qr", "link", "downloads", "zips"]) total[k] += d[k];
+    for (const k of ["pages", "files", "folders", "countries"]) for (const [n, c] of Object.entries(d[k])) bump(total[k], n, c);
+  });
+  const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n).map(([name, count]) => ({ name, count }));
+  return {
+    from: days[0] || from, to, today,
+    totals: { visits: total.visits, qr: total.qr, link: total.link, views: total.views, downloads: total.downloads, zips: total.zips },
+    days: days.map((day, i) => ({ day, visits: list[i].visits, qr: list[i].qr, link: list[i].link, views: list[i].views, downloads: list[i].downloads, zips: list[i].zips })),
+    pages: top(total.pages, 30), files: top(total.files, 50), folders: top(total.folders, 30), countries: top(total.countries, 40),
+  };
 }

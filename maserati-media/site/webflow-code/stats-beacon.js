@@ -1,0 +1,3 @@
+// Webflow registered inline script "MaseratiStats" (site-wide, footer), version 1.0.0.
+// Anonymous page view beacon for the media service: no cookie, no storage. See README → Statistics.
+(function(){try{var H="https://mas26-media.toolpress.workers.dev/t",r="",n="";try{r=document.referrer?new URL(document.referrer).host:""}catch(e){}try{n=(performance.getEntriesByType("navigation")[0]||{}).type||""}catch(e){}var l=r!==location.host&&n!=="reload"&&n!=="back_forward"?1:0,q=/[?&]src=qr(&|$)/.test(location.search)?1:0,b=JSON.stringify({p:location.pathname,l:l,q:q});if(navigator.sendBeacon)navigator.sendBeacon(H,b);else fetch(H,{method:"POST",body:b,keepalive:true,mode:"no-cors"});}catch(e){}})();
