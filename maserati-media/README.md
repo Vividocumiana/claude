@@ -36,7 +36,8 @@ Open points:
 | Colour confirmation; light tint `#2536831a` still on a few badge styles in Webflow | Webflow variable `BrandColor`, code files, `public/*.css` |
 | Model covers (now the event key visual as placeholder), descriptions, renders for the models row | Events items (`event-key-visual`, `event-description`, `logo`) |
 | Models row: renders on Grecale, GranTurismo, GranCabrio, MCPura, GT2 Stradale with the name below (live on staging, 24 Nov); Concept render still missing | Events items (`logo`) |
-| Colour feedback (24 Nov): option 3 ok, red option ok with the centenary trident artwork as event image, blue option wanted with the normal white trident as event image and the "Press Kit" title kept. Final choice not made yet; previews in `site/qa/preview/`, event images in `site/covers/event-trident-*.png` | — |
+| Decisions of 25 Nov: colour option 3 with the event key visual; home title = "Press Kit" + small "FaSTLAne 2030" + large "Maserati Day", no slash (styles `hero-fastlane`, `hero-maserati-day`); main event name "FaSTLAne 2030 Maserati Day". The slash is still in the footer, tab titles, password page and intro sentence | Webflow |
+| SAMPLE CONTENT for the mockup (25 Nov), to delete before going live: 18 documents ("<Model> – Photo gallery / Video / Press release", description "Sample … for the mockup."), 3 contacts "Name Surname (sample)", model descriptions starting with "Sample text:" | Press Kit Manager |
 | Key visual at full quality (now the 2000 px copy from chat) | `site/covers/`, `public/upload/cover*.webp`, `og.jpg` |
 | Favicon / webclip: upload by hand (no API) | `site/favicon/` |
 | Legal pages: see `site/webflow-code/legal-pages.md` | Webflow |
