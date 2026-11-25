@@ -1,6 +1,6 @@
 import { createRequire } from 'module'; const { chromium } = createRequire(import.meta.url)('/opt/node-tools/node_modules/playwright/index.js');
 import fs from 'fs';
-const B = 'https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io', DIR = new URL('./shots/', import.meta.url).pathname;
+const B = 'https://fastlane-2030-maserati-day-2026.webflow.io', DIR = new URL('./shots/', import.meta.url).pathname;
 const jq = fs.readFileSync(new URL('./lib/jquery/dist/jquery.min.js', import.meta.url)), mix = fs.readFileSync(new URL('./lib/mixitup/dist/mixitup.min.js', import.meta.url));
 const PAGES = ['/', '/models', '/contact', '/events/concept', '/events/grecale', '/events/granturismo', '/events/grancabrio', '/events/mcpura', '/events/gt2-stradale', '/cookie-policy', '/privacy-policy', '/terms-and-conditions'];
 const out = [], log = (k, ok, d = '') => { out.push([ok ? 'PASS' : 'FAIL', k, d]); console.log(ok ? 'PASS' : 'FAIL', k, d); };

@@ -1,7 +1,7 @@
 // Live check of the visit counter on the staging site: PW=<upload password> PWPATH=<path of playwright> node test/stats-live.mjs
 import { createRequire } from 'module'; const { chromium } = createRequire(import.meta.url)(process.env.PWPATH);
 import fs from 'fs';
-const B = 'https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io', W = 'https://mas26-media.toolpress.workers.dev';
+const B = 'https://fastlane-2030-maserati-day-2026.webflow.io', W = 'https://mas26-media.toolpress.workers.dev';
 const jq = fs.readFileSync(new URL('./lib/jquery/dist/jquery.min.js', import.meta.url));
 const tok = (await (await fetch(W + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: process.env.PW }) })).json()).token;
 const get = async () => (await (await fetch(W + '/api/admin/stats', { headers: { authorization: 'Bearer ' + tok } })).json()).totals;

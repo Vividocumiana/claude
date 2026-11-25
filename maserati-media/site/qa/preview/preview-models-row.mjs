@@ -1,6 +1,6 @@
 import { createRequire } from 'module'; const { chromium } = createRequire(import.meta.url)(process.env.PWPATH);
 import fs from 'fs';
-const B = 'https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io', OUT = process.env.OUT + '/', M = 'https://mas26-media.toolpress.workers.dev/upload/models/';
+const B = 'https://fastlane-2030-maserati-day-2026.webflow.io', OUT = process.env.OUT + '/', M = 'https://mas26-media.toolpress.workers.dev/upload/models/';
 const jq = fs.readFileSync(new URL('./lib/jquery/dist/jquery.min.js', import.meta.url));
 const b = await chromium.launch();
 async function shot(path, name, vp, mobile) {

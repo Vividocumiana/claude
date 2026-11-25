@@ -1,6 +1,6 @@
 import { createRequire } from 'module'; const { chromium } = createRequire(import.meta.url)(process.env.PWPATH);
 import fs from 'fs';
-const B = 'https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io', DIR = new URL('./shots/', import.meta.url).pathname;
+const B = 'https://fastlane-2030-maserati-day-2026.webflow.io', DIR = new URL('./shots/', import.meta.url).pathname;
 const jq = fs.readFileSync(new URL('./lib/jquery/dist/jquery.min.js', import.meta.url)), mix = fs.readFileSync(new URL('./lib/mixitup/dist/mixitup.min.js', import.meta.url));
 const log = (k, ok, d = '') => console.log(ok ? 'PASS' : 'FAIL', k, d);
 const b = await chromium.launch();

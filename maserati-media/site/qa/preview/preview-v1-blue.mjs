@@ -1,6 +1,6 @@
 import { createRequire } from 'module'; const { chromium } = createRequire(import.meta.url)(process.env.PWPATH);
 import fs from 'fs';
-const B = 'https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io', OUT = process.env.OUT + '/';
+const B = 'https://fastlane-2030-maserati-day-2026.webflow.io', OUT = process.env.OUT + '/';
 const jq = fs.readFileSync(new URL('./lib/jquery/dist/jquery.min.js', import.meta.url));
 const KV = {}; 
 const V = { v1: { main: '#0C2340', soft: '#f5f5f7', hover: '#0C2340' }, v2: { main: '#971B2F', soft: '#DDE5ED', hover: '#971B2F' } };

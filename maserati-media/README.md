@@ -24,7 +24,7 @@ models `concept`, `grecale`, `granturismo`, `grancabrio`, `mcpura`, `gt2-stradal
 
 ## Status (23 Nov 2026): staging only, domain NOT connected
 
-Staging: https://stellantis-mondial-auto-p-ca5c2043669e4.webflow.io (rename the subdomain in Webflow).
+Staging: https://fastlane-2030-maserati-day-2026.webflow.io (rename the subdomain in Webflow).
 Gate and upload password: temporary. Colours: option 3 (night blue `#131B2C`, red `#B3121F`), draft to be confirmed.
 Worker deployed: https://mas26-media.toolpress.workers.dev (bucket `mas26-media`).
 
