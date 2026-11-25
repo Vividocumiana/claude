@@ -2,7 +2,7 @@
 // PW=<upload password> DEMO=<folder with one sub-folder of files per model slug> [ONLY=slug,slug] node test/fill-samples.mjs
 import { chromium } from 'playwright'; import fs from 'fs';
 const BASE = 'https://mas26-media.toolpress.workers.dev', D = process.env.DEMO + '/';
-const MODELS = [['concept', 'Concept'], ['grecale', 'Grecale'], ['granturismo', 'GranTurismo'], ['grancabrio', 'GranCabrio'], ['mcpura', 'MCPura'], ['gt2-stradale', 'GT2 Stradale']];
+const MODELS = [['concept', 'Concept'], ['grecale', 'Grecale'], ['granturismo', 'GranTurismo'], ['grancabrio', 'GranCabrio'], ['mcpura', 'MCPura'], ['gt2-stradale', 'GT2 Stradale'], ['mcxtrema', 'MCXtrema']];
 const only = (process.env.ONLY || '').split(',').filter(Boolean);
 const b = await chromium.launch({ proxy: { server: process.env.HTTPS_PROXY } });
 const ctx = await b.newContext({ viewport: { width: 1360, height: 900 }, ignoreHTTPSErrors: true });
