@@ -32,7 +32,7 @@ Open points:
 
 | What | Where |
 | --- | --- |
-| Final passwords, unlock time confirmed | gate `HASH`/`UNLOCK_AT` in `site/webflow-code/site-head.html` (+ embargo notice), `UPLOAD_PASSWORD` secret |
+| No password page on the site (removed 25 Nov 2026, client decision; code kept in `site/webflow-code/password-gate.html`). Embargo notice stays until 10/12/2026 19:00. Final `UPLOAD_PASSWORD` for the Manager still to set | `site/webflow-code/site-head.html`, worker secret |
 | Colour confirmation; light tint `#2536831a` still on a few badge styles in Webflow | Webflow variable `BrandColor`, code files, `public/*.css` |
 | Model covers (now the event key visual as placeholder), descriptions, renders for the models row | Events items (`event-key-visual`, `event-description`, `logo`) |
 | Models row: renders on Grecale, GranTurismo, GranCabrio, MCPura, GT2 Stradale with the name below (live on staging, 24 Nov); Concept render still missing | Events items (`logo`) |
