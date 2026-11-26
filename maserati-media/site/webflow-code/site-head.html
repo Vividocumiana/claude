@@ -9,8 +9,12 @@
 .footer-logo{height:auto}
 .footer .image-2{min-height:64px;max-height:64px}
 </style>
-<!-- Models row (model pages + Models page): full-width strip under the fixed navbar: Maserati logo + the 6 models.
-     A model shows its render ("Logo" field, Press Kit Manager) with the name below; without a render only the name. The Maserati logo is the first item (static, links to home). -->
+<script>
+/* Navbar links added as plain links (Media Site): behave like the other navbar links (mobile menu alignment + closes the menu on tap) */
+document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll("a.nav-link:not(.w-nav-link)").forEach(function(a){a.classList.add("w-nav-link");a.addEventListener("click",function(){var b=document.querySelector(".w-nav-button.w--open");if(b)setTimeout(function(){b.click();},50);});});});
+</script>
+<!-- Models row (model pages + Models page): full-width strip under the fixed navbar: the "Maserati Day" page (logo) first, then the models.
+     A model shows its render ("Logo" field, Press Kit Manager) with the name below; without a render only the name. -->
 <style>
 [data-brandbar]{margin-top:96px;background:#fff;border-bottom:1px solid #e6e6ea;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 [data-brandbar] + section{margin-top:0 !important}
@@ -25,15 +29,12 @@
 [data-bb-logo]{display:block;height:46px;width:auto;max-width:130px;object-fit:contain}
 [data-bb-name]{font-size:14px;line-height:1.2;white-space:nowrap}
 [data-bb-slug]{display:none}
-[data-bb-home]{display:flex;align-items:center;height:52px;padding:0 20px 0 4px;margin-right:8px;border-right:1px solid #e6e6ea}
-[data-bb-home] img{display:block;height:26px;width:auto}
 [data-bb-name]{font-weight:600;letter-spacing:.02em}
 [data-bb-link].has-logo [data-bb-name]{font-size:11px}
 /* When at least one model has its render, every item is taller: render above, name below */
 [data-brandbar].has-renders [data-bb-link]{flex-direction:column;gap:2px;height:82px;min-width:120px}
-[data-brandbar].has-renders [data-bb-home]{height:82px}
 [data-bb-link]:not(.has-logo) [data-bb-logo]{display:none}
-@media (max-width:767px){[data-brandbar]{padding:10px 16px}[data-brandbar] .w-dyn-items{justify-content:flex-start}[data-bb-link]{height:44px;min-width:76px;padding:0 12px}[data-bb-logo]{height:36px;max-width:100px}[data-brandbar].has-renders [data-bb-link]{height:68px;min-width:96px}[data-brandbar].has-renders [data-bb-home]{height:68px}}
+@media (max-width:767px){[data-brandbar]{padding:10px 16px}[data-brandbar] .w-dyn-items{justify-content:flex-start}[data-bb-link]{height:44px;min-width:76px;padding:0 12px}[data-bb-logo]{height:36px;max-width:100px}[data-brandbar].has-renders [data-bb-link]{height:68px;min-width:96px}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -42,13 +43,6 @@ document.addEventListener('DOMContentLoaded', function () {
   var nav = document.querySelector('.navbar');
   function fit() { if (nav) bar.style.marginTop = Math.max(nav.offsetHeight - 1, 0) + 'px'; }
   fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit);
-  // Maserati logo first in the row
-  var items = bar.querySelector('.w-dyn-items');
-  if (items && !bar.querySelector('[data-bb-home]')) {
-    var li = document.createElement('div'); li.className = 'w-dyn-item';
-    li.innerHTML = '<a data-bb-home href="/" aria-label="Maserati – home"><img src="https://mas26-media.toolpress.workers.dev/upload/logo.svg" alt="Maserati"></a>';
-    items.insertBefore(li, items.firstChild);
-  }
   var here = location.pathname.replace(/\/+$/, '').split('/').pop();
   bar.querySelectorAll('[data-bb-link]').forEach(function (a) {
     var slugEl = a.querySelector('[data-bb-slug]'), slug = slugEl ? slugEl.textContent.trim() : '';
@@ -64,8 +58,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (slug) a.setAttribute('href', '/events/' + slug);
     if (slug && slug === here) { a.classList.add('is-current'); a.setAttribute('aria-current', 'page'); }
   });
-  var cur = bar.querySelector('[data-bb-link].is-current');
-  if (cur && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = cur.offsetLeft - bar.clientWidth / 2 + cur.offsetWidth / 2;
+  // Keep the selected item in view (again after the renders have loaded: they change the widths)
+  function center() { var cur = bar.querySelector('[data-bb-link].is-current'); if (cur && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = cur.offsetLeft - bar.clientWidth / 2 + cur.offsetWidth / 2; }
+  center(); window.addEventListener('load', center);
 });
 </script>
 <!-- Embargo notice shown on every page until the embargo ends (no password gate: removed on 25 Nov 2026, see password-gate.html):
