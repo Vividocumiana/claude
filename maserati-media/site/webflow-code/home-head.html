@@ -1,0 +1,29 @@
+<!-- Home page > Custom code > Head (page-level). Source of truth for the home hero layout. -->
+<style>
+/* Ensure that the modal is above everything */
+.selectmarketmodal {
+  position: fixed !important;
+  z-index: 9999 !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.selectmarketmodal-container {
+  position: relative;
+  z-index: 9998;
+}
+
+/* HOME HERO – centred composition, Maserati Day logo as the title */
+.header-title-left > .badge{display:none}
+.h1-heading br{display:none}
+.header-left-wrapper,.header-content-top,.header-title-left{align-items:center !important;text-align:center}
+.header-title-left{display:flex;flex-direction:column}
+.h1-heading{font-size:15px !important;line-height:1.4 !important;letter-spacing:.3em;text-transform:uppercase;font-weight:500;color:#8c8c8c !important;text-align:center;width:100%}
+.hero-day-logo{width:470px !important;max-width:90% !important;margin:28px auto 30px !important}
+.header-left-wrapper .max-width-small{margin-left:auto;margin-right:auto}
+.header-left-wrapper .paragraph-regular{text-align:center}
+.header-features{display:none !important}
+.header-button-group{justify-content:center !important;margin-top:36px}
+@media (max-width:767px){.hero-day-logo{width:280px !important}}
+</style>
